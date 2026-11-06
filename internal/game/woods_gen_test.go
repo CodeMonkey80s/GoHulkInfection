@@ -4,7 +4,7 @@ import "testing"
 
 func TestWoodsGeneratorTerrain(t *testing.T) {
 	for level := 0; level < 9; level++ {
-		for seed := int64(0); seed < 5; seed++ {
+		for seed := int64(0); seed < 10; seed++ {
 			g := NewGame(seed + int64(level)*1000)
 			g.SetupNewGame(0, "tester")
 			g.GenerateLevel(level)
@@ -45,6 +45,41 @@ func TestWoodsGeneratorTerrain(t *testing.T) {
 			}
 			if !reachable(g, g.Player.X, g.Player.Y, px, py) {
 				t.Fatalf("level %d seed %d portal is not reachable", level, seed)
+			}
+		}
+	}
+}
+
+func TestWoodsGeneratorBuildsHuts(t *testing.T) {
+	for level := 0; level < 9; level++ {
+		for seed := int64(0); seed < 10; seed++ {
+			g := NewGame(seed + int64(level)*2000)
+			g.SetupNewGame(0, "tester")
+			g.GenerateLevel(level)
+			doors, windows, furniture := 0, 0, 0
+			for y := 0; y < g.Map.H; y++ {
+				for x := 0; x < g.Map.W; x++ {
+					switch g.Map.Tile(x, y) {
+					case tileWoodenDoor:
+						doors++
+						if !reachable(g, g.Player.X, g.Player.Y, x, y) {
+							t.Fatalf("level %d seed %d hut door at %d,%d is unreachable", level, seed, x, y)
+						}
+					case tileWoodenWindow:
+						windows++
+					case tileTable, tileChair, tileBed, tileCrate, tileBarrel, tileFireplace, tileShelf:
+						furniture++
+					}
+				}
+			}
+			if doors < 2 || doors > 6 {
+				t.Fatalf("level %d seed %d has %d hut doors, want 2-6", level, seed, doors)
+			}
+			if windows == 0 {
+				t.Fatalf("level %d seed %d has no hut windows", level, seed)
+			}
+			if furniture == 0 {
+				t.Fatalf("level %d seed %d has no hut furniture", level, seed)
 			}
 		}
 	}

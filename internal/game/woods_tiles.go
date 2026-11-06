@@ -2,6 +2,13 @@ package game
 
 // Woods terrain tiles are appended at the end of TileDefs so all recovered tile
 // IDs remain stable for saves and older data.
+const (
+	tileWoodenFloor  = 13
+	tileWoodenWall   = 14
+	tileWoodenDoor   = 15
+	tileWoodenWindow = 17
+)
+
 var (
 	tileDirtRoad    uint8
 	tileBush        uint8
@@ -13,6 +20,13 @@ var (
 	tileLanternPost uint8
 	tileMud         uint8
 	tileReeds       uint8
+	tileTable       uint8
+	tileChair       uint8
+	tileBed         uint8
+	tileCrate       uint8
+	tileBarrel      uint8
+	tileFireplace   uint8
+	tileShelf       uint8
 )
 
 var woodsTileRoles = map[int]ColorRole{}
@@ -64,6 +78,34 @@ func init() {
 		Name: "reeds", Type: 1, Glyph: '"', Color: 6,
 		BlockMove: false, BlockSight: true, Partner: -1,
 	})
+	tileTable = add(TileDef{
+		Name: "table", Type: 2, Glyph: 'T', Color: 6,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileChair = add(TileDef{
+		Name: "chair", Type: 1, Glyph: 'h', Color: 6,
+		BlockMove: false, BlockSight: false, Partner: -1,
+	})
+	tileBed = add(TileDef{
+		Name: "bed", Type: 2, Glyph: 'b', Color: 6,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileCrate = add(TileDef{
+		Name: "crate", Type: 2, Glyph: 'x', Color: 6,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileBarrel = add(TileDef{
+		Name: "barrel", Type: 2, Glyph: '0', Color: 6,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileFireplace = add(TileDef{
+		Name: "fireplace", Type: 2, Glyph: '&', Color: 6,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileShelf = add(TileDef{
+		Name: "shelf", Type: 2, Glyph: '[', Color: 6,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
 
 	woodsTileRoles = map[int]ColorRole{
 		int(tileDirtRoad):    RoleDirtRoad,
@@ -76,5 +118,12 @@ func init() {
 		int(tileLanternPost): RoleLanternGlow,
 		int(tileMud):         RoleMud,
 		int(tileReeds):       RoleReeds,
+		int(tileTable):       RoleFurniture,
+		int(tileChair):       RoleFurniture,
+		int(tileBed):         RoleCloth,
+		int(tileCrate):       RoleFurniture,
+		int(tileBarrel):      RoleFurniture,
+		int(tileFireplace):   RoleFirelight,
+		int(tileShelf):       RoleFurniture,
 	}
 }
