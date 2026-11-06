@@ -27,7 +27,8 @@ own revamp plans are written.
 
 | Feature | Status | Document |
 |---|---|---|
-| Command and scope reduction — melee-only combat, no ranged/unarmed, FOV-limited throwing | In progress | [systems/command-scope-reduction.md](systems/command-scope-reduction.md) |
+| Command and scope reduction — melee-only combat, no ranged/unarmed, FOV-limited throwing | Done | [systems/command-scope-reduction.md](systems/command-scope-reduction.md) |
+| Player redesign — five ADOM-style slots, HP/AP, minimal HUD | Proposed | [systems/player-redesign.md](systems/player-redesign.md) |
 
 The woods plan intentionally includes the first pass of:
 
