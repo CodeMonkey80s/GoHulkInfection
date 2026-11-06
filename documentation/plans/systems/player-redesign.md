@@ -3,12 +3,13 @@
 Status: **proposed**  
 Parent: [Feature plans](../README.md)  
 Related: [Command and scope reduction](command-scope-reduction.md), [Woods level revamp](../woods/level-revamp.md)  
-Scope: player equipment, HP/AP, AV/DV, HUD, message log, item actions and key bindings
+Scope: player equipment, HP/AP, AV/DV, HUD, message log, item actions and key bindings. Throwing is deferred to a later plan.
 
 This plan redesigns the player around a small, tactical set of ADOM-style
 equipment slots. It assumes the melee-only command scope from the current
-feature branch: no ranged weapons, no ammo, no unarmed attack, no tactics, and
-throwing limited to HE grenades and molotovs.
+feature branch: no ranged weapons, no ammo, no unarmed attack, no tactics.
+Throwing is deliberately deferred to a later plan; the molotov data is kept for
+that future pass.
 
 ---
 
@@ -20,8 +21,8 @@ throwing limited to HE grenades and molotovs.
 - Introduce HP and AP as the two core survival resources.
 - Simplify the HUD and message log so the map gets most of the screen.
 - Make every action a direct key binding; no inventory scrolling.
-- Keep the chainsaw as the signature melee weapon and the molotov as the
-  signature throwable.
+- Keep the chainsaw as the signature melee weapon; preserve molotov data for a
+  later throwing pass.
 - Fit the grim, simple ASCII presentation.
 
 ## 2. Equipment slots
@@ -30,7 +31,7 @@ Use five player slots:
 
 | Slot | Hotkey | Accepts | Notes |
 |---|---|---|---|
-| Hands | `a` | weapon, tool, throwable | The active item. One hand slot only. |
+| Hands | `a` | weapon, tool, throwable | The active item. One hand slot only. Throwable actions are deferred. |
 | Body | `b` | armour | Worn armour; provides AP and DV penalty. |
 | Belt 1 | `c` | any non-body item | Available from the start. |
 | Belt 2 | `d` | any non-body item | Unlocked at level 3. |
@@ -64,15 +65,35 @@ as unavailable until earned.
 
 Every slot has one context-sensitive action key and one drop key.
 
+### Movement and directional attack
+
+- Arrows and the numpad move the player in eight directions.
+- Moving into an enemy attacks it (bump attack).
+- `f` followed by a direction performs a deliberate directional melee attack
+  without moving.
+- There is no “nearest target” attack. The player chooses the direction.
+- If there is no adjacent enemy in that direction, `f` reports that there is
+  nothing to attack.
+
+### Throwing
+
+Throwing is **deferred** to a later plan.
+
+- `t` is reserved for throwing but is inactive for now.
+- Throwables may still exist in item data and slots, but their action is shown
+  as “throwing deferred” in the player-slot overlay.
+- When throwing returns, a belt throwable is first swapped into Hands, then
+  thrown with `t`. This preserves the deliberate switching decision.
+
 ### Lowercase = use / act
 
 | Key | Slot | Action |
 |---|---|---|
-| `a` | Hands | Attack with a weapon, use a tool, or throw a grenade/molotov |
-| `b` | Body | Inspect armour / activate armour ability (future) |
-| `c` | Belt 1 | Use, equip or swap the item |
-| `d` | Belt 2 | Use, equip or swap the item |
-| `e` | Belt 3 | Use, equip or swap the item |
+| `a` | Hands | Use a tool; a weapon reports that it is ready; throwables are deferred |
+| `b` | Body | Open the player-slot overlay focused on Body |
+| `c` | Belt 1 | Use, swap, or consume the item |
+| `d` | Belt 2 | Use, swap, or consume the item |
+| `e` | Belt 3 | Use, swap, or consume the item |
 
 ### Uppercase = drop
 
@@ -90,14 +111,10 @@ Dropping succeeds only if the current tile has no item on it.
 
 `a` is context-sensitive:
 
-- **weapon** — attack the nearest adjacent enemy
 - **tool** — use the tool (axe, lockpick, shovel, lantern, etc.)
-- **throwable** — enter throw targeting for HE grenade or molotov
-
-If Hands is empty, `a` reports that the player has nothing ready.
-
-This replaces the old separate `f` attack and `t` throw keys. Movement into an
-enemy still auto-attacks when `optPlayerAttackOnMove` is enabled.
+- **weapon** — report that the weapon is ready; attack with `f` + direction
+- **throwable** — unavailable for now; throwing is deferred
+- **empty** — report that the player has nothing ready
 
 ### Belt actions
 
@@ -106,21 +123,47 @@ enemy still auto-attacks when `optPlayerAttackOnMove` is enabled.
 | Belt item | Action |
 |---|---|
 | weapon or tool | Swap it into Hands; the old Hands item moves into that belt slot |
-| throwable | Swap it into Hands (then press `a` to throw) |
-| medical or food | Use it immediately; empty slot when consumed |
+| throwable | Swap it into Hands; throwing itself is deferred |
+| armour vial | Consume it and restore AP |
+| health pack / food | Consume it and restore HP |
 | other | Show a short message describing why it cannot be used |
 
 Belt slots are quick access, not a second inventory.
 
 ### Body actions
 
-`b` currently:
+`b` opens the player-slot overlay focused on Body. Armour is worn
+automatically when placed in Body; it is not “used” like a consumable.
 
-- reports armour name, current/max AP and absorb value
-- can later activate powered armour or special body items
+The overlay shows armour AP, absorption and DV penalty. There is no separate
+armour activation command in this scope.
 
-Armour is worn automatically when placed in Body. It is not “used” like a
-consumable.
+### Player-slot overlay (`i`)
+
+`i` opens a top overlay showing only the player slots:
+
+- key bindings on the left
+- a small ASCII character representation
+- item name and stats for the focused item
+- an action column on the right: `swap`, `consume`, `inspect`, `drop`,
+  `deferred`
+
+Suggested shape:
+
+```text
+PLAYER SLOTS                                      action
+[a] Hands   chainsaw       dmg 7-44 av 5 dv -12    attack: f + dir
+[b] Body    jacket         AP 20/20 absorb 50%     inspect
+[c] Belt 1  molotov        fire throwable          swap (deferred)
+[d] Belt 2  medkit         heal 25, charges 5      consume
+[e] Belt 3  ---                                   -
+                 O
+                /|\
+                / \
+```
+
+`a`–`e` work inside the overlay; `A`–`E` drop the corresponding item; `i` or
+`Esc` closes it.
 
 ### Pickup and ground items
 
@@ -138,12 +181,11 @@ This keeps loot decisions immediate and avoids inventory Tetris.
 
 ### Smash
 
-The old bash key `b` conflicts with Body. Move smash to **`v`**:
+Smash stays on **`v`** for now:
 
 - `v` smashes an adjacent door, wall or furniture
 - a weapon in Hands is not required, but an axe or chainsaw may improve it
-- if we want an even smaller command set, smash can be removed and melee
-  attacks can damage adjacent obstacles instead
+- may be revisited in a later plan
 
 ## 4. HP, AP, AV and DV
 
@@ -204,15 +246,13 @@ decision is which Body armour to wear.
 
 ## 5. HUD and message layout
 
-Target 80×50 layout:
+Target 80×50 layout — as little as possible:
 
-```
+```text
 row 0      latest message only
-row 1..45  map view
-row 46     Name   HP 39/39   AP 20/20   Lvl 3
-row 47     Hands: chainsaw        Body: jacket (AP 20/20)
-row 48     [c] molotov  [d] medkit  [e] ---
-row 49     a use  A drop  , pick up  m log  ? help
+row 1..46  map view
+row 47     Name   HP 39/39   AP 20/20   Lvl 3
+row 48     [a] chainsaw  [b] jacket 20/20  [c] molotov  [d] medkit  [e] ---
 ```
 
 Rules:
@@ -223,29 +263,22 @@ Rules:
 - There is no permanent multi-line message buffer.
 - HP is green/yellow/red depending on health.
 - AP is shown in a steel/blue tone; `AP 0/20` is a warning.
-- Hands is the primary displayed weapon.
-- Body shows armour and current/max AP.
-- Belt shows only the three quick slots and their hotkeys.
+- The second HUD line shows the five slots with their hotkeys and item names.
+- Body armour shows its current/max AP in the overlay, not in the permanent HUD.
 - No weight, burden, ammo, target, tactic, or XP bar in the main HUD.
-- Level and XP can stay on the compact player screen.
+- There is no permanent help line; `?` opens the help screen.
 
 ### Map overlays
 
 - Look mode (`l`) shows a one-line description and a highlighted tile.
-- Throw mode (`a` with a throwable) shows target coordinates, range and
-  `enter`/`esc`.
-- Message expansion and item info share the top region; only one overlay is
-  active at a time.
+- Message expansion and the player-slot overlay share the top region; only one
+  overlay is active at a time.
+- Throwing overlays are deferred with the throwing feature.
 
-### Item details
+### Player-slot overlay
 
-No scrolling inventory screen is required. The HUD is the inventory.
-
-Optional: `i` opens a compact equipment-details overlay with the five slots and
-their descriptions. It uses the same `a`–`e` keys and never scrolls. If the
-command set must stay minimal, omit `i` and show item details through the
-message line when an action is attempted.
-
+The HUD is the permanent inventory summary; `i` opens the detailed overlay
+described in section 3. It never scrolls and always shows all five slots.
 ## 6. Menus without arrow scrolling
 
 Map movement keeps arrows and numpad. Menus should not need arrow scrolling:
@@ -288,13 +321,13 @@ type PlayerSlots struct {
 ## 8. Implementation phases
 
 1. **Data model** — player slots, belt unlock, AP fields, one-item-per-tile.
-2. **Combat** — HP/AP split, simplified AV/DV, chainsaw/molotov tuning.
+2. **Combat** — HP/AP split, simplified AV/DV and chainsaw tuning; preserve molotov data for later.
 3. **Item actions** — `a`–`e` context actions and `A`–`E` drops.
 4. **HUD** — top message line, bottom HP/AP/slot display, message expansion.
 5. **Pickup/drop** — auto-placement and one-item ground rule.
 6. **Menus** — fixed help/skills/player screens and non-scrolling options.
 7. **Save migration and tests**.
-8. **Playtest** — switching, AP attrition, chainsaw and molotov feel.
+8. **Playtest** — switching, AP attrition and chainsaw feel; throwables remain deferred.
 
 ## 9. Acceptance criteria
 
@@ -302,22 +335,41 @@ type PlayerSlots struct {
 - [ ] Belt 2 and 3 unlock through experience.
 - [ ] No weight, burden, ammo, target or tactic UI remains.
 - [ ] No scrolling inventory.
+- [ ] Movement into an enemy attacks; `f` + direction attacks deliberately.
 - [ ] `a`–`e` perform item actions; `A`–`E` drop items.
 - [ ] Dropping fails when the tile already has an item.
 - [ ] HP and AP are visible and AP absorbs damage.
-- [ ] Chainsaw is a top-tier melee option; molotov is a top-tier throwable.
+- [ ] Armour vials and health packs work from belt slots.
+- [ ] Chainsaw is a top-tier melee option; molotov data is preserved for the
+      future throwing plan.
 - [ ] Latest message is one line; `m` shows up to eight messages.
+- [ ] `i` opens the non-scrolling player-slot overlay.
 - [ ] Old saves migrate into the new slots without crashing.
 
-## 10. Open questions
+## 10. Resolved decisions
 
-- Confirm one Hands slot rather than two.
-- Confirm belt unlock levels 3 and 6.
-- Should `b` do anything beyond inspecting armour for now?
-- Should `i` exist as a non-scrolling equipment-details overlay?
-- Should belt slots accept body armour, or should armour only fit Body?
-- Should AP be repairable only with kits, or also slowly regenerate at rest?
-- Should `v` remain smash, or should smash be folded into weapon attacks?
-- Should `a` replace `f` entirely for attacking?
-- Should throwing a belt grenade swap it into Hands first, or throw directly?
-- Should acid bypass AP completely, or only a percentage?
+- One Hands slot.
+- Attack is directional: bump attack or `f` + direction.
+- Throwing is deferred; `t` reserved.
+- Belt 2 at level 3, Belt 3 at level 6.
+- Body accepts armour only; belt accepts non-body items.
+- Pickup auto-places into Hands → Body (if armour) → first free belt slot.
+- Belt throwables must be swapped into Hands before throwing.
+- Smash stays on `v` for now.
+- HP regenerates slowly as before; AP is restored by kits, tools and vials.
+- Acid bypasses AP completely for now.
+- Body action opens the player-slot overlay; no armour activation command yet.
+- Enemy AP is out of scope; monsters will be redesigned separately.
+- Chainsaw is noisy and has no fuel requirement.
+- Molotovs are loot-only.
+- Drop is refused on a tile that already has an item.
+- HUD is two lines, as minimal as possible.
+
+## 11. Remaining tuning questions
+
+These do not block implementation:
+
+- How much AP should a vial restore?
+- What is the chainsaw noise radius and how does it attract zombies?
+- Exact overlay height and arrangement of the ASCII character silhouette.
+- Whether the overlay pauses the game or is purely informational.
