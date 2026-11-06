@@ -381,6 +381,27 @@ func TestUIDOSColourMapping(t *testing.T) {
 	}
 }
 
+func TestWoodsTileRoles(t *testing.T) {
+	cases := map[int]ColorRole{
+		int(tileDirtRoad):    RoleDirtRoad,
+		int(tileBush):        RoleBush,
+		int(tileBramble):     RoleBramble,
+		int(tileFlowers):     RoleFlowerGold,
+		int(tileStump):       RoleStump,
+		int(tileFallenLog):   RoleStump,
+		int(tileDeadTree):    RoleDeadTree,
+		int(tileLanternPost): RoleLanternGlow,
+		int(tileMud):         RoleMud,
+		int(tileReeds):       RoleReeds,
+	}
+	for id, want := range cases {
+		got, ok := TileColorRole(id)
+		if !ok || got != want {
+			t.Fatalf("tile %d role = %s, want %s", id, got, want)
+		}
+	}
+}
+
 func TestDrawGameUsesPalette(t *testing.T) {
 	g := NewGame(7)
 	g.SetupNewGame(0, "tester")

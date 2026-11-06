@@ -1,9 +1,14 @@
 # Woods Level Revamp — Levels 0–8
 
-Status: **planned**  
+Status: **in progress**
 Parent: [Woods plans](README.md)  
 Related: [Woods colour palette](color-palette.md)  
 Scope: **woods levels 0–8 only**
+
+Implementation status: the first outdoor terrain pass is implemented for woods
+levels 0–8: grass, forest clusters, clearings, bushes, brambles, a dirt road,
+lantern posts and scattered props. Caves, temple and time-portal levels still
+use the section generator.
 
 This document describes the next major map-content pass for the Go port. The
 goal is to stop treating every level as a reused room-section grid and give
@@ -17,9 +22,9 @@ loot identity and inhabitants.
 The current Go port has:
 
 - four level themes: `woods`, `caves`, `temple of underminer`, `time portal`
-- 80×46 maps assembled from the recovered 10×40 cube-section templates and
-  sized to fit the viewport
-- 64 recovered tile prototypes
+- 80×46 maps sized to fit the viewport; woods levels 0–8 use the outdoor
+  terrain generator, other themes use the recovered 10×40 cube-section templates
+- 64 recovered tile prototypes plus appended woods terrain tiles
 - 49 recovered item prototypes and a 20-entry weapon table
 - 17 recovered critter prototypes
 - simple AI that generally treats the player as the only target
@@ -28,6 +33,8 @@ The current Go port has:
 Relevant code:
 
 - `internal/game/map.go` — `GenerateLevel`, terrain, exits, spawn population
+- `internal/game/woods_gen.go` — woods terrain, forest noise, roads and lanterns
+- `internal/game/woods_tiles.go` — appended woods tile definitions
 - `internal/game/ai.go` — critter turns and target selection
 - `internal/game/combat.go` — damage, death, corpses, explosions
 - `internal/game/data_gen.go` — recovered tile/item/critter/weapon tables
@@ -319,8 +326,9 @@ general nearest-valid-target selection based on faction and aggro state.
 
 ### 3.10 Implementation phases
 
-- [ ] Phase 1 — data groundwork: append new tiles, item kinds, item prototypes and weapon entries
-- [ ] Phase 2 — woods terrain generator: grass, forest clusters, bushes, roads, lanterns
+- [x] Phase 1a — terrain tile definitions appended for roads, vegetation and lanterns
+- [ ] Phase 1b — item kinds, item prototypes and weapon entries
+- [x] Phase 2 — woods terrain generator: grass, forest clusters, bushes, roads, lanterns
 - [ ] Phase 3 — huts, doors, windows, furniture, road-facing placement
 - [ ] Phase 4 — river/pond generation and bridges
 - [ ] Phase 5 — nine wood-level specifications and unique landmarks
