@@ -196,6 +196,28 @@ func TestInventoryCommaPicksUpItem(t *testing.T) {
 	}
 }
 
+func TestLookDescriptionNamesGroundItem(t *testing.T) {
+	g := NewGame(705)
+	g.SetupNewGame(0, "tester")
+	g.UpdateFOV()
+	g.Items = append(g.Items, &Item{Proto: 10, X: g.Player.X, Y: g.Player.Y})
+	desc := g.TileDescription(g.Player.X, g.Player.Y)
+	if !strings.Contains(desc, "Crowbar is lying here.") {
+		t.Fatalf("tile description does not name the item: %q", desc)
+	}
+
+	g.State = StateLook
+	g.LookX, g.LookY = g.Player.X, g.Player.Y
+	u, s := newTestUI(g, ColorModeTrueColor)
+	defer s.Fini()
+	u.drawLookOverlay()
+	s.Show()
+	rows := strings.Split(screenText(s), "\n")
+	if !strings.Contains(rows[45], "Crowbar is lying here.") {
+		t.Fatalf("look overlay does not show the item: %q", rows[45])
+	}
+}
+
 func TestSaveMigrationGrantsTwoBeltSlots(t *testing.T) {
 	sc := saveCritter{
 		Player: true,
