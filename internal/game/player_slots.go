@@ -233,7 +233,7 @@ func (g *Game) UseSlot(slot int) {
 		case KindMelee:
 			g.Msg("your "+d.Name+" is ready; use f to attack.", 8)
 		case KindGrenade:
-			g.Msg("use t to throw your "+d.Name+".", 8)
+			g.Msg("throwing is not available yet.", 8)
 		case KindMedical:
 			if g.playerConsumeMedical(it) {
 				if it.Charges <= 0 {

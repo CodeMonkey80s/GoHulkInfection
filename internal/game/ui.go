@@ -66,15 +66,16 @@ type UI struct {
 	g      *Game
 	ox, oy int
 
-	titleSel    int
-	classSel    int
-	optSel      int
-	optScroll   int
-	helpSel     int
-	helpScroll  int
-	msgScroll   int
-	msgExpanded bool
-	skillSel    int
+	titleSel      int
+	classSel      int
+	optSel        int
+	optScroll     int
+	helpSel       int
+	helpScroll    int
+	msgScroll     int
+	msgExpanded   bool
+	attackPending bool
+	skillSel      int
 }
 
 func Run() error {
@@ -391,6 +392,12 @@ func (u *UI) drawGame() {
 	}
 	u.drawTopMessages()
 	u.drawStatus(47)
+	if u.attackPending {
+		u.fill(0, 45, screenW, 2, ' ', 8, 0)
+		u.fill(0, 45, screenW, 1, ' ', 15, 1)
+		u.putStr(1, 45, "attack: choose a direction", 15, 1)
+		u.putStr(1, 46, "arrows / numpad attack, esc cancels", 8, 0)
+	}
 }
 
 // CellForHighlight returns the glyph/colour of a world cell for the look/throw
@@ -634,6 +641,46 @@ func (u *UI) handleCharCreate(e *tcell.EventKey) {
 	}
 }
 
+func directionFromEvent(e *tcell.EventKey) (int, int, bool) {
+	switch e.Key() {
+	case tcell.KeyUp:
+		return 0, -1, true
+	case tcell.KeyDown:
+		return 0, 1, true
+	case tcell.KeyLeft:
+		return -1, 0, true
+	case tcell.KeyRight:
+		return 1, 0, true
+	case tcell.KeyHome:
+		return -1, -1, true
+	case tcell.KeyEnd:
+		return 1, 1, true
+	case tcell.KeyPgUp:
+		return 1, -1, true
+	case tcell.KeyPgDn:
+		return -1, 1, true
+	}
+	switch e.Rune() {
+	case '8':
+		return 0, -1, true
+	case '9':
+		return 1, -1, true
+	case '7':
+		return -1, -1, true
+	case '6':
+		return 1, 0, true
+	case '4':
+		return -1, 0, true
+	case '3':
+		return 1, 1, true
+	case '2':
+		return 0, 1, true
+	case '1':
+		return -1, 1, true
+	}
+	return 0, 0, false
+}
+
 func (u *UI) handlePlaying(e *tcell.EventKey) {
 	g := u.g
 	switch e.Key() {
@@ -681,6 +728,21 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 		if e.Key() == tcell.KeyEscape || e.Rune() == 'm' {
 			u.msgExpanded = false
 		}
+		return
+	}
+	if u.attackPending {
+		if e.Key() == tcell.KeyEscape {
+			u.attackPending = false
+			g.Msg("attack cancelled.", 8)
+			return
+		}
+		if dx, dy, ok := directionFromEvent(e); ok {
+			u.attackPending = false
+			g.PlayerDirectionalAttack(dx, dy)
+			return
+		}
+		u.attackPending = false
+		g.Msg("attack cancelled.", 8)
 		return
 	}
 	// movement
@@ -735,7 +797,12 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 	case ',':
 		g.PickUp()
 	case 'f':
-		g.PlayerMeleeAttack()
+		if g.Player.HandItem() == nil {
+			g.Msg("you are defenceless without a weapon.", 12)
+			return
+		}
+		u.attackPending = true
+		g.Msg("attack in which direction? (esc cancels)", 8)
 	case '?':
 		g.State = StateHelp
 	case 'i':
@@ -756,13 +823,6 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 	case 'x':
 		g.State = StateSkills
 		u.skillSel = 0
-	case 't':
-		if g.hasThrowable() {
-			g.State = StateThrow
-			g.LookX, g.LookY = g.Player.X, g.Player.Y
-		} else {
-			g.Msg("you do not have any throwable items ready.", 12)
-		}
 	case '>':
 		g.UsePortal()
 	case ']':

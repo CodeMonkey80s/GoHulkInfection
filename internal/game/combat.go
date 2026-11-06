@@ -109,34 +109,23 @@ func (g *Game) HitChance(attacker, defender *Critter, mode int) int {
 	return chance
 }
 
-// PlayerMeleeAttack is the targetless melee command.  It attacks the nearest
-// adjacent critter; enemies are preferred over neutral creatures on ties.
-func (g *Game) PlayerMeleeAttack() {
+// PlayerDirectionalAttack attacks the adjacent critter in the chosen
+// direction.  Movement into an enemy also triggers a bump attack.
+func (g *Game) PlayerDirectionalAttack(dx, dy int) {
 	p := g.Player
 	if p == nil || !p.IsAlive() {
 		return
 	}
-	if p.HandItem() == nil {
-		g.Msg("you are defenceless without a weapon.", 12)
+	if dx == 0 && dy == 0 {
+		g.Msg("choose a direction to attack.", 8)
 		return
 	}
-	var target *Critter
-	best := 99
-	for _, c := range g.Critters {
-		if !c.IsAlive() || !isAdjacent(p, c) {
-			continue
-		}
-		d := chebyshev(p.X, p.Y, c.X, c.Y)
-		if d < best || (d == best && c.Align == AlignEnemy) {
-			best = d
-			target = c
-		}
-	}
-	if target == nil {
-		g.Msg("there is no enemy adjacent.", 8)
+	c := g.CritterAt(p.X+dx, p.Y+dy)
+	if c == nil || !c.IsAlive() {
+		g.Msg("there is nothing to attack in that direction.", 8)
 		return
 	}
-	g.PlayerMelee(target)
+	g.PlayerMelee(c)
 }
 
 func (g *Game) PlayerMelee(target *Critter) {
