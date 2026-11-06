@@ -163,6 +163,24 @@ func buildLandmarkBuilding(m *Map, cx, cy, w, h int, side [2]int, wall, floor, d
 		dx, dy = x0, cy
 	}
 	m.SetTile(dx, dy, door)
+	for k := 1; k <= 6; k++ {
+		x, y := dx-side[0]*k, dy-side[1]*k
+		if !m.InBounds(x, y) {
+			break
+		}
+		t := m.Tile(x, y)
+		if t == tileDirtRoad || t == tileWoodenBridge {
+			break
+		}
+		if isWoodsStructure(t) {
+			break
+		}
+		if isWoodsWater(t) {
+			m.SetTile(x, y, tileWoodenBridge)
+		} else {
+			m.SetTile(x, y, tileDirtRoad)
+		}
+	}
 }
 
 func (g *Game) buildWoodcutterLandmark(m *Map, path [][2]int) {
