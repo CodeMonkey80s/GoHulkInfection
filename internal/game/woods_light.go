@@ -14,6 +14,10 @@ func (m *Map) WarmLight(x, y int) float64 {
 			if !m.InBounds(xx, yy) {
 				continue
 			}
+			idx := m.idx(xx, yy)
+			if !m.Visible[idx] {
+				continue
+			}
 			radius := 0
 			switch m.Tile(xx, yy) {
 			case tileLanternPost:
@@ -21,7 +25,7 @@ func (m *Map) WarmLight(x, y int) float64 {
 			case tileCampfire, tileFireplace:
 				radius = 5
 			}
-			if m.Fire[m.idx(xx, yy)] > 0 {
+			if m.Fire[idx] > 0 {
 				radius = 5
 			}
 			if radius == 0 {

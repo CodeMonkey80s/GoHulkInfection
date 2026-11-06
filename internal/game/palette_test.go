@@ -468,11 +468,15 @@ func TestWoodsAccentsAndWarmLight(t *testing.T) {
 		m.Tiles[i] = 2
 	}
 	m.SetTile(10, 10, tileLanternPost)
+	if got := m.WarmLight(12, 10); got != 0 {
+		t.Fatal("unexplored lantern emitted light")
+	}
+	m.Visible[m.idx(10, 10)] = true
 	if got := m.WarmLight(10, 10); got <= 0 {
-		t.Fatal("lantern tile has no warm light")
+		t.Fatal("visible lantern tile has no warm light")
 	}
 	if got := m.WarmLight(12, 10); got <= 0 {
-		t.Fatal("lantern light does not reach nearby tiles")
+		t.Fatal("visible lantern light does not reach nearby tiles")
 	}
 	if got := m.WarmLight(19, 19); got != 0 {
 		t.Fatal("warm light reaches too far")
