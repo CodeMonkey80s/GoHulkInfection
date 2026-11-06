@@ -100,11 +100,7 @@ func Run() error {
 }
 
 func (u *UI) put(x, y int, r rune, fg, bg uint8) {
-	bgColor := pal(bg)
-	if bg == 0 {
-		bgColor = screenBackgroundColor(u.colorMode)
-	}
-	u.putTcell(x, y, r, pal(fg), bgColor)
+	u.putTcell(x, y, r, u.uiDOSColor(fg, false), u.uiDOSColor(bg, true))
 }
 
 func (u *UI) putTcell(x, y int, r rune, fg, bg tcell.Color) {
@@ -152,6 +148,73 @@ func (u *UI) uiColor(role ColorRole, fallback uint8) tcell.Color {
 	pc, ok := WoodsPalette.Lookup(role)
 	if !ok {
 		return pal(fallback)
+	}
+	return pc.Resolve(u.colorMode)
+}
+
+func uiForegroundRole(i uint8) (ColorRole, bool) {
+	switch i {
+	case 0:
+		return RoleSelectionText, true
+	case 1, 3, 9, 11:
+		return RoleHintCyan, true
+	case 2, 10:
+		return RoleAccentGreen, true
+	case 4:
+		return RoleBloodAccent, true
+	case 5, 13:
+		return RolePotionPurple, true
+	case 6:
+		return RoleLeather, true
+	case 7:
+		return RolePrimaryText, true
+	case 8:
+		return RoleDimText, true
+	case 12:
+		return RoleDanger, true
+	case 14:
+		return RoleAccentGold, true
+	case 15:
+		return RoleSelectionText, true
+	}
+	return "", false
+}
+
+func uiBackgroundRole(i uint8) (ColorRole, bool) {
+	switch i {
+	case 0:
+		return RoleUIBackground, true
+	case 1, 3, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15:
+		return RolePanelBackground, true
+	case 2:
+		return RoleSelectionBackground, true
+	case 4:
+		return RoleDarkBlood, true
+	case 7:
+		return RoleSelectionBackground, true
+	}
+	return "", false
+}
+
+// uiDOSColor maps the old DOS colour arguments used by UI code onto semantic
+// palette roles. 16-colour mode keeps the recovered DOS palette exactly.
+func (u *UI) uiDOSColor(i uint8, background bool) tcell.Color {
+	if u.colorMode == ColorMode16 {
+		return pal(i)
+	}
+	var role ColorRole
+	var ok bool
+	if background {
+		role, ok = uiBackgroundRole(i)
+	} else {
+		role, ok = uiForegroundRole(i)
+	}
+	if !ok {
+		return pal(i)
+	}
+	pc, ok := WoodsPalette.Lookup(role)
+	if !ok {
+		return pal(i)
 	}
 	return pc.Resolve(u.colorMode)
 }

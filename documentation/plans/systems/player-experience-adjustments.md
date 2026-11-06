@@ -59,8 +59,8 @@ Starting kit placement:
 - Belt 2: starts empty so early loot has a free slot.
 - Belt 3: empty until unlocked.
 
-Update `PlayerSlots{BeltUnlocked: 2}`, the starting-kit setup, save migration,
-HUD/overlay text and tests.
+Update `PlayerSlots{BeltUnlocked: 2}`, the starting-kit setup, current save/load
+round-trip, HUD/overlay text and tests.
 
 ## 4. Class roster
 
@@ -205,7 +205,7 @@ the menu stays obvious. No large ASCII illustration is needed.
 4. Look-mode description readability.
 5. Intro text.
 6. Chosen title screen.
-7. Save migration, tests and documentation updates.
+7. Current save/load round-trip tests and documentation updates.
 
 ## 10. Acceptance criteria
 
@@ -217,7 +217,8 @@ the menu stays obvious. No large ASCII illustration is needed.
 - [x] The permanent HUD is one line: HP, AP and weapon name.
 - [x] The title screen keeps `HULK INFECTION` and the three menu options.
 - [x] Title copyright reads `copyright (c) 2026 Michał Przybyłowicz`.
-- [x] Existing saves migrate without crashing.
+- [x] Current saves round-trip through load/save. Older development saves may
+      break between iterations.
 - [x] Caves, temple and time-portal levels still generate and remain reachable.
 
 ## 11. Resolved decisions

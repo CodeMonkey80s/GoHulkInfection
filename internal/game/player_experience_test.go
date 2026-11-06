@@ -260,6 +260,40 @@ func TestSaveMigrationGrantsTwoBeltSlots(t *testing.T) {
 	}
 }
 
+func TestAllClassesCanPickUpStartingLoot(t *testing.T) {
+	for class, def := range PlayerClasses {
+		g := NewGame(int64(900 + class))
+		g.SetupNewGame(class, "tester")
+		g.State = StatePlaying
+		g.Items = append(g.Items, &Item{Proto: 48, X: g.Player.X, Y: g.Player.Y, Charges: 5})
+		g.PickUp()
+		if g.ItemAt(g.Player.X, g.Player.Y) != nil {
+			t.Fatalf("%s could not pick up loot with the starting kit", def.Name)
+		}
+	}
+}
+
+func TestAllThemesRenderAtViewportSize(t *testing.T) {
+	for _, level := range []int{0, 8, 9, 17, 18, 26, 27} {
+		g := NewGame(int64(level + 800))
+		g.SetupNewGame(0, "tester")
+		g.GenerateLevel(level)
+		g.State = StatePlaying
+		g.UpdateFOV()
+		u, s := newTestUI(g, ColorModeTrueColor)
+		u.drawGame()
+		s.Show()
+		text := screenText(s)
+		if !strings.Contains(text, "@") {
+			t.Fatalf("level %d did not render the player", level)
+		}
+		if len(strings.Split(text, "\n")) != screenH+1 {
+			t.Fatalf("level %d rendered an unexpected screen height", level)
+		}
+		s.Fini()
+	}
+}
+
 func TestQuitConfirmUsesReadablePanelColours(t *testing.T) {
 	g := NewGame(707)
 	u, s := newTestUI(g, ColorModeTrueColor)

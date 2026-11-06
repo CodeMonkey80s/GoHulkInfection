@@ -247,7 +247,7 @@ should affect 5–15% of the map, not the whole screen.
 - [ ] Blend blood and effects with tile colours instead of drawing solid background blocks.
 - [ ] Add warm light radii for lanterns, candles and fires.
 - [ ] Define the per-level accent sets.
-- [ ] Apply the new UI palette.
+- [x] Apply the new UI palette.
 - [ ] Add screenshot-based visual checks for all nine woods levels.
 
 ## 7. Acceptance criteria
