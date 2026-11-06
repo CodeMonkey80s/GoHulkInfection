@@ -4,6 +4,9 @@ package game
 // Tiles that belong to other themes still get a role so they can be recoloured
 // consistently if they are reused by the woods generator later.
 func TileColorRole(tile int) (ColorRole, bool) {
+	if role, ok := woodsTileRoles[tile]; ok {
+		return role, true
+	}
 	switch tile {
 	case 0, 1: // space void, void
 		return RoleMapBackground, true

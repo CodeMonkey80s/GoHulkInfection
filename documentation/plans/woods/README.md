@@ -1,6 +1,6 @@
 # Woods Plans — Levels 0–8
 
-Status: **planned**
+Status: **in progress**
 
 This folder contains the current plans for the woods theme.
 
@@ -12,7 +12,7 @@ This folder contains the current plans for the woods theme.
 ## Recommended implementation order
 
 1. **Palette foundation** — implemented: true-colour support with 16-colour fallback and the core woods palette.
-2. **Terrain generator** — grass, forest clusters, bushes, roads and lanterns.
+2. **Terrain generator** — implemented: grass, forest clusters, clearings, bushes, roads and lanterns.
 3. **Structures** — huts, doors, windows, furniture, cemetery, chapel, village.
 4. **Water and roads** — river/pond generation and bridges.
 5. **Level identities** — nine `WoodLevelSpec` definitions and unique landmarks.

@@ -299,10 +299,19 @@ func (m *Map) Bresenham(x0, y0, x1, y1 int) [][2]int {
 	return m.Line(x0, y0, x1, y1)
 }
 
-// GenerateLevel builds a map exactly the size of the map viewport from the
-// recovered 10x40 section templates. The last section row is clipped when the
-// viewport height is not a multiple of ten.
+// GenerateLevel dispatches woods levels to the outdoor generator and all other
+// themes to the recovered room-section generator.
 func (g *Game) GenerateLevel(level int) {
+	if levelTheme(level) == 0 {
+		g.generateWoodsLevel(level)
+		return
+	}
+	g.generateSectionLevel(level)
+}
+
+// generateSectionLevel keeps the recovered room-section generator for caves,
+// the temple and the time portal.
+func (g *Game) generateSectionLevel(level int) {
 	m := NewMap(mapWidth, mapHeight)
 	theme := levelTheme(level)
 	m.Theme = theme
@@ -428,6 +437,10 @@ func (g *Game) GenerateLevel(level int) {
 			}
 		}
 	}
+	g.finishLevel(m, level, theme)
+}
+
+func (g *Game) finishLevel(m *Map, level, theme int) {
 	g.Map = m
 	g.Critters = nil
 	g.Items = nil
