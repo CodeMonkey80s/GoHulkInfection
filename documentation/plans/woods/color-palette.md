@@ -1,13 +1,14 @@
 # Woods Colour Palette — True-Colour Proposal
 
-Status: **proposed**  
+Status: **in progress** (core palette and true-colour foundation implemented; per-level accents and lighting still proposed)
 Parent: [Woods plans](README.md)  
 Related: [Woods level revamp](level-revamp.md)  
 Scope: woods levels 0–8, rendering and UI palette only
 
-This document proposes a 24-bit colour palette for the woods theme. It is a
-design plan, not an implementation yet. The current game uses the recovered
-16-colour DOS palette, mapped to tcell colours.
+This document proposes a 24-bit colour palette for the woods theme. The core
+palette and the true-colour/16-colour fallback foundation are now implemented in
+`internal/game/palette.go`; per-level accents, lighting and effect blending are
+still future work.
 
 ---
 
@@ -238,11 +239,11 @@ should affect 5–15% of the map, not the whole screen.
 
 ## 6. Implementation plan
 
-- [ ] Add an RGB palette type and a named woods palette.
-- [ ] Extend tile/item/critter colour data with RGB values and a fallback palette index.
-- [ ] Detect true-colour support (`COLORTERM` / terminal capability) and fall back to 256 or 16 colours.
-- [ ] Add deterministic per-tile colour variation.
-- [ ] Replace flat visibility shading with brightness/desaturation grading.
+- [x] Add an RGB palette type and a named woods palette.
+- [x] Extend tile/item/critter colour data with RGB values and a fallback palette index.
+- [x] Detect true-colour support (`COLORTERM` / terminal capability) and fall back to 256 or 16 colours.
+- [x] Add deterministic per-tile colour variation.
+- [x] Replace flat visibility shading with brightness/desaturation grading.
 - [ ] Blend blood and effects with tile colours instead of drawing solid background blocks.
 - [ ] Add warm light radii for lanterns, candles and fires.
 - [ ] Define the per-level accent sets.

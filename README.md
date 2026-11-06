@@ -80,6 +80,7 @@ and 6.
   the main corridor grid
 * recursive shadow-casting FOV (the algorithm credited in `contributors.txt`)
 * four level themes: woods, caves, temple of the underminer, time portal
+* 24-bit woods palette with deterministic tile variation and 16-colour DOS fallback
 * turn/energy based critters with zombie, observer and animal AI
 * melee combat with recovered weapon AV/DV and damage values
 * throwing is deferred; HE grenade and molotov data are retained for a future pass
