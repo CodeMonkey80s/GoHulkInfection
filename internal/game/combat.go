@@ -53,12 +53,6 @@ func (g *Game) AttackValue(c *Critter, mode int) int {
 			}
 		}
 	}
-	switch c.Tactics {
-	case TacticAggressive:
-		av = av * 120 / 100
-	case TacticDefensive:
-		av = av * 80 / 100
-	}
 	if mode == 3 {
 		// Throwing is harder when an enemy is adjacent.
 		for _, other := range g.Critters {
@@ -86,12 +80,6 @@ func (g *Game) DefenseValue(c *Critter) int {
 		if d := arm.Def(); d != nil {
 			dv -= d.Weight / 4000
 		}
-	}
-	switch c.Tactics {
-	case TacticAggressive:
-		dv = dv * 80 / 100
-	case TacticDefensive:
-		dv = dv * 120 / 100
 	}
 	switch c.Burden() {
 	case "light":

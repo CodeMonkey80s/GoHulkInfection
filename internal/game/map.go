@@ -709,16 +709,15 @@ func (g *Game) SetupNewGame(class int, name string) {
 	g.PlayerClass = class
 	g.PlayerName = name
 	g.Player = &Critter{
-		Proto:   -1,
-		Name:    name,
-		Player:  true,
-		Align:   AlignPlayer,
-		Class:   4,
-		AI:      AIPlayer,
-		Color:   14,
-		Glyph:   '@',
-		Tactics: TacticNormal,
-		Dead:    false,
+		Proto:  -1,
+		Name:   name,
+		Player: true,
+		Align:  AlignPlayer,
+		Class:  4,
+		AI:     AIPlayer,
+		Color:  14,
+		Glyph:  '@',
+		Dead:   false,
 	}
 	c := &ClassDefs[class]
 	g.Player.STR = c.STR

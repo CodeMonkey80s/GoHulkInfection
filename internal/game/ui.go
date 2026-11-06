@@ -460,8 +460,7 @@ func (u *UI) drawStatus(y int) {
 	if w := p.Equip[EquipMelee]; w != nil {
 		wep = w.Name()
 	}
-	tac := []string{"defensive", "normal", "aggressive"}[p.Tactics]
-	line2 := fmt.Sprintf("weapon: %-16s wearing: %-14s tactic: %s", wep, wear, tac)
+	line2 := fmt.Sprintf("weapon: %-16s wearing: %s", wep, wear)
 	u.putStr(0, y+1, line2, 7, 0)
 	line3 := fmt.Sprintf("weight: %d/%d  burden: %s", p.Weight(), p.MaxWeight(), p.Burden())
 	if g.Options.Bool("optPlayerShowAVDV") {
@@ -706,8 +705,6 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 	case 'x':
 		g.State = StateSkills
 		u.skillSel = 0
-	case 'T':
-		g.ChangeTactics()
 	case 't':
 		if g.hasThrowable() {
 			g.State = StateThrow

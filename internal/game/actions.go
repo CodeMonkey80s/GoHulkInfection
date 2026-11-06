@@ -368,11 +368,3 @@ func (g *Game) ChangeLevel(level int) {
 	g.Player.X, g.Player.Y = p.X, p.Y
 	g.UpdateFOV()
 }
-
-func (g *Game) ChangeTactics() {
-	p := g.Player
-	p.Tactics = (p.Tactics + 1) % 3
-	names := []string{"defensive", "normal", "aggressive"}
-	g.Msg("you changed tactic to "+names[p.Tactics], 8)
-	g.EndPlayerTurn()
-}

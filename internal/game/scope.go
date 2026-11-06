@@ -127,7 +127,6 @@ var ActiveKeyBindings = []KeyBind{
 var ActiveHints = []string{
 	Hints[0], // medkit
 	Hints[1], // fight one enemy at a time
-	Hints[2], // change tactics
 	Hints[4], // use the surroundings
 	Hints[6], // inventory takes time
 	Hints[7], // acid ignores armor

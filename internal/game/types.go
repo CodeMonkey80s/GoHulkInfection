@@ -50,12 +50,6 @@ const (
 	NumEquipSlots
 )
 
-const (
-	TacticDefensive = iota
-	TacticNormal
-	TacticAggressive
-)
-
 type KeyBind struct {
 	Key    int
 	Mod    int
@@ -132,7 +126,6 @@ type Critter struct {
 	Gold      int
 	Inventory []*Item
 	Equip     [NumEquipSlots]*Item
-	Tactics   int
 	Blood     int
 	Poison    int
 	LastSeenX int
@@ -385,15 +378,14 @@ func NewGame(seed int64) *Game {
 		Running:  true,
 	}
 	g.Player = &Critter{
-		Proto:   -1,
-		Name:    "you",
-		Player:  true,
-		Align:   AlignPlayer,
-		Class:   4,
-		X:       -1,
-		Y:       -1,
-		Gold:    0,
-		Tactics: TacticNormal,
+		Proto:  -1,
+		Name:   "you",
+		Player: true,
+		Align:  AlignPlayer,
+		Class:  4,
+		X:      -1,
+		Y:      -1,
+		Gold:   0,
 	}
 	return g
 }

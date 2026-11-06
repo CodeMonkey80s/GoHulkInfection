@@ -41,7 +41,6 @@ type saveCritter struct {
 	Gold      int            `json:"gold"`
 	Inv       []saveItem     `json:"inv"`
 	Equip     []saveItem     `json:"eq"`
-	Tactics   int            `json:"tac"`
 	Blood     int            `json:"bl"`
 	Poison    int            `json:"po"`
 	LastSeenX int            `json:"lsx"`
@@ -109,7 +108,7 @@ func critterToSave(c *Critter) saveCritter {
 		Proto: c.Proto, Name: c.Name, X: c.X, Y: c.Y, HP: c.HP, MaxHP: c.MaxHP,
 		STR: c.STR, TGH: c.TGH, AGI: c.AGI, INT: c.INT, SPD: c.SPD, Skills: c.Skills,
 		Align: c.Align, Class: c.Class, AI: c.AI, Color: c.Color, Glyph: c.Glyph,
-		Player: c.Player, Energy: c.Energy, Level: c.Level, XP: c.XP, Gold: c.Gold, Tactics: c.Tactics, Blood: c.Blood,
+		Player: c.Player, Energy: c.Energy, Level: c.Level, XP: c.XP, Gold: c.Gold, Blood: c.Blood,
 		Poison: c.Poison, LastSeenX: c.LastSeenX, LastSeenY: c.LastSeenY,
 		Alert: c.Alert, Dead: c.Dead,
 	}
@@ -128,7 +127,7 @@ func critterFromSave(s saveCritter, version int) (*Critter, int) {
 		Proto: s.Proto, Name: s.Name, X: s.X, Y: s.Y, HP: s.HP, MaxHP: s.MaxHP,
 		STR: s.STR, TGH: s.TGH, AGI: s.AGI, INT: s.INT, SPD: s.SPD, Skills: s.Skills,
 		Align: s.Align, Class: s.Class, AI: s.AI, Color: s.Color, Glyph: s.Glyph,
-		Player: s.Player, Energy: s.Energy, Level: s.Level, XP: s.XP, Gold: s.Gold, Tactics: s.Tactics, Blood: s.Blood,
+		Player: s.Player, Energy: s.Energy, Level: s.Level, XP: s.XP, Gold: s.Gold, Blood: s.Blood,
 		Poison: s.Poison, LastSeenX: s.LastSeenX, LastSeenY: s.LastSeenY,
 		Alert: s.Alert, Dead: s.Dead,
 	}
