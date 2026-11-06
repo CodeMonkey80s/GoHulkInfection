@@ -287,6 +287,8 @@ func TestPlayerSlotSaveRoundtrip(t *testing.T) {
 	g.Player.Slots.BeltUnlocked = 3
 	g.Player.Slots.Belt[1] = &Item{Proto: 41, X: -1, Y: -1}
 	g.Player.Slots.Belt[2] = &Item{Proto: 47, X: -1, Y: -1, Charges: 1}
+	ensureArmorAP(g.Player.Slots.Body)
+	g.Player.Slots.Body.AP = 7
 	path := filepath.Join(t.TempDir(), "slots.json")
 	if err := g.SaveGame(path); err != nil {
 		t.Fatal(err)
@@ -304,6 +306,9 @@ func TestPlayerSlotSaveRoundtrip(t *testing.T) {
 	if g2.Player.Slots.Belt[1] == nil || g2.Player.Slots.Belt[1].Proto != 41 {
 		t.Fatal("belt 2 item lost")
 	}
+	if g2.Player.Slots.Body == nil || g2.Player.Slots.Body.AP != 7 {
+		t.Fatal("armour AP not restored")
+	}
 }
 
 func TestPlayerSlotMigration(t *testing.T) {
@@ -320,10 +325,63 @@ func TestPlayerSlotMigration(t *testing.T) {
 	if c.Slots.Body == nil || c.Slots.Body.Proto != 5 {
 		t.Fatal("body migration failed")
 	}
+	ensureArmorAP(c.Slots.Body)
+	if c.Slots.Body.AP != 20 {
+		t.Fatalf("migrated body AP = %d, want 20", c.Slots.Body.AP)
+	}
 	want := []int{41, 46, 47}
 	for i, proto := range want {
 		if c.Slots.Belt[i] == nil || c.Slots.Belt[i].Proto != proto {
 			t.Fatalf("belt %d = %v, want proto %d", i, c.Slots.Belt[i], proto)
 		}
+	}
+}
+
+func TestArmorAPAbsorption(t *testing.T) {
+	g := NewGame(41)
+	g.SetupNewGame(0, "tester")
+	arm := g.Player.Slots.Body
+	if arm == nil {
+		t.Fatal("starting armour missing")
+	}
+	ensureArmorAP(arm)
+	if arm.AP != 20 {
+		t.Fatalf("starting AP = %d, want 20", arm.AP)
+	}
+	hp := g.Player.HP
+	g.DamageCritter(g.Player, 20, nil, 0)
+	if arm.AP != 10 {
+		t.Fatalf("AP after 20 damage = %d, want 10", arm.AP)
+	}
+	if g.Player.HP != hp-10 {
+		t.Fatalf("HP after absorbed damage = %d, want %d", g.Player.HP, hp-10)
+	}
+
+	// Acid bypasses AP completely.
+	apBefore := arm.AP
+	hp = g.Player.HP
+	g.DamageCritter(g.Player, 10, nil, 2)
+	if arm.AP != apBefore {
+		t.Fatalf("acid changed AP: %d -> %d", apBefore, arm.AP)
+	}
+	if g.Player.HP != hp-10 {
+		t.Fatalf("acid HP damage = %d, want 10", hp-g.Player.HP)
+	}
+}
+
+func TestArmorVialRestoresAP(t *testing.T) {
+	g := NewGame(42)
+	g.SetupNewGame(0, "tester")
+	g.Player.Slots.BeltUnlocked = 1
+	g.Player.Slots.Belt[0] = &Item{Proto: ArmourVialProto, X: -1, Y: -1, Charges: 1}
+	ensureArmorAP(g.Player.Slots.Body)
+	g.Player.Slots.Body.AP = 5
+	g.UseSlot(SlotBelt1)
+	cur, _ := armorAP(g.Player.Slots.Body)
+	if cur != 15 {
+		t.Fatalf("AP after vial = %d, want 15", cur)
+	}
+	if g.Player.Slots.Belt[0] != nil {
+		t.Fatal("empty vial remained in belt")
 	}
 }

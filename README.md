@@ -84,7 +84,9 @@ and 6.
 * melee combat with recovered weapon AV/DV and damage values
 * throwing only: HE grenades and molotov cocktails, limited to FOV range
 * recovered weapon table (attack/defense value and damage range per subtype)
-* armor damage reduction, armor wear, blood, corpses and limbs
+* HP and AP: body armour provides a depletable armour-point pool
+* armour vials restore AP from belt slots; acid bypasses AP
+* blood, corpses and limbs
 * five player slots: Hands, Body and three belt slots
 * one item maximum per ground tile; dropping onto an occupied tile is refused
 * skills, skill checks, experience, levels and free skill points

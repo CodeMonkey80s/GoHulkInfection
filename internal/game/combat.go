@@ -73,6 +73,11 @@ func (g *Game) DefenseValue(c *Critter) int {
 			dv += wd.DV
 		}
 	}
+	if arm := c.BodyItem(); arm != nil {
+		if stats, ok := ArmorStatsFor(arm.Def()); ok {
+			dv += stats.DV
+		}
+	}
 	if dv < 1 {
 		dv = 1
 	}
@@ -218,7 +223,27 @@ func (g *Game) DamageCritter(target *Critter, dmg int, source *Critter, dtype in
 		g.Msg("your god mode absorbs the damage.", 8)
 		return
 	}
-	if arm := target.BodyItem(); arm != nil {
+	if target.Player {
+		// AP absorbs a percentage of non-acid damage.  Acid bypasses armour.
+		if dtype != 2 {
+			if arm := target.Slots.Body; arm != nil {
+				if stats, ok := ArmorStatsFor(arm.Def()); ok {
+					ensureArmorAP(arm)
+					if arm.AP > 0 {
+						absorbed := (dmg*stats.Absorb + 99) / 100
+						if absorbed > arm.AP {
+							absorbed = arm.AP
+						}
+						arm.AP -= absorbed
+						dmg -= absorbed
+						if arm.AP == 0 {
+							g.Msg("your armour is depleted!", 12)
+						}
+					}
+				}
+			}
+		}
+	} else if arm := target.Equip[EquipArmor]; arm != nil {
 		if d := arm.Def(); d != nil {
 			factor := d.ArmorMelee
 			switch dtype {
@@ -237,11 +262,7 @@ func (g *Game) DamageCritter(target *Critter, dmg int, source *Critter, dtype in
 			if g.Options.Bool("optGameSendDamageToItems") && g.Chance(5) {
 				arm.Charges--
 				if arm.Charges < 0 {
-					if target.Player {
-						target.Slots.Body = nil
-					} else {
-						target.Equip[EquipArmor] = nil
-					}
+					target.Equip[EquipArmor] = nil
 					g.Msg("your "+d.Name+" is shattered!", 12)
 				}
 			}

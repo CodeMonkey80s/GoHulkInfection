@@ -118,6 +118,7 @@ func (c *Critter) AutoPlaceItem(it *Item) bool {
 	}
 	if d.Kind == KindArmor {
 		if c.Slots.Body == nil {
+			ensureArmorAP(it)
 			c.Slots.Body = it
 			return true
 		}
@@ -139,6 +140,7 @@ func (g *Game) PlaceGroundItem(it *Item, x, y int) bool {
 	if it == nil || !g.Map.InBounds(x, y) {
 		return false
 	}
+	ensureArmorAP(it)
 	if g.ItemAt(x, y) != nil {
 		return false
 	}
@@ -174,6 +176,29 @@ func (g *Game) playerConsumeMedical(it *Item) bool {
 	d := it.Def()
 	if d == nil || d.Kind != KindMedical {
 		return false
+	}
+	if it.Proto == ArmourVialProto {
+		arm := g.Player.Slots.Body
+		stats, ok := ArmorStatsFor(arm.Def())
+		if !ok {
+			g.Msg("you need to wear armour to use an armour vial.", 8)
+			return false
+		}
+		ensureArmorAP(arm)
+		if arm.AP >= stats.MaxAP {
+			g.Msg("your armour is already fully repaired.", 8)
+			return false
+		}
+		if it.Charges <= 0 {
+			it.Charges = 1
+		}
+		arm.AP += 10
+		if arm.AP > stats.MaxAP {
+			arm.AP = stats.MaxAP
+		}
+		it.Charges--
+		g.Msg(fmt.Sprintf("you apply the armour vial (%d/%d AP).", arm.AP, stats.MaxAP), 10)
+		return true
 	}
 	if it.Charges <= 0 {
 		it.Charges = d.Charges
@@ -238,6 +263,7 @@ func (g *Game) UseSlot(slot int) {
 			}
 		case KindArmor:
 			if g.Player.Slots.Body == nil {
+				ensureArmorAP(it)
 				g.Player.Slots.Body = it
 				g.Player.SetSlotItem(slot, nil)
 				g.Msg("you equip "+d.Name+".", 10)

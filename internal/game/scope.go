@@ -79,7 +79,20 @@ func filterAvailableItems(ids []int) []int {
 	return out
 }
 
+// ArmourVialProto is appended at init so it does not disturb recovered IDs.
+var ArmourVialProto int
+
 func init() {
+	ArmourVialProto = len(ItemDefs)
+	ItemDefs = append(ItemDefs, ItemDef{
+		Name:    "armour vial",
+		Desc:    "a small vial of hardening compound that restores armour points.",
+		Kind:    KindMedical,
+		Charges: 1,
+		Glyph:   '!',
+		Color:   9,
+	})
+
 	// Repurpose the recovered incendiary grenade as a molotov cocktail.  Its
 	// weapon subtype still gives the fire damage range, while ThrowGrenade
 	// applies the burning ground effect.

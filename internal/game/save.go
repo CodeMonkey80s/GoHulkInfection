@@ -11,6 +11,8 @@ const saveVersion = 3
 type saveItem struct {
 	Proto   int  `json:"p"`
 	Charges int  `json:"c,omitempty"`
+	AP      int  `json:"ap,omitempty"`
+	APInit  bool `json:"api,omitempty"`
 	Active  bool `json:"a,omitempty"`
 	X       int  `json:"x,omitempty"`
 	Y       int  `json:"y,omitempty"`
@@ -101,14 +103,14 @@ func itemToSave(it *Item) saveItem {
 	if it == nil {
 		return saveItem{Proto: -1}
 	}
-	return saveItem{Proto: it.Proto, Charges: it.Charges, Active: it.Active, X: it.X, Y: it.Y}
+	return saveItem{Proto: it.Proto, Charges: it.Charges, AP: it.AP, APInit: it.APInit, Active: it.Active, X: it.X, Y: it.Y}
 }
 
 func itemFromSave(s saveItem) *Item {
 	if s.Proto < 0 {
 		return nil
 	}
-	return &Item{Proto: s.Proto, Charges: s.Charges, Active: s.Active, X: s.X, Y: s.Y}
+	return &Item{Proto: s.Proto, Charges: s.Charges, AP: s.AP, APInit: s.APInit, Active: s.Active, X: s.X, Y: s.Y}
 }
 
 func critterToSave(c *Critter) saveCritter {
@@ -228,6 +230,7 @@ func critterFromSave(s saveCritter, version int) (*Critter, int) {
 				}
 			}
 		}
+		ensureArmorAP(c.Slots.Body)
 		if c.Slots.BeltUnlocked < 1 {
 			c.Slots.BeltUnlocked = 1
 		}

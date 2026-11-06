@@ -634,7 +634,7 @@ func spawnPool(theme, level int) []int {
 func itemSpawnPool(theme, level int) []int {
 	base := []int{46, 47, 48, 8, 9, 10, 11, 12, 5}
 	if level > 2 {
-		base = append(base, 6, 15, 16, 17, 18, 19, 7)
+		base = append(base, 6, 15, 16, 17, 18, 19, 7, ArmourVialProto)
 	}
 	if level > 4 {
 		base = append(base, 41)
@@ -735,6 +735,7 @@ func (g *Game) SetupNewGame(class int, name string) {
 	g.Player.Poison = 0
 	g.Player.Slots = PlayerSlots{BeltUnlocked: 1}
 	g.Player.Slots.Body = &Item{Proto: 5, X: -1, Y: -1}
+	ensureArmorAP(g.Player.Slots.Body)
 	g.Player.Slots.Belt[0] = &Item{Proto: 48, X: -1, Y: -1, Charges: 5}
 	switch class {
 	case 0: // murderer
