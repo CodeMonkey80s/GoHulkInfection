@@ -27,6 +27,8 @@ work are done.
 | Command and scope reduction (melee-only, limited throwing) | Done | [systems/command-scope-reduction.md](plans/systems/command-scope-reduction.md) |
 | Player redesign (five slots, HP/AP, minimal HUD) | Done | [systems/player-redesign.md](plans/systems/player-redesign.md) |
 | Player experience adjustments (classes, intro, HUD, viewport) | Done | [systems/player-experience-adjustments.md](plans/systems/player-experience-adjustments.md) |
+| Cardinal movement (remove diagonals, unified hjkl controls) | Proposed | [systems/cardinal-movement.md](plans/systems/cardinal-movement.md) |
+| Monster AI and cardinal pathfinding | Proposed | [systems/monster-ai-pathfinding.md](plans/systems/monster-ai-pathfinding.md) |
 | Caves levels 9–17 | Not planned yet | [plans/caves.md](plans/caves.md) |
 | Temple of the Underminer levels 18–26 | Not planned yet | [plans/temple.md](plans/temple.md) |
 | Time portal / lab level 27 | Not planned yet | [plans/time-portal.md](plans/time-portal.md) |
