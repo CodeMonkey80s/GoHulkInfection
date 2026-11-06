@@ -67,13 +67,19 @@ func itemSummary(it *Item) string {
 
 func (u *UI) drawInventory() {
 	g := u.g
-	u.clear(0)
-	u.putStr(centerText("[ i ] equipment", screenW), 0, "[ i ] equipment", 2, 0)
+	u.fill(0, 0, screenW, 24, ' ', 7, 0)
+	u.putStr(centerText("[ i ] player slots", screenW), 0, "[ i ] player slots", 2, 0)
+	u.putStr(1, 1, "key  slot     item              stats                         action", 8, 0)
 
-	y := 3
 	slots := []int{SlotHands, SlotBody, SlotBelt1, SlotBelt2, SlotBelt3}
+	y := 3
 	for _, slot := range slots {
 		it := g.Player.SlotItem(slot)
+		key := slotKey(slot)
+		if key == "-" {
+			key = " "
+		}
+		label := slotName(slot)
 		locked := false
 		if slot == SlotBelt2 && g.Player.Slots.BeltUnlocked < 2 {
 			locked = true
@@ -81,28 +87,86 @@ func (u *UI) drawInventory() {
 		if slot == SlotBelt3 && g.Player.Slots.BeltUnlocked < 3 {
 			locked = true
 		}
-		key := slotKey(slot)
-		label := slotName(slot)
 		if locked {
-			u.putStr(1, y, fmt.Sprintf("[%s] %-7s: locked (level %d)", key, label, 3+3*(slot-SlotBelt2)), 8, 0)
-			y += 2
+			u.putStr(1, y, fmt.Sprintf("[%s] %-7s %-16s %-28s %s", key, label, "locked", fmt.Sprintf("level %d", 3+3*(slot-SlotBelt2)), "-"), 8, 0)
+			y++
 			continue
 		}
-		if key == "-" {
-			u.putStr(1, y, fmt.Sprintf("   %-7s: %s", label, itemSummary(it)), 11, 0)
-		} else {
-			u.putStr(1, y, fmt.Sprintf("[%s] %-7s: %s", key, label, itemSummary(it)), 11, 0)
+		name := "-"
+		stats := ""
+		if it != nil {
+			name = it.Name()
+			stats = slotStats(it)
 		}
-		y += 2
+		action := slotAction(slot, it)
+		u.putStr(1, y, fmt.Sprintf("[%s] %-7s %-16s %-28s %s", key, label, name, stats, action), 11, 0)
+		y++
 	}
 
-	ground := g.ItemAt(g.Player.X, g.Player.Y)
-	u.putStr(1, y+1, "[ , ] item here: "+itemSummary(ground), 10, 0)
+	u.putStr(2, 10, "O", 14, 0)
+	u.putStr(1, 11, "/|\\", 14, 0)
+	u.putStr(1, 12, "/ \\", 14, 0)
+	u.putStr(16, 10, "a-e  act / swap / consume", 8, 0)
+	u.putStr(16, 11, "A-E  drop", 8, 0)
+	u.putStr(16, 12, "B    unequip body", 8, 0)
+	u.putStr(16, 13, "i/z  close", 8, 0)
 
-	u.fill(0, 46, screenW, 3, ' ', 8, 0)
-	u.putStr(1, 46, "a hands   c/d/e belt   A-E drop   z quit", 8, 0)
-	u.putStr(1, 47, "Body armour is worn; B drops it.", 8, 0)
-	u.putStr(1, 48, "Pick up with , on the map.", 8, 0)
+	ground := g.ItemAt(g.Player.X, g.Player.Y)
+	u.putStr(1, 16, "[ , ] item here: "+itemSummary(ground), 10, 0)
+
+	u.fill(0, 22, screenW, 2, ' ', 8, 0)
+	u.putStr(1, 22, "a hands   c/d/e belt   A-E drop   i/z close", 8, 0)
+	u.putStr(1, 23, "Body armour is worn; B drops it.  Pick up with , on the map.", 8, 0)
+}
+
+func slotStats(it *Item) string {
+	if it == nil {
+		return ""
+	}
+	d := it.Def()
+	if d == nil {
+		return ""
+	}
+	switch d.Kind {
+	case KindMelee, KindGrenade:
+		if wd := d.Weapon(); wd != nil {
+			return fmt.Sprintf("dmg %d-%d av %d dv %d", wd.DmgMin, wd.DmgMax, wd.AV, wd.DV)
+		}
+	case KindArmor:
+		ensureArmorAP(it)
+		if stats, ok := ArmorStatsFor(d); ok {
+			return fmt.Sprintf("AP %d/%d abs %d%% dv %d", it.AP, stats.MaxAP, stats.Absorb, stats.DV)
+		}
+	case KindMedical:
+		if it.Proto == ArmourVialProto {
+			return fmt.Sprintf("AP +10  charges %d", it.Charges)
+		}
+		return fmt.Sprintf("heal %d  charges %d", d.Heal, it.Charges)
+	}
+	return d.Name
+}
+
+func slotAction(slot int, it *Item) string {
+	if it == nil {
+		return "-"
+	}
+	if slot == SlotHands {
+		return "act a"
+	}
+	if slot == SlotBody {
+		return "unequip B"
+	}
+	d := it.Def()
+	if d == nil {
+		return "-"
+	}
+	switch d.Kind {
+	case KindMelee, KindGrenade:
+		return "swap " + slotKey(slot)
+	case KindMedical:
+		return "consume " + slotKey(slot)
+	}
+	return "-"
 }
 
 func (u *UI) handleInventory(e *tcell.EventKey) {

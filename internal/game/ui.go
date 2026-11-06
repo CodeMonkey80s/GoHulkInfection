@@ -12,7 +12,7 @@ import (
 const (
 	screenW  = 80
 	screenH  = 50
-	mapViewH = 42
+	mapViewH = 46
 )
 
 var cp437 = [128]rune{
@@ -66,14 +66,15 @@ type UI struct {
 	g      *Game
 	ox, oy int
 
-	titleSel   int
-	classSel   int
-	optSel     int
-	optScroll  int
-	helpSel    int
-	helpScroll int
-	msgScroll  int
-	skillSel   int
+	titleSel    int
+	classSel    int
+	optSel      int
+	optScroll   int
+	helpSel     int
+	helpScroll  int
+	msgScroll   int
+	msgExpanded bool
+	skillSel    int
 }
 
 func Run() error {
@@ -164,6 +165,7 @@ func (u *UI) draw() {
 	case StatePlaying:
 		u.drawGame()
 	case StateInventory:
+		u.drawGame()
 		u.drawInventory()
 	case StatePlayerScreen:
 		u.drawPlayerScreen()
@@ -309,12 +311,12 @@ func (u *UI) drawGame() {
 		for sx := 0; sx < screenW; sx++ {
 			mx, my := left+sx, top+sy
 			if !g.Map.InBounds(mx, my) {
-				u.put(sx, sy, ' ', 0, 0)
+				u.put(sx, sy+1, ' ', 0, 0)
 				continue
 			}
 			i := g.Map.idx(mx, my)
 			if !g.Map.Seen[i] {
-				u.put(sx, sy, ' ', 0, 0)
+				u.put(sx, sy+1, ' ', 0, 0)
 				continue
 			}
 			d := g.Map.Def(mx, my)
@@ -371,7 +373,7 @@ func (u *UI) drawGame() {
 				r = '@'
 				fg = 15
 			}
-			u.put(sx, sy, r, fg, bg)
+			u.put(sx, sy+1, r, fg, bg)
 		}
 	}
 	// Highlight the cursor tile in look and throw modes.
@@ -384,11 +386,11 @@ func (u *UI) drawGame() {
 		sx, sy := hx-left, hy-top
 		if sx >= 0 && sy >= 0 && sx < screenW && sy < mapViewH {
 			r, _ := g.CellForHighlight(hx, hy)
-			u.put(sx, sy, r, 0, 7)
+			u.put(sx, sy+1, r, 0, 7)
 		}
 	}
-	u.drawMessages(42, 4)
-	u.drawStatus(46)
+	u.drawTopMessages()
+	u.drawStatus(47)
 }
 
 // CellForHighlight returns the glyph/colour of a world cell for the look/throw
@@ -422,7 +424,26 @@ func (g *Game) CellForHighlight(x, y int) (rune, uint8) {
 	return r, fg
 }
 
-func (u *UI) drawMessages(y, rows int) {
+func (u *UI) drawTopMessages() {
+	g := u.g
+	if u.msgExpanded {
+		u.fill(0, 0, screenW, 8, ' ', 7, 0)
+		u.drawMessageLines(0, 8)
+		return
+	}
+	u.fill(0, 0, screenW, 1, ' ', 7, 0)
+	if len(g.Messages) == 0 {
+		return
+	}
+	m := g.Messages[len(g.Messages)-1]
+	line := m.Text
+	if len(line) > screenW {
+		line = line[:screenW]
+	}
+	u.putStr(0, 0, line, m.Color, 0)
+}
+
+func (u *UI) drawMessageLines(y, rows int) {
 	g := u.g
 	type line struct {
 		text  string
@@ -453,31 +474,32 @@ func slotBrief(it *Item) string {
 func (u *UI) drawStatus(y int) {
 	g := u.g
 	p := g.Player
-	need := 200 * p.Level
-	line1 := fmt.Sprintf("%-12s health: (%s)   exp: %d/%d   [lvl %d]", p.Name, p.HealthState(), p.XP, need, p.Level)
-	u.putStr(0, y, line1, 10, 0)
-	wear := "none"
-	if a := p.BodyItem(); a != nil {
-		wear = a.Name()
-	}
-	wep := "none"
-	if w := p.HandItem(); w != nil {
-		wep = w.Name()
-	}
-	body := wear
+	ac, am := 0, 0
 	if arm := p.BodyItem(); arm != nil {
-		cur, max := armorAP(arm)
-		body += fmt.Sprintf(" AP %d/%d", cur, max)
+		ac, am = armorAP(arm)
 	}
-	line2 := fmt.Sprintf("hands: %-18s body: %-22s", wep, body)
+	line1 := fmt.Sprintf("%-12s HP %d/%d  AP %d/%d  Lvl %d", p.Name, p.HP, p.MaxHP, ac, am, p.Level)
+	u.putStr(0, y, line1, 10, 0)
+
+	line2 := fmt.Sprintf("[a] %-10s [c] %-8s [d] %-8s [e] %-8s",
+		hudItem(p.SlotItem(SlotHands)), hudItem(p.SlotItem(SlotBelt1)),
+		hudItem(p.SlotItem(SlotBelt2)), hudItem(p.SlotItem(SlotBelt3)))
+	if arm := p.BodyItem(); arm != nil {
+		body := fmt.Sprintf("  body: %s %d/%d", arm.Name(), ac, am)
+		line2 += body
+	}
 	u.putStr(0, y+1, line2, 7, 0)
-	line3 := fmt.Sprintf("belt: c:%s d:%s e:%s", slotBrief(p.SlotItem(SlotBelt1)), slotBrief(p.SlotItem(SlotBelt2)), slotBrief(p.SlotItem(SlotBelt3)))
-	if g.Options.Bool("optPlayerShowAVDV") {
-		line3 += fmt.Sprintf("  av:%d dv:%d", g.AttackValue(p, 1), g.DefenseValue(p))
+}
+
+func hudItem(it *Item) string {
+	if it == nil {
+		return "-"
 	}
-	u.putStr(0, y+2, line3, 8, 0)
-	right := fmt.Sprintf("[%04d:%04d] [%s]", p.X, p.Y, g.Map.Name)
-	u.putStr(screenW-len(right), y+2, right, 14, 0)
+	name := it.Name()
+	if len(name) > 10 {
+		name = name[:10]
+	}
+	return name
 }
 
 func wrapText(s string, width int) []string {
@@ -655,6 +677,12 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 		}
 		return
 	}
+	if u.msgExpanded {
+		if e.Key() == tcell.KeyEscape || e.Rune() == 'm' {
+			u.msgExpanded = false
+		}
+		return
+	}
 	// movement
 	moves := map[tcell.Key][2]int{
 		tcell.KeyUp: {0, -1}, tcell.KeyDown: {0, 1}, tcell.KeyLeft: {-1, 0}, tcell.KeyRight: {1, 0},
@@ -716,8 +744,7 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 		g.State = StateLook
 		g.LookX, g.LookY = g.Player.X, g.Player.Y
 	case 'm':
-		g.State = StateMessages
-		u.msgScroll = 0
+		u.msgExpanded = true
 	case 'O':
 		g.State = StateOptions
 		u.optSel = 0
@@ -818,10 +845,10 @@ func (u *UI) handleGameOver(e *tcell.EventKey) {
 func (u *UI) drawLookOverlay() {
 	g := u.g
 	desc := g.TileDescription(g.LookX, g.LookY)
-	u.fill(0, 42, screenW, 2, ' ', 8, 0)
-	u.fill(0, 42, screenW, 1, ' ', 15, 1)
-	u.putStr(1, 42, desc, 15, 1)
-	u.putStr(1, 43, fmt.Sprintf("look: [%d:%d] arrows move  enter/esc quit", g.LookX, g.LookY), 8, 0)
+	u.fill(0, 45, screenW, 2, ' ', 8, 0)
+	u.fill(0, 45, screenW, 1, ' ', 15, 1)
+	u.putStr(1, 45, desc, 15, 1)
+	u.putStr(1, 46, fmt.Sprintf("look: [%d:%d] arrows move  enter/esc quit", g.LookX, g.LookY), 8, 0)
 }
 
 func (u *UI) handleLook(e *tcell.EventKey) {
@@ -855,10 +882,10 @@ func (u *UI) handleLook(e *tcell.EventKey) {
 
 func (u *UI) drawThrowOverlay() {
 	g := u.g
-	u.fill(0, 42, screenW, 2, ' ', 8, 0)
-	u.fill(0, 42, screenW, 1, ' ', 15, 1)
-	u.putStr(1, 42, fmt.Sprintf("throw: target [%d:%d]  range %d  enter throw  esc cancel", g.LookX, g.LookY, g.FOVRadius()), 15, 1)
-	u.putStr(1, 43, "arrows move cursor", 8, 0)
+	u.fill(0, 45, screenW, 2, ' ', 8, 0)
+	u.fill(0, 45, screenW, 1, ' ', 15, 1)
+	u.putStr(1, 45, fmt.Sprintf("throw: target [%d:%d]  range %d  enter throw  esc cancel", g.LookX, g.LookY, g.FOVRadius()), 15, 1)
+	u.putStr(1, 46, "arrows move cursor", 8, 0)
 }
 
 func (g *Game) moveThrowCursor(dx, dy int) {
