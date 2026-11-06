@@ -1,6 +1,6 @@
 # Woods Plans — Levels 0–8
 
-Status: **in progress**
+Status: **done**
 
 This folder contains the current plans for the woods theme.
 
@@ -18,7 +18,7 @@ This folder contains the current plans for the woods theme.
 5. **Level identities** — implemented: nine `WoodLevelSpec` definitions and unique landmarks.
 6. **Items and signature loot** — implemented: wood-specific food, tools, weapons, armour, potions, relics and per-level signature categories.
 7. **Factions and AI** — implemented: villagers, neutral animals, local zombie aggro and villager conversion.
-8. **Exit placement and validation** — random edge/middle/landmark exits, connectivity tests and polish.
+8. **Exit placement and validation** — implemented: edge/centre/landmark exits, connectivity checks and visual smoke tests.
 
 The level revamp is the larger structural plan; the palette can be implemented
 first because new tiles will need colour roles anyway.

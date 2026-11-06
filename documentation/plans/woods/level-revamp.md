@@ -1,6 +1,6 @@
 # Woods Level Revamp — Levels 0–8
 
-Status: **in progress**
+Status: **done**
 Parent: [Woods plans](README.md)  
 Related: [Woods colour palette](color-palette.md)  
 Scope: **woods levels 0–8 only**
@@ -14,8 +14,10 @@ now has its named identity and a unique landmark. Wood-specific food, tools,
 weapons, armour, potions and relics are appended, with a shuffled signature
 loot category assigned to each level and guaranteed near its landmark. Villagers,
 neutral animals, zombie target selection and villager-to-zombie conversion are
-implemented. Caves, temple and time-portal levels still use the section
-generator.
+implemented. Exit placement now uses edge, centre and landmark candidates;
+connectivity, hut-door/road, bridge, landmark, loot, faction and rendering
+checks are covered by generator tests. Caves, temple and time-portal levels
+still use the section generator.
 
 This document describes the next major map-content pass for the Go port. The
 goal is to stop treating every level as a reused room-section grid and give
@@ -341,22 +343,22 @@ general nearest-valid-target selection based on faction and aggro state.
 - [x] Phase 5 — nine wood-level specifications and unique landmarks
 - [x] Phase 6 — signature loot and wood-specific item pools
 - [x] Phase 7 — villager/animal factions, zombie aggro and conversion
-- [ ] Phase 8 — exit placement, connectivity validation, visual polish and tests
+- [x] Phase 8 — exit placement, connectivity validation, visual polish and tests
 
 ### 3.11 Acceptance criteria
 
 For each wood level and several deterministic seeds:
 
-- [ ] no void tiles
-- [ ] exactly one main landmark present
-- [ ] exit exists and is reachable
-- [ ] all hut doors are reachable from a road
-- [ ] every road/water crossing has a bridge
-- [ ] signature loot exists and is placed in the landmark or biased loot
-- [ ] villagers and at least one neutral animal are present
-- [ ] zombies can convert a killed villager
-- [ ] no generic walls/doors outside buildings, fences, cemeteries or ruins
-- [ ] caves, temple and time-portal levels still generate as before
+- [x] no void tiles
+- [x] exactly one main landmark present
+- [x] exit exists and is reachable
+- [x] all hut doors are reachable from a road
+- [x] every road/water crossing has a bridge
+- [x] signature loot exists and is placed in the landmark or biased loot
+- [x] villagers and at least one neutral animal are present
+- [x] zombies can convert a killed villager
+- [x] no generic walls/doors outside buildings, fences, cemeteries or ruins
+- [x] caves, temple and time-portal levels still generate as before
 
 ---
 

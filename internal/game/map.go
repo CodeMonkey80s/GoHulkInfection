@@ -23,6 +23,7 @@ type Map struct {
 	Name      string
 	LandmarkX int
 	LandmarkY int
+	ExitMode  int
 }
 
 func NewMap(w, h int) *Map {

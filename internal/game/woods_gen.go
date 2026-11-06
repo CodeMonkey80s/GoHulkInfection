@@ -5,6 +5,12 @@ import (
 	"math"
 )
 
+const (
+	ExitEdge = iota
+	ExitCenter
+	ExitLandmark
+)
+
 type roadNode struct {
 	x, y int
 	cost int
@@ -45,7 +51,9 @@ func (g *Game) generateWoodsLevel(level int) {
 	}
 
 	startX, startY := 2, 6+g.Roll(m.H-12)
-	exitX, exitY := g.woodsExit(m)
+	exitMode := g.chooseWoodsExitMode(level)
+	exitX, exitY := g.woodsExit(m, exitMode, startX, startY)
+	m.ExitMode = exitMode
 
 	clearings := make([][3]int, 0, 6)
 	clearings = append(clearings,
@@ -74,7 +82,15 @@ func (g *Game) generateWoodsLevel(level int) {
 	}
 	g.setWoodsRoadTile(m, startX, startY)
 	m.SetTile(exitX, exitY, portalTile(0))
-	g.placeWoodsLandmark(m, level, path, startX, startY, exitX, exitY)
+	landmarkPath := path
+	if exitMode == ExitLandmark && level != 8 && len(path) > 24 {
+		if level == 0 {
+			landmarkPath = path[:24]
+		} else {
+			landmarkPath = path[len(path)-24:]
+		}
+	}
+	g.placeWoodsLandmark(m, level, landmarkPath, startX, startY, exitX, exitY)
 	g.placeWoodsHuts(m, path, startX, startY, exitX, exitY, spec.HutMin, spec.HutMax)
 	g.placeWoodsLanterns(m, path)
 	g.scatterWoodsProps(m, startX, startY, exitX, exitY)
@@ -86,15 +102,47 @@ func (g *Game) generateWoodsLevel(level int) {
 	g.finishLevel(m, level, 0)
 }
 
-func (g *Game) woodsExit(m *Map) (int, int) {
-	switch g.Roll(3) {
-	case 0: // east
-		return m.W - 3, 6 + g.Roll(m.H-12)
-	case 1: // north
-		return m.W/2 + g.Roll(m.W/2-8), 2
-	default: // south
-		return m.W/2 + g.Roll(m.W/2-8), m.H - 3
+func (g *Game) chooseWoodsExitMode(level int) int {
+	if level == 8 {
+		return ExitLandmark
 	}
+	switch r := g.Roll(100); {
+	case r < 50:
+		return ExitEdge
+	case r < 75:
+		return ExitCenter
+	default:
+		return ExitLandmark
+	}
+}
+
+func (g *Game) woodsExit(m *Map, mode, startX, startY int) (int, int) {
+	for tries := 0; tries < 80; tries++ {
+		var x, y int
+		switch mode {
+		case ExitEdge:
+			switch g.Roll(4) {
+			case 0:
+				x, y = 3+g.Roll(m.W-6), 2
+			case 1:
+				x, y = m.W-3, 3+g.Roll(m.H-6)
+			case 2:
+				x, y = 3+g.Roll(m.W-6), m.H-3
+			default:
+				x, y = 2, 3+g.Roll(m.H-6)
+			}
+		case ExitCenter:
+			x, y = m.W/2-8+g.Roll(16), m.H/2-6+g.Roll(12)
+		default:
+			x, y = m.W/2+g.Roll(m.W/2-10), 6+g.Roll(m.H-12)
+		}
+		x = clampInt(x, 2, m.W-3)
+		y = clampInt(y, 2, m.H-3)
+		if abs(x-startX)+abs(y-startY) >= 18 {
+			return x, y
+		}
+	}
+	return m.W - 3, m.H / 2
 }
 
 func (g *Game) growWoodsForest(m *Map, level int, clearings [][3]int) {
@@ -250,18 +298,35 @@ func (g *Game) placeWoodsLanterns(m *Map, path [][2]int) {
 	if len(path) < 12 {
 		return
 	}
-	for i := 6; i < len(path)-6; i += 6 + g.Roll(3) {
-		p := path[i]
-		for _, d := range [][2]int{{0, -1}, {0, 1}, {-1, 0}, {1, 0}} {
-			x, y := p[0]+d[0], p[1]+d[1]
-			if x < 1 || y < 1 || x >= m.W-1 || y >= m.H-1 {
-				continue
-			}
-			if m.Tile(x, y) == 2 || m.Tile(x, y) == tileBush {
-				m.SetTile(x, y, tileLanternPost)
-				break
+	placeAt := func(p [2]int) bool {
+		for radius := 1; radius <= 3; radius++ {
+			for dy := -radius; dy <= radius; dy++ {
+				for dx := -radius; dx <= radius; dx++ {
+					if abs(dx) != radius && abs(dy) != radius {
+						continue
+					}
+					x, y := p[0]+dx, p[1]+dy
+					if x < 1 || y < 1 || x >= m.W-1 || y >= m.H-1 {
+						continue
+					}
+					t := m.Tile(x, y)
+					if t == 2 || t == tileBush {
+						m.SetTile(x, y, tileLanternPost)
+						return true
+					}
+				}
 			}
 		}
+		return false
+	}
+	placed := false
+	for i := 6; i < len(path)-6; i += 6 + g.Roll(3) {
+		if placeAt(path[i]) {
+			placed = true
+		}
+	}
+	if !placed {
+		placeAt(path[len(path)/2])
 	}
 }
 

@@ -1,6 +1,9 @@
 package game
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestWoodsGeneratorTerrain(t *testing.T) {
 	for level := 0; level < 9; level++ {
@@ -46,6 +49,9 @@ func TestWoodsGeneratorTerrain(t *testing.T) {
 			if !reachable(g, g.Player.X, g.Player.Y, px, py) {
 				t.Fatalf("level %d seed %d portal is not reachable", level, seed)
 			}
+			if px == g.Player.X && py == g.Player.Y {
+				t.Fatalf("level %d seed %d spawned the player on the exit", level, seed)
+			}
 		}
 	}
 }
@@ -64,6 +70,17 @@ func TestWoodsGeneratorBuildsHuts(t *testing.T) {
 						doors++
 						if !reachable(g, g.Player.X, g.Player.Y, x, y) {
 							t.Fatalf("level %d seed %d hut door at %d,%d is unreachable", level, seed, x, y)
+						}
+						roadside := false
+						for _, d := range [][2]int{{0, -1}, {0, 1}, {-1, 0}, {1, 0}} {
+							t := g.Map.Tile(x+d[0], y+d[1])
+							if t == tileDirtRoad || t == tileWoodenBridge {
+								roadside = true
+								break
+							}
+						}
+						if !roadside {
+							t.Fatalf("level %d seed %d hut door at %d,%d is not connected to a road", level, seed, x, y)
 						}
 					case tileWoodenWindow:
 						windows++
@@ -121,6 +138,49 @@ func TestWoodsLandmarks(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+func TestWoodsExitModes(t *testing.T) {
+	seen := map[int]int{}
+	for level := 0; level < 8; level++ {
+		for seed := int64(0); seed < 30; seed++ {
+			g := NewGame(seed + int64(level)*8000)
+			g.SetupNewGame(0, "tester")
+			g.GenerateLevel(level)
+			seen[g.Map.ExitMode]++
+		}
+	}
+	for _, mode := range []int{ExitEdge, ExitCenter, ExitLandmark} {
+		if seen[mode] == 0 {
+			t.Fatalf("exit mode %d never appeared: %v", mode, seen)
+		}
+	}
+	for seed := int64(0); seed < 20; seed++ {
+		g := NewGame(seed + 90000)
+		g.SetupNewGame(0, "tester")
+		g.GenerateLevel(8)
+		if g.Map.ExitMode != ExitLandmark {
+			t.Fatalf("level 8 exit mode = %d, want landmark", g.Map.ExitMode)
+		}
+	}
+}
+
+func TestAllWoodsLevelsRender(t *testing.T) {
+	for level := 0; level < 9; level++ {
+		g := NewGame(int64(91000 + level))
+		g.SetupNewGame(0, "tester")
+		g.GenerateLevel(level)
+		g.State = StatePlaying
+		g.UpdateFOV()
+		u, s := newTestUI(g, ColorModeTrueColor)
+		u.drawGame()
+		s.Show()
+		text := screenText(s)
+		if !strings.Contains(text, "@") {
+			t.Fatalf("level %d did not render the player", level)
+		}
+		s.Fini()
 	}
 }
 

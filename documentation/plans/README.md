@@ -6,7 +6,7 @@ Status legend: `Not planned yet` · `Proposed` · `Planned` · `In progress` · 
 
 | Feature | Status | Document |
 |---|---|---|
-| Woods level revamp — outdoor generator, landmarks, huts, roads, loot, factions | In progress | [woods/level-revamp.md](woods/level-revamp.md) |
+| Woods level revamp — outdoor generator, landmarks, huts, roads, loot, factions | Done | [woods/level-revamp.md](woods/level-revamp.md) |
 | Woods true-colour palette and per-level accents | In progress | [woods/color-palette.md](woods/color-palette.md) |
 
 The woods folder has a short overview and implementation order here:
