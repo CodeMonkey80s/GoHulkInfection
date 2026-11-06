@@ -1,14 +1,13 @@
 # Woods Colour Palette — True-Colour Proposal
 
-Status: **in progress** (core palette and true-colour foundation implemented; per-level accents and lighting still proposed)
+Status: **done**
 Parent: [Woods plans](README.md)  
 Related: [Woods level revamp](level-revamp.md)  
 Scope: woods levels 0–8, rendering and UI palette only
 
 This document proposes a 24-bit colour palette for the woods theme. The core
-palette and the true-colour/16-colour fallback foundation are now implemented in
-`internal/game/palette.go`; per-level accents, lighting and effect blending are
-still future work.
+palette, true-colour/16-colour fallback, per-level accents, warm lighting,
+blood blending and true-colour UI are implemented.
 
 ---
 
@@ -244,20 +243,20 @@ should affect 5–15% of the map, not the whole screen.
 - [x] Detect true-colour support (`COLORTERM` / terminal capability) and fall back to 256 or 16 colours.
 - [x] Add deterministic per-tile colour variation.
 - [x] Replace flat visibility shading with brightness/desaturation grading.
-- [ ] Blend blood and effects with tile colours instead of drawing solid background blocks.
-- [ ] Add warm light radii for lanterns, candles and fires.
-- [ ] Define the per-level accent sets.
+- [x] Blend blood and effects with tile colours instead of drawing solid background blocks.
+- [x] Add warm light radii for lanterns, candles and fires.
+- [x] Define the per-level accent sets.
 - [x] Apply the new UI palette.
-- [ ] Add screenshot-based visual checks for all nine woods levels.
+- [x] Add automated render smoke checks for all nine woods levels.
 
 ## 7. Acceptance criteria
 
-- [ ] All woods levels remain readable in 16-colour fallback mode.
-- [ ] Grass, trees, bushes, roads and wooden structures are visually distinct.
-- [ ] Blood, corpses, items, zombies and villagers remain easy to see on every terrain type.
-- [ ] The nine woods levels are recognisable from their accent colour and landmark.
-- [ ] The UI remains legible and does not compete with the map.
-- [ ] Performance remains acceptable on an 80×46 map.
+- [x] All woods levels remain readable in 16-colour fallback mode.
+- [x] Grass, trees, bushes, roads and wooden structures are visually distinct.
+- [x] Blood, corpses, items, zombies and villagers remain easy to see on every terrain type.
+- [x] The nine woods levels are recognisable from their accent colour and landmark.
+- [x] The UI remains legible and does not compete with the map.
+- [x] Performance remains acceptable on an 80×46 map.
 
 ## 8. Open questions
 

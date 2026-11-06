@@ -222,6 +222,68 @@ func paletteColor(hex uint32, fallback uint8) PaletteColor {
 	return PaletteColor{RGB: rgbFromHex(hex), Fallback: fallback}
 }
 
+// WoodsAccent is the per-level tint used for a small portion of the map.
+type WoodsAccent struct {
+	Primary   RGB
+	Secondary RGB
+}
+
+// WoodsAccents follows the per-level palette table in the woods colour plan.
+var WoodsAccents = [9]WoodsAccent{
+	{Primary: rgbFromHex(0xC9A227), Secondary: rgbFromHex(0xD8D0B0)}, // Woodcutter's Clearing
+	{Primary: rgbFromHex(0xA83A32), Secondary: rgbFromHex(0xD8C0C8)}, // Old Orchard
+	{Primary: rgbFromHex(0xD6CBB0), Secondary: rgbFromHex(0x8A9A92)}, // Forgotten Cemetery
+	{Primary: rgbFromHex(0x2F5A66), Secondary: rgbFromHex(0xC9A85A)}, // River Mill
+	{Primary: rgbFromHex(0xE06A2A), Secondary: rgbFromHex(0x7A4E2E)}, // Poacher's Camp
+	{Primary: rgbFromHex(0x6AA89A), Secondary: rgbFromHex(0x7A7C72)}, // Druid's Grove
+	{Primary: rgbFromHex(0xB8A88A), Secondary: rgbFromHex(0x5A6A7A)}, // Abandoned Village
+	{Primary: rgbFromHex(0xE06A2A), Secondary: rgbFromHex(0x5A6A3A)}, // Charcoal Clearing
+	{Primary: rgbFromHex(0xF2C46A), Secondary: rgbFromHex(0x7A4A8A)}, // Ruined Chapel
+}
+
+func woodsAccentFor(level int) WoodsAccent {
+	if level < 0 || level >= len(WoodsAccents) {
+		return WoodsAccents[0]
+	}
+	return WoodsAccents[level]
+}
+
+func accentableRole(role ColorRole) bool {
+	s := string(role)
+	return strings.HasPrefix(s, "terrain.") ||
+		strings.HasPrefix(s, "vegetation.") ||
+		strings.HasPrefix(s, "water.") ||
+		strings.HasPrefix(s, "structure.")
+}
+
+func (u *UI) applyWoodsAccent(c RGB, role ColorRole, x, y int) RGB {
+	if u.g == nil || u.g.Theme != 0 || !accentableRole(role) {
+		return c
+	}
+	accent := woodsAccentFor(u.g.Level)
+	h := tileColorHash(u.g.Level, x, y) % 100
+	switch {
+	case h < 10:
+		return BlendRGB(c, accent.Primary, 0.18)
+	case h < 15:
+		return BlendRGB(c, accent.Secondary, 0.12)
+	default:
+		return c
+	}
+}
+
+func (u *UI) applyWarmLight(c RGB, x, y int) RGB {
+	if u.g == nil || u.g.Theme != 0 || u.g.Map == nil {
+		return c
+	}
+	warm := u.g.Map.WarmLight(x, y)
+	if warm <= 0 {
+		return c
+	}
+	glow := WoodsPalette[RoleLanternGlow].RGB
+	return BlendRGB(c, glow, warm*0.30)
+}
+
 // Palette maps semantic roles to colours.
 type Palette map[ColorRole]PaletteColor
 

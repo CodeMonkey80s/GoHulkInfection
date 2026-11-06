@@ -434,6 +434,67 @@ func TestWoodsTileRoles(t *testing.T) {
 	}
 }
 
+func TestWoodsAccentsAndWarmLight(t *testing.T) {
+	if len(WoodsAccents) != 9 {
+		t.Fatalf("accent count = %d, want 9", len(WoodsAccents))
+	}
+	for i, a := range WoodsAccents {
+		if a.Primary == (RGB{}) || a.Secondary == (RGB{}) {
+			t.Fatalf("accent %d is empty: %+v", i, a)
+		}
+	}
+
+	u := &UI{g: &Game{Theme: 0, Level: 1}, colorMode: ColorModeTrueColor}
+	base := WoodsPalette[RoleGrassBase].RGB
+	changed := false
+	for y := 0; y < 20 && !changed; y++ {
+		for x := 0; x < 20; x++ {
+			if u.applyWoodsAccent(base, RoleGrassBase, x, y) != base {
+				changed = true
+				break
+			}
+		}
+	}
+	if !changed {
+		t.Fatal("woods accent never changed a terrain colour")
+	}
+	blood := WoodsPalette[RoleFreshBlood].RGB
+	if got := u.applyWoodsAccent(blood, RoleFreshBlood, 3, 3); got != blood {
+		t.Fatal("woods accent tinted a gore colour")
+	}
+
+	m := NewMap(20, 20)
+	for i := range m.Tiles {
+		m.Tiles[i] = 2
+	}
+	m.SetTile(10, 10, tileLanternPost)
+	if got := m.WarmLight(10, 10); got <= 0 {
+		t.Fatal("lantern tile has no warm light")
+	}
+	if got := m.WarmLight(12, 10); got <= 0 {
+		t.Fatal("lantern light does not reach nearby tiles")
+	}
+	if got := m.WarmLight(19, 19); got != 0 {
+		t.Fatal("warm light reaches too far")
+	}
+}
+
+func TestBloodBlendsWithTile(t *testing.T) {
+	u := &UI{g: &Game{Theme: 0, Level: 2}, colorMode: ColorModeTrueColor}
+	got := u.bloodColor(RoleGrassBase, true, 4, 8, 8)
+	if !got.IsRGB() {
+		t.Fatalf("blood background is not RGB: %v", got)
+	}
+	darkBlood := WoodsPalette[RoleDarkBlood].Resolve(ColorModeTrueColor)
+	if got == darkBlood {
+		t.Fatal("blood background was not blended with the tile")
+	}
+	u.colorMode = ColorMode16
+	if got := u.bloodColor(RoleGrassBase, true, 4, 8, 8); got != DOSColor(4) {
+		t.Fatalf("16-colour blood = %v, want DOS red", got)
+	}
+}
+
 func TestDrawGameUsesPalette(t *testing.T) {
 	g := NewGame(7)
 	g.SetupNewGame(0, "tester")

@@ -173,14 +173,16 @@ func TestAllWoodsLevelsRender(t *testing.T) {
 		g.GenerateLevel(level)
 		g.State = StatePlaying
 		g.UpdateFOV()
-		u, s := newTestUI(g, ColorModeTrueColor)
-		u.drawGame()
-		s.Show()
-		text := screenText(s)
-		if !strings.Contains(text, "@") {
-			t.Fatalf("level %d did not render the player", level)
+		for _, mode := range []ColorMode{ColorModeTrueColor, ColorMode16} {
+			u, s := newTestUI(g, mode)
+			u.drawGame()
+			s.Show()
+			text := screenText(s)
+			if !strings.Contains(text, "@") {
+				t.Fatalf("level %d mode %s did not render the player", level, mode)
+			}
+			s.Fini()
 		}
-		s.Fini()
 	}
 }
 
