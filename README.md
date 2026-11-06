@@ -33,13 +33,12 @@ The player-facing command set is intentionally melee-focused.
 | Key | Action |
 | --- | --- |
 | `8 9 7 6 5 4 3 2 1` | move in eight directions / wait |
-| arrows | move (or move the cursor in look/throw modes) |
-| `f` | attack an adjacent enemy with the equipped melee weapon |
+| arrows | move (or move the cursor in look mode) |
+| `f` | choose a direction and attack the adjacent enemy |
 | `a` | use the Hands item / report the weapon ready |
 | `c` `d` `e` | use, swap or consume Belt 1–3 |
 | `A` `B` `C` `D` `E` | drop Hands, Body, Belt 1–3 |
 | `v` | smash an adjacent door, wall or piece of furniture |
-| `t` | throw an HE grenade or molotov within sight range |
 | `,` | fast pick up |
 | `i` | player-slot overlay |
 | `l` | look around |
@@ -55,7 +54,8 @@ The player-facing command set is intentionally melee-focused.
 | `Q` | quit |
 
 Screens generally close with `z`, `q`, or `Esc`.  The player is defenceless
-without a melee weapon; there is no unarmed attack.
+without a melee weapon; there is no unarmed attack.  Throwing is deferred for
+now.
 
 The player has five equipment slots: Hands, Body, Belt 1–3.  Body armour is
 worn passively and removed/dropped with `B`.  Belt 2 and 3 unlock at levels 3
@@ -68,7 +68,7 @@ and 6.
 * message log and message-buffer screen
 * inventory, equipment and ground-item screen with item data
 * character sheet, skill-level screen, options screen, key-binding screen
-* look mode and grenade/molotov throw cursor
+* look mode with tile highlighting
 * save/load, death and victory screens
 
 ## Game systems
@@ -82,7 +82,7 @@ and 6.
 * four level themes: woods, caves, temple of the underminer, time portal
 * turn/energy based critters with zombie, observer and animal AI
 * melee combat with recovered weapon AV/DV and damage values
-* throwing only: HE grenades and molotov cocktails, limited to FOV range
+* throwing is deferred; HE grenade and molotov data are retained for a future pass
 * recovered weapon table (attack/defense value and damage range per subtype)
 * HP and AP: body armour provides a depletable armour-point pool
 * armour vials restore AP from belt slots; acid bypasses AP

@@ -143,7 +143,7 @@ func TestPlayerIsDefencelessWithoutWeapon(t *testing.T) {
 	c.HP = 999
 	c.MaxHP = 999
 	before := c.HP
-	g.PlayerMeleeAttack()
+	g.PlayerDirectionalAttack(1, 0)
 	if c.HP != before {
 		t.Fatalf("unarmed player dealt damage: %d -> %d", before, c.HP)
 	}
@@ -383,5 +383,22 @@ func TestArmorVialRestoresAP(t *testing.T) {
 	}
 	if g.Player.Slots.Belt[0] != nil {
 		t.Fatal("empty vial remained in belt")
+	}
+}
+
+func TestDirectionalAttack(t *testing.T) {
+	g := NewGame(51)
+	g.SetupNewGame(0, "tester")
+	east := g.SpawnCritter(0, g.Player.X+1, g.Player.Y)
+	west := g.SpawnCritter(0, g.Player.X-1, g.Player.Y)
+	east.HP, east.MaxHP = 999, 999
+	west.HP, west.MaxHP = 999, 999
+	g.Options["optMechanicBaseHitChance"] = 95
+	g.PlayerDirectionalAttack(1, 0)
+	if east.HP == 999 {
+		t.Fatal("east critter was not attacked")
+	}
+	if west.HP != 999 {
+		t.Fatal("west critter was attacked instead")
 	}
 }
