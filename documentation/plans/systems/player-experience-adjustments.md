@@ -38,6 +38,8 @@ Proposed fix:
 - Use `RoleDimText` for the controls line instead of the map-grey fallback.
 - Keep the description on row 45 and the controls on row 46.
 - Name the item on the selected tile, for example `Crowbar is lying here.`
+- Entering a tile with a ground item prints the same announcement in the
+  message line.
 - If the description is too long, wrap or truncate it deliberately rather than
   letting it run off-screen.
 
