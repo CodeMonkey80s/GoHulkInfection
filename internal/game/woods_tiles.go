@@ -10,23 +10,27 @@ const (
 )
 
 var (
-	tileDirtRoad    uint8
-	tileBush        uint8
-	tileBramble     uint8
-	tileFlowers     uint8
-	tileStump       uint8
-	tileFallenLog   uint8
-	tileDeadTree    uint8
-	tileLanternPost uint8
-	tileMud         uint8
-	tileReeds       uint8
-	tileTable       uint8
-	tileChair       uint8
-	tileBed         uint8
-	tileCrate       uint8
-	tileBarrel      uint8
-	tileFireplace   uint8
-	tileShelf       uint8
+	tileDirtRoad     uint8
+	tileBush         uint8
+	tileBramble      uint8
+	tileFlowers      uint8
+	tileStump        uint8
+	tileFallenLog    uint8
+	tileDeadTree     uint8
+	tileLanternPost  uint8
+	tileMud          uint8
+	tileReeds        uint8
+	tileTable        uint8
+	tileChair        uint8
+	tileBed          uint8
+	tileCrate        uint8
+	tileBarrel       uint8
+	tileFireplace    uint8
+	tileShelf        uint8
+	tileRiverBank    uint8
+	tileWoodenBridge uint8
+	tileStoneBridge  uint8
+	tileLilyPad      uint8
 )
 
 var woodsTileRoles = map[int]ColorRole{}
@@ -106,24 +110,44 @@ func init() {
 		Name: "shelf", Type: 2, Glyph: '[', Color: 6,
 		BlockMove: true, BlockSight: false, Partner: -1,
 	})
+	tileRiverBank = add(TileDef{
+		Name: "river bank", Type: 1, Glyph: ',', Color: 6,
+		BlockMove: false, BlockSight: false, Partner: -1,
+	})
+	tileWoodenBridge = add(TileDef{
+		Name: "wooden bridge", Type: 1, Glyph: '=', Color: 6,
+		BlockMove: false, BlockSight: false, Partner: -1,
+	})
+	tileStoneBridge = add(TileDef{
+		Name: "stone bridge", Type: 1, Glyph: '=', Color: 7,
+		BlockMove: false, BlockSight: false, Partner: -1,
+	})
+	tileLilyPad = add(TileDef{
+		Name: "lily pad", Type: 1, Glyph: 'o', Color: 10,
+		BlockMove: false, BlockSight: false, Partner: -1,
+	})
 
 	woodsTileRoles = map[int]ColorRole{
-		int(tileDirtRoad):    RoleDirtRoad,
-		int(tileBush):        RoleBush,
-		int(tileBramble):     RoleBramble,
-		int(tileFlowers):     RoleFlowerGold,
-		int(tileStump):       RoleStump,
-		int(tileFallenLog):   RoleStump,
-		int(tileDeadTree):    RoleDeadTree,
-		int(tileLanternPost): RoleLanternGlow,
-		int(tileMud):         RoleMud,
-		int(tileReeds):       RoleReeds,
-		int(tileTable):       RoleFurniture,
-		int(tileChair):       RoleFurniture,
-		int(tileBed):         RoleCloth,
-		int(tileCrate):       RoleFurniture,
-		int(tileBarrel):      RoleFurniture,
-		int(tileFireplace):   RoleFirelight,
-		int(tileShelf):       RoleFurniture,
+		int(tileDirtRoad):     RoleDirtRoad,
+		int(tileBush):         RoleBush,
+		int(tileBramble):      RoleBramble,
+		int(tileFlowers):      RoleFlowerGold,
+		int(tileStump):        RoleStump,
+		int(tileFallenLog):    RoleStump,
+		int(tileDeadTree):     RoleDeadTree,
+		int(tileLanternPost):  RoleLanternGlow,
+		int(tileMud):          RoleMud,
+		int(tileReeds):        RoleReeds,
+		int(tileTable):        RoleFurniture,
+		int(tileChair):        RoleFurniture,
+		int(tileBed):          RoleCloth,
+		int(tileCrate):        RoleFurniture,
+		int(tileBarrel):       RoleFurniture,
+		int(tileFireplace):    RoleFirelight,
+		int(tileShelf):        RoleFurniture,
+		int(tileRiverBank):    RoleMud,
+		int(tileWoodenBridge): RoleBridgeWood,
+		int(tileStoneBridge):  RoleStoneLight,
+		int(tileLilyPad):      RoleFrog,
 	}
 }

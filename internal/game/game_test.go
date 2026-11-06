@@ -115,6 +115,12 @@ func TestKillCreatesCorpse(t *testing.T) {
 		t.Fatal("corpse option should be enabled by default")
 	}
 	x, y := g.Player.X+2, g.Player.Y
+	g.Map.SetTile(x, y, 2) // keep the corpse test on ordinary grass
+	for _, it := range append([]*Item(nil), g.Items...) {
+		if it.X == x && it.Y == y {
+			g.RemoveItem(it)
+		}
+	}
 	c := g.SpawnCritter(0, x, y)
 	if c == nil {
 		t.Fatal("spawn failed")
