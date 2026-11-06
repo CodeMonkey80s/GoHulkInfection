@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	screenW  = 80
+	screenW  = mapWidth
 	screenH  = 50
-	mapViewH = 46
+	mapViewH = mapHeight
 )
 
 var cp437 = [128]rune{
@@ -116,8 +116,14 @@ func (u *UI) putTcell(x, y int, r rune, fg, bg tcell.Color) {
 }
 
 func (u *UI) putStr(x, y int, s string, fg, bg uint8) {
-	for i, r := range s {
+	for i, r := range []rune(s) {
 		u.put(x+i, y, r, fg, bg)
+	}
+}
+
+func (u *UI) putStrTcell(x, y int, s string, fg, bg tcell.Color) {
+	for i, r := range []rune(s) {
+		u.putTcell(x+i, y, r, fg, bg)
 	}
 }
 
@@ -127,6 +133,27 @@ func (u *UI) fill(x, y, w, h int, r rune, fg, bg uint8) {
 			u.put(xx, yy, r, fg, bg)
 		}
 	}
+}
+
+func (u *UI) fillTcell(x, y, w, h int, r rune, fg, bg tcell.Color) {
+	for yy := y; yy < y+h; yy++ {
+		for xx := x; xx < x+w; xx++ {
+			u.putTcell(xx, yy, r, fg, bg)
+		}
+	}
+}
+
+// uiColor resolves a UI palette role, keeping the supplied DOS fallback for
+// 16-colour terminals.
+func (u *UI) uiColor(role ColorRole, fallback uint8) tcell.Color {
+	if u.colorMode == ColorMode16 {
+		return pal(fallback)
+	}
+	pc, ok := WoodsPalette.Lookup(role)
+	if !ok {
+		return pal(fallback)
+	}
+	return pc.Resolve(u.colorMode)
 }
 
 func (u *UI) clear(bg uint8) {
@@ -234,95 +261,116 @@ func (u *UI) draw() {
 
 func (u *UI) drawTitle() {
 	u.clear(0)
-	u.putStr(centerText("==================================================", screenW), 6, "==================================================", 2, 0)
-	u.putStr(centerText("H  U  L  K     I  N  F  E  C  T  I  O  N", screenW), 8, "H  U  L  K     I  N  F  E  C  T  I  O  N", 10, 0)
-	u.putStr(centerText("==================================================", screenW), 9, "==================================================", 2, 0)
-	u.putStr(centerText("u l t i m a t e   c h a i n s a w   m a s s a c r e", screenW), 11, "u l t i m a t e   c h a i n s a w   m a s s a c r e", 14, 0)
-	lines := []struct {
-		s  string
-		fg uint8
-	}{
-		{"hulk infection (v0.3a)", 10},
-		{"copyright (c) 2006, 2007 by michal przybylowicz", 8},
-		{"all rights reserved", 8},
-		{"", 7},
-		{"( this edition is dedicated for Ryzy )", 14},
-		{"www.przybyl666.prv.pl", 11},
+	left, top, width, height := 1, 4, 78, 28
+	border := uint8(2)
+	for x := left + 1; x < left+width-1; x++ {
+		u.put(x, top, '-', border, 0)
+		u.put(x, top+height-1, '-', border, 0)
 	}
-	for i, l := range lines {
-		u.putStr(centerText(l.s, screenW), 15+i, l.s, l.fg, 0)
+	for y := top + 1; y < top+height-1; y++ {
+		u.put(left, y, '|', border, 0)
+		u.put(left+width-1, y, '|', border, 0)
 	}
-	menu := []string{"New game", "Continue", "Quit"}
+	u.put(left, top, '+', border, 0)
+	u.put(left+width-1, top, '+', border, 0)
+	u.put(left, top+height-1, '+', border, 0)
+	u.put(left+width-1, top+height-1, '+', border, 0)
+
+	u.putStr(left+3, top+1, "CASE FILE: HULK INFECTION", 14, 0)
+	status := "STATUS: CONTAINMENT FAILED"
+	u.putStr(left+width-3-len(status), top+1, status, 12, 0)
+	u.putStr(left+3, top+2, "LOCATION: NORTH WOODS", 10, 0)
+	date := "DATE: 2026"
+	u.putStr(left+width-3-len(date), top+2, date, 10, 0)
+	u.putStr(left+1, top+3, strings.Repeat("-", width-2), 2, 0)
+
+	title := "H  U  L  K     I  N  F  E  C  T  I  O  N"
+	u.putStr(left+(width-len(title))/2, top+6, title, 10, 0)
+	rule := strings.Repeat("=", len(title))
+	u.putStr(left+(width-len(rule))/2, top+7, rule, 2, 0)
+	warning := "The dead are walking. The road is closed."
+	u.putStr(left+(width-len(warning))/2, top+10, warning, 7, 0)
+
+	menu := []string{"new game", "continue", "quit"}
 	for i, s := range menu {
+		prefix := "  "
 		fg := uint8(7)
 		if i == u.titleSel {
-			fg = 15
-			s = "> " + s + " <"
+			prefix = "> "
+			fg = 14
 		}
-		u.putStr(centerText(s, screenW), 28+i, s, fg, 0)
+		u.putStr(left+5, top+13+i*2, prefix+s, fg, 0)
 	}
-	u.putStr(centerText("arrows / enter", screenW), 35, "arrows / enter", 8, 0)
+
+	copyright := "copyright (c) 2026 Michał Przybyłowicz"
+	u.putStr(left+(width-len([]rune(copyright)))/2, top+height-2, copyright, 8, 0)
+	u.putStr(centerText("arrows / enter", screenW), top+height+2, "arrows / enter", 8, 0)
 }
 
 func (u *UI) drawIntro() {
 	u.clear(0)
 	intro := []string{
-		"year 2007",
-		"~~~~~~~~~",
+		"T H E   W O O D S   A R E   D E A D",
 		"",
-		"hungry for adventure you travel deep into nearest woods to",
-		"find the truth about local gossip ... you heard that there is an",
-		"ancient evil lurking deep underground somewhere in the forest ...",
+		"The first body rose seven days ago. By morning the town was gone.",
+		"By nightfall the trees were full of things that used to be people.",
 		"",
-		"after a while of meaningless walking you find a small wooden shed,",
-		"tired and little exausted you head yourself toward it ...",
+		"You are the last one to leave the road.",
+		"",
+		"Somewhere in these woods is the source of the infection.",
+		"Find it. Destroy it. Do not let it reach the cities.",
+		"",
+		"You have a weapon, a handful of supplies, and no way back.",
 		"",
 		"press enter to continue",
 	}
 	for i, s := range intro {
 		fg := uint8(10)
-		if i == 0 {
+		switch {
+		case i == 0:
+			fg = 12
+		case i == 8:
 			fg = 14
-		}
-		if i == len(intro)-1 {
+		case i == len(intro)-1:
 			fg = 8
 		}
-		u.putStr(centerText(s, screenW), 12+i, s, fg, 0)
+		u.putStr(centerText(s, screenW), 10+i, s, fg, 0)
 	}
 }
 
 func (u *UI) drawCharCreate() {
 	u.clear(0)
-	u.putStr(centerText("[ @ ] proffession...", screenW), 1, "[ @ ] proffession...", 11, 0)
+	u.putStr(centerText("[ @ ] profession...", screenW), 1, "[ @ ] profession...", 11, 0)
 	u.putStr(2, 3, "select class", 8, 0)
-	for i, c := range ClassDefs {
+	for i, c := range PlayerClasses {
 		mark := "  "
 		fg := uint8(7)
 		if i == u.classSel {
 			mark = "> "
 			fg = 15
 		}
-		u.putStr(4, 5+i*2, mark+c.Name, fg, 0)
+		u.putStr(4, 5+i, mark+c.Name, fg, 0)
 	}
-	c := &ClassDefs[u.classSel]
-	u.putStr(2, 12, "class: "+c.Name, 14, 0)
+	c := &PlayerClasses[u.classSel]
+	u.putStr(2, 11, "class: "+c.Name, 14, 0)
 	descLines := wrapText(c.Desc, 74)
 	for i, l := range descLines {
 		if i > 2 {
 			break
 		}
-		u.putStr(2, 13+i, l, 10, 0)
+		u.putStr(2, 12+i, l, 10, 0)
 	}
-	u.putStr(2, 17, fmt.Sprintf("strength:%d  toughness:%d  agility:%d  intelligence:%d", c.STR, c.TGH, c.AGI, c.INT), 7, 0)
+	u.putStr(2, 16, fmt.Sprintf("strength:%d  toughness:%d  agility:%d  intelligence:%d", c.STR, c.TGH, c.AGI, c.INT), 7, 0)
 	for i, skill := range ActiveSkills {
 		col, row := i/3, i%3
 		x := 2 + col*26
-		y := 19 + row
+		y := 18 + row
 		u.putStr(x, y, fmt.Sprintf("%-16s %3d", SkillNames[skill], c.Skills[skill]), 10, 0)
 	}
-	u.putStr(2, 23, "name: "+u.g.PlayerName, 14, 0)
-	u.putStr(2, 24, "arrows: select class   r: reroll name   enter: begin", 8, 0)
-	u.putStr(2, 25, "esc: back", 8, 0)
+	u.putStr(2, 22, startingKitSummary(u.classSel), 8, 0)
+	u.putStr(2, 24, "name: "+u.g.PlayerName, 14, 0)
+	u.putStr(2, 25, "arrows: select class   r: reroll name   enter: begin", 8, 0)
+	u.putStr(2, 26, "esc: back", 8, 0)
 }
 
 func (u *UI) drawGame() {
@@ -548,28 +596,29 @@ func (u *UI) drawStatus(y int) {
 	if arm := p.BodyItem(); arm != nil {
 		ac, am = armorAP(arm)
 	}
-	line1 := fmt.Sprintf("%-12s HP %d/%d  AP %d/%d  Lvl %d", p.Name, p.HP, p.MaxHP, ac, am, p.Level)
-	u.putStr(0, y, line1, 10, 0)
-
-	line2 := fmt.Sprintf("[a] %-10s [c] %-8s [d] %-8s [e] %-8s",
-		hudItem(p.SlotItem(SlotHands)), hudItem(p.SlotItem(SlotBelt1)),
-		hudItem(p.SlotItem(SlotBelt2)), hudItem(p.SlotItem(SlotBelt3)))
-	if arm := p.BodyItem(); arm != nil {
-		body := fmt.Sprintf("  body: %s %d/%d", arm.Name(), ac, am)
-		line2 += body
+	hpColor := uint8(10)
+	if p.MaxHP > 0 {
+		ratio := float64(p.HP) / float64(p.MaxHP)
+		switch {
+		case ratio <= 0.25:
+			hpColor = 12
+		case ratio <= 0.60:
+			hpColor = 14
+		}
 	}
-	u.putStr(0, y+1, line2, 7, 0)
-}
-
-func hudItem(it *Item) string {
-	if it == nil {
-		return "-"
+	apColor := uint8(11)
+	if ac == 0 && am > 0 {
+		apColor = 12
 	}
-	name := it.Name()
-	if len(name) > 10 {
-		name = name[:10]
+	weapon := "none"
+	if it := p.SlotItem(SlotHands); it != nil {
+		weapon = it.Name()
 	}
-	return name
+	hp := fmt.Sprintf("HP %d/%d", p.HP, p.MaxHP)
+	ap := fmt.Sprintf("AP %d/%d", ac, am)
+	u.putStr(0, y, hp, hpColor, 0)
+	u.putStr(len(hp)+3, y, ap, apColor, 0)
+	u.putStr(len(hp)+len(ap)+6, y, weapon, 7, 0)
 }
 
 func wrapText(s string, width int) []string {
@@ -683,9 +732,9 @@ func (u *UI) handleTitle(e *tcell.EventKey) {
 func (u *UI) handleCharCreate(e *tcell.EventKey) {
 	switch e.Key() {
 	case tcell.KeyUp:
-		u.classSel = (u.classSel + len(ClassDefs) - 1) % len(ClassDefs)
+		u.classSel = (u.classSel + len(PlayerClasses) - 1) % len(PlayerClasses)
 	case tcell.KeyDown:
-		u.classSel = (u.classSel + 1) % len(ClassDefs)
+		u.classSel = (u.classSel + 1) % len(PlayerClasses)
 	case tcell.KeyEscape:
 		u.g.State = StateIntro
 	default:
@@ -968,10 +1017,15 @@ func (u *UI) handleGameOver(e *tcell.EventKey) {
 func (u *UI) drawLookOverlay() {
 	g := u.g
 	desc := g.TileDescription(g.LookX, g.LookY)
-	u.fill(0, 45, screenW, 2, ' ', 8, 0)
-	u.fill(0, 45, screenW, 1, ' ', 15, 1)
-	u.putStr(1, 45, desc, 15, 1)
-	u.putStr(1, 46, fmt.Sprintf("look: [%d:%d] arrows move  enter/esc quit", g.LookX, g.LookY), 8, 0)
+	bg := u.uiColor(RolePanelBackground, 1)
+	fg := u.uiColor(RolePrimaryText, 15)
+	dim := u.uiColor(RoleDimText, 8)
+	u.fillTcell(0, 45, screenW, 2, ' ', fg, bg)
+	if lines := wrapText(desc, screenW-2); len(lines) > 0 {
+		desc = lines[0]
+	}
+	u.putStrTcell(1, 45, desc, fg, bg)
+	u.putStrTcell(1, 46, fmt.Sprintf("look: [%d:%d] arrows move  enter/esc quit", g.LookX, g.LookY), dim, bg)
 }
 
 func (u *UI) handleLook(e *tcell.EventKey) {
@@ -1005,10 +1059,12 @@ func (u *UI) handleLook(e *tcell.EventKey) {
 
 func (u *UI) drawThrowOverlay() {
 	g := u.g
-	u.fill(0, 45, screenW, 2, ' ', 8, 0)
-	u.fill(0, 45, screenW, 1, ' ', 15, 1)
-	u.putStr(1, 45, fmt.Sprintf("throw: target [%d:%d]  range %d  enter throw  esc cancel", g.LookX, g.LookY, g.FOVRadius()), 15, 1)
-	u.putStr(1, 46, "arrows move cursor", 8, 0)
+	bg := u.uiColor(RolePanelBackground, 1)
+	fg := u.uiColor(RolePrimaryText, 15)
+	dim := u.uiColor(RoleDimText, 8)
+	u.fillTcell(0, 45, screenW, 2, ' ', fg, bg)
+	u.putStrTcell(1, 45, fmt.Sprintf("throw: target [%d:%d]  range %d  enter throw  esc cancel", g.LookX, g.LookY, g.FOVRadius()), fg, bg)
+	u.putStrTcell(1, 46, "arrows move cursor", dim, bg)
 }
 
 func (g *Game) moveThrowCursor(dx, dy int) {

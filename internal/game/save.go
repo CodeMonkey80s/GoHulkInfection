@@ -154,7 +154,7 @@ func critterFromSave(s saveCritter, version int) (*Critter, int) {
 		Alert: s.Alert, Dead: s.Dead,
 	}
 	if s.Player {
-		c.Slots = PlayerSlots{BeltUnlocked: 1}
+		c.Slots = PlayerSlots{BeltUnlocked: 2}
 		if version >= 3 && s.Slots != nil {
 			if it := itemFromSave(s.Slots.Hands); it != nil {
 				if ItemAvailable(it.Proto) {
@@ -231,8 +231,8 @@ func critterFromSave(s saveCritter, version int) (*Critter, int) {
 			}
 		}
 		ensureArmorAP(c.Slots.Body)
-		if c.Slots.BeltUnlocked < 1 {
-			c.Slots.BeltUnlocked = 1
+		if c.Slots.BeltUnlocked < 2 {
+			c.Slots.BeltUnlocked = 2
 		}
 		if c.Slots.BeltUnlocked > 3 {
 			c.Slots.BeltUnlocked = 3
@@ -338,6 +338,9 @@ func (g *Game) LoadGame(path string) error {
 	g.Player, removed = critterFromSave(s.Player, s.Version)
 	g.PlayerName = s.PlayerName
 	g.PlayerClass = s.PlayerClass
+	if g.PlayerClass < 0 || g.PlayerClass >= len(PlayerClasses) {
+		g.PlayerClass = 0
+	}
 	g.Turn = s.Turn
 	g.Level = s.Level
 	g.Theme = s.Theme

@@ -219,7 +219,7 @@ func (u *UI) drawPlayerScreen() {
 	u.putStr(1, 3, strings.Repeat("~", 37), 2, 0)
 	u.putStr(41, 3, strings.Repeat("~", 37), 2, 0)
 	attrs := []string{
-		fmt.Sprintf("class: %s", ClassDefs[g.PlayerClass].Name),
+		fmt.Sprintf("class: %s", PlayerClasses[g.PlayerClass].Name),
 		fmt.Sprintf("name: %s", p.Name),
 		fmt.Sprintf("strength: %d", p.STR),
 		fmt.Sprintf("toughness: %d", p.TGH),

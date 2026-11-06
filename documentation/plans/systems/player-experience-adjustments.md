@@ -1,6 +1,9 @@
 # Player Experience Adjustments — Classes, Intro, HUD and Viewport
 
-Status: **planned**
+Status: **done**
+
+Implementation status: complete. Classes, starting kits, intro, title screen,
+one-line HUD, look-description colours and the 80×46 viewport are implemented.
 Parent: [Feature plans](../README.md)
 Related: [Player redesign](player-redesign.md), [Woods level revamp](../woods/level-revamp.md), [Woods colour palette](../woods/color-palette.md)
 Scope: onboarding, class roster, intro text, HUD, look mode, starting belt slots and map viewport. Combat scope and the woods generator are unchanged.
@@ -58,7 +61,7 @@ HUD/overlay text and tests.
 
 ## 4. Class roster
 
-Five proposed zombie-fighting classes. Values are first-pass tuning numbers, not
+Five playable zombie-fighting classes. Values are first-pass tuning numbers, not
 recovered data. Skill arrays use the existing order:
 perception, dodging, unarmed, melee, ranged, throwing, searching, metabolism,
 focusing.
@@ -71,7 +74,7 @@ focusing.
 | The Mechanic | 11 | 12 | 8 | 11 | Door/wall breaker; good melee and searching, slow |
 | The Prepper | 9 | 10 | 11 | 10 | Balanced generalist; good searching and metabolism, no weakness |
 
-Proposed skills:
+Skills:
 
 | Class | PER | DOD | UNA | MEL | RNG | THR | SRCH | MET | FOC |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -81,8 +84,8 @@ Proposed skills:
 | Mechanic | 45 | 40 | 55 | 75 | 0 | 0 | 55 | 55 | 25 |
 | Prepper | 60 | 60 | 40 | 60 | 0 | 30 | 60 | 65 | 40 |
 
-Proposed starting kits (existing prototypes first; dedicated class weapons can
-replace the improvised ones later):
+Starting kits (existing prototypes first; dedicated class weapons can replace
+the improvised ones later):
 
 | Class | Hands | Body | Belt 1 | Belt 2 |
 |---|---|---|---|---|
@@ -130,17 +133,18 @@ The exact line breaks can be adjusted when the screen is implemented.
 
 ## 6. Map size and viewport
 
-Current maps are 80×80 and scroll inside an 80×46 viewport. Remove scrolling:
+Before this change, maps were 80×80 and scrolled inside an 80×46 viewport.
+Scrolling has been removed:
 
 - Map size: **80×46**, the same as the visible map area.
-- Camera offset is fixed at `(0,0)`; the map always fills the viewport.
-- Player, exit and all content must be placed inside 80×46.
-- Adapt `GenerateLevel` from the 2×8 section grid to a 2×4 section grid
-  (80×40) plus six rows of theme terrain, then carve the usual connections.
-- Update `map_quality_test.go` and any tests that assume 80×80.
-- Update the woods level-revamp acceptance criteria from 80×80 to 80×46.
-- Keep the camera code path available for a future large-map option, but do not
-  use it in normal play.
+- New maps fill the viewport; no scrolling occurs in normal play.
+- Player, exit and all content are placed inside 80×46.
+- `GenerateLevel` uses a 2×5 section grid, clipping the final section row to
+  the map height, then carves the usual connections.
+- `map_quality_test.go` and tests that assumed 80×80 were updated.
+- The woods level-revamp acceptance criteria were updated to 80×46.
+- The camera code path remains for compatibility with older saves and a future
+  large-map option, but new maps never scroll.
 
 Decision: apply 80×46 to **all themes** immediately. The map must never scroll
 in normal play.
@@ -202,16 +206,16 @@ the menu stays obvious. No large ASCII illustration is needed.
 
 ## 10. Acceptance criteria
 
-- [ ] Look-mode descriptions are clearly readable in all colour modes.
-- [ ] Player starts with two unlocked belt slots and a class-appropriate kit.
-- [ ] Five classes exist with distinct attributes, skills and starting equipment.
-- [ ] The intro states the infection source goal before play begins.
-- [ ] Maps are 80×46 and never scroll during normal play.
-- [ ] The permanent HUD is one line: HP, AP and weapon name.
-- [ ] The title screen keeps `HULK INFECTION` and the three menu options.
-- [ ] Title copyright reads `copyright (c) 2026 Michał Przybyłowicz`.
-- [ ] Existing saves migrate without crashing.
-- [ ] Caves, temple and time-portal levels still generate and remain reachable.
+- [x] Look-mode descriptions are clearly readable in all colour modes.
+- [x] Player starts with two unlocked belt slots and a class-appropriate kit.
+- [x] Five classes exist with distinct attributes, skills and starting equipment.
+- [x] The intro states the infection source goal before play begins.
+- [x] Maps are 80×46 and never scroll during normal play.
+- [x] The permanent HUD is one line: HP, AP and weapon name.
+- [x] The title screen keeps `HULK INFECTION` and the three menu options.
+- [x] Title copyright reads `copyright (c) 2026 Michał Przybyłowicz`.
+- [x] Existing saves migrate without crashing.
+- [x] Caves, temple and time-portal levels still generate and remain reachable.
 
 ## 11. Resolved decisions
 

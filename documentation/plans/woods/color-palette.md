@@ -257,7 +257,7 @@ should affect 5–15% of the map, not the whole screen.
 - [ ] Blood, corpses, items, zombies and villagers remain easy to see on every terrain type.
 - [ ] The nine woods levels are recognisable from their accent colour and landmark.
 - [ ] The UI remains legible and does not compete with the map.
-- [ ] Performance remains acceptable on an 80×80 map.
+- [ ] Performance remains acceptable on an 80×46 map.
 
 ## 8. Open questions
 
