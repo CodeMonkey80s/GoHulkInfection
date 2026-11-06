@@ -25,6 +25,10 @@ own revamp plans are written.
 
 ## Cross-cutting systems
 
+| Feature | Status | Document |
+|---|---|---|
+| Command and scope reduction — melee-only combat, no ranged/unarmed, FOV-limited throwing | Proposed | [systems/command-scope-reduction.md](systems/command-scope-reduction.md) |
+
 The woods plan intentionally includes the first pass of:
 
 - villager and animal factions
@@ -33,5 +37,6 @@ The woods plan intentionally includes the first pass of:
 - signature loot categories
 - true-colour rendering with fallback
 
-When those systems grow beyond the woods, they should be split into their own
-documents under `documentation/plans/systems/` and linked here.
+The command reduction applies globally and should be validated in the woods
+first. When the remaining systems grow beyond the woods, they should get their
+own documents under `documentation/plans/systems/` and be linked here.
