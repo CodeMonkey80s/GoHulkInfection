@@ -9,6 +9,11 @@ Implementation status: complete.  Slots, HP/AP, the minimal HUD, the
 player-slot overlay and directional melee are implemented.  Throwing is
 deferred to a separate future plan.
 
+The belt-start and HUD details below are superseded by
+[Player experience adjustments](player-experience-adjustments.md): the player
+will start with two belt slots and the permanent HUD becomes one line showing
+only HP, AP and the weapon name.
+
 This plan redesigns the player around a small, tactical set of ADOM-style
 equipment slots. It assumes the melee-only command scope from the current
 feature branch: no ranged weapons, no ammo, no unarmed attack, no tactics.
