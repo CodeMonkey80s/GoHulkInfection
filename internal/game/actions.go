@@ -154,7 +154,7 @@ func (g *Game) WaitTurn() {
 }
 
 func (g *Game) PickUp() {
-	if g.State != StatePlaying {
+	if g.State != StatePlaying && g.State != StateInventory {
 		return
 	}
 	it := g.ItemAt(g.Player.X, g.Player.Y)

@@ -115,8 +115,8 @@ func (u *UI) drawInventory() {
 	u.putStr(1, 16, "[ , ] item here: "+itemSummary(ground), 10, 0)
 
 	u.fill(0, 22, screenW, 2, ' ', 8, 0)
-	u.putStr(1, 22, "a hands   c/d/e belt   A-E drop   i/z close", 8, 0)
-	u.putStr(1, 23, "Body armour is worn; B drops it.  Pick up with , on the map.", 8, 0)
+	u.putStr(1, 22, "a hands   c/d/e belt   , pick up   A-E drop   i/z close", 8, 0)
+	u.putStr(1, 23, "Body armour is worn; B drops it.", 8, 0)
 }
 
 func slotStats(it *Item) string {
@@ -195,6 +195,8 @@ func (u *UI) handleInventory(e *tcell.EventKey) {
 		g.DropSlot(SlotBelt2)
 	case 'E':
 		g.DropSlot(SlotBelt3)
+	case ',':
+		g.PickUp()
 	case 'z', 'q', 'i':
 		g.State = StatePlaying
 	}

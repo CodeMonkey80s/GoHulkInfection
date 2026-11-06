@@ -51,7 +51,7 @@ func TestPlayerClassRoster(t *testing.T) {
 			t.Fatalf("%s has a non-positive attribute", c.Name)
 		}
 		kit := ClassStartingKit(i)
-		if kit.Hands < 0 || kit.Body < 0 || len(kit.Belt) != 2 {
+		if kit.Hands < 0 || kit.Body < 0 || len(kit.Belt) != 1 {
 			t.Fatalf("%s has an invalid starting kit: %+v", c.Name, kit)
 		}
 		for _, proto := range append([]int{kit.Hands, kit.Body}, kit.Belt...) {
@@ -86,10 +86,11 @@ func TestSetupNewGameUsesClassValuesAndKit(t *testing.T) {
 		if g.Player.Slots.Body == nil || g.Player.Slots.Body.Proto != kit.Body {
 			t.Fatalf("%s starting body does not match kit", def.Name)
 		}
-		for i := 0; i < 2; i++ {
-			if g.Player.Slots.Belt[i] == nil || g.Player.Slots.Belt[i].Proto != kit.Belt[i] {
-				t.Fatalf("%s starting belt %d does not match kit", def.Name, i+1)
-			}
+		if g.Player.Slots.Belt[0] == nil || g.Player.Slots.Belt[0].Proto != kit.Belt[0] {
+			t.Fatalf("%s starting belt 1 does not match kit", def.Name)
+		}
+		if g.Player.Slots.Belt[1] != nil {
+			t.Fatalf("%s should start with belt 2 empty", def.Name)
 		}
 		if g.Player.Slots.Belt[2] != nil {
 			t.Fatalf("%s starts with an item in locked belt 3", def.Name)
@@ -173,6 +174,25 @@ func TestCharCreateShowsFiveClassesAndKit(t *testing.T) {
 	}
 	if !strings.Contains(text, "hands: crowbar") {
 		t.Fatalf("class selection missing starting kit: %q", text)
+	}
+}
+
+func TestInventoryCommaPicksUpItem(t *testing.T) {
+	g := NewGame(704)
+	g.SetupNewGame(0, "tester")
+	g.State = StateInventory
+	it := &Item{Proto: 48, X: g.Player.X, Y: g.Player.Y, Charges: 5}
+	g.Items = append(g.Items, it)
+	u := &UI{g: g}
+	u.handleInventory(tcell.NewEventKey(tcell.KeyRune, ',', tcell.ModNone))
+	if g.ItemAt(g.Player.X, g.Player.Y) != nil {
+		t.Fatal("item was not removed from the ground")
+	}
+	if g.Player.Slots.Belt[1] == nil || g.Player.Slots.Belt[1].Proto != 48 {
+		t.Fatal("picked-up item was not placed in the free belt slot")
+	}
+	if g.State != StateInventory {
+		t.Fatalf("inventory closed after pickup: state %v", g.State)
 	}
 }
 

@@ -234,8 +234,11 @@ func TestPlayerSlotsStartAndBeltUnlock(t *testing.T) {
 	if g.Player.Slots.BeltUnlocked != 2 {
 		t.Fatalf("starting belt unlock = %d, want 2", g.Player.Slots.BeltUnlocked)
 	}
-	if g.Player.Slots.Belt[0] == nil || g.Player.Slots.Belt[1] == nil {
-		t.Fatal("starting belt items missing")
+	if g.Player.Slots.Belt[0] == nil {
+		t.Fatal("starting belt item missing")
+	}
+	if g.Player.Slots.Belt[1] != nil {
+		t.Fatal("second belt slot should start empty for loot")
 	}
 	if g.Player.Slots.Belt[2] != nil {
 		t.Fatal("third belt slot should start empty and locked")
