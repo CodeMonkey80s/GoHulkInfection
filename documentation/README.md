@@ -24,7 +24,7 @@ build file lives here.
 | Woods levels 0–8 | Planned | [woods/level-revamp.md](plans/woods/level-revamp.md) |
 | Woods true-colour palette | Proposed | [woods/color-palette.md](plans/woods/color-palette.md) |
 | Command and scope reduction (melee-only, limited throwing) | Done | [systems/command-scope-reduction.md](plans/systems/command-scope-reduction.md) |
-| Player redesign (five slots, HP/AP, minimal HUD) | Proposed | [systems/player-redesign.md](plans/systems/player-redesign.md) |
+| Player redesign (five slots, HP/AP, minimal HUD) | In progress | [systems/player-redesign.md](plans/systems/player-redesign.md) |
 | Caves levels 9–17 | Not planned yet | [plans/caves.md](plans/caves.md) |
 | Temple of the Underminer levels 18–26 | Not planned yet | [plans/temple.md](plans/temple.md) |
 | Time portal / lab level 27 | Not planned yet | [plans/time-portal.md](plans/time-portal.md) |

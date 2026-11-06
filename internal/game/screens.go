@@ -7,216 +7,128 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
-func (u *UI) groundItems() []*Item {
-	if u.g.Map == nil || u.g.Player == nil {
-		return nil
+func slotName(slot int) string {
+	switch slot {
+	case SlotHands:
+		return "Hands"
+	case SlotBody:
+		return "Body"
+	case SlotBelt1:
+		return "Belt 1"
+	case SlotBelt2:
+		return "Belt 2"
+	case SlotBelt3:
+		return "Belt 3"
 	}
-	return u.g.ItemsAt(u.g.Player.X, u.g.Player.Y)
+	return "?"
 }
 
-func (u *UI) activeList() []*Item {
-	if u.invTab == 0 {
-		return u.g.Player.Inventory
+func slotKey(slot int) string {
+	switch slot {
+	case SlotHands:
+		return "a"
+	case SlotBelt1:
+		return "c"
+	case SlotBelt2:
+		return "d"
+	case SlotBelt3:
+		return "e"
 	}
-	return u.goundItems()
+	return "-"
 }
 
-func (u *UI) goundItems() []*Item { return u.groundItems() }
-
-func (u *UI) clampInvSel() {
-	n := len(u.activeList())
-	if n == 0 {
-		u.invSel = 0
-		return
+func itemSummary(it *Item) string {
+	if it == nil {
+		return "empty"
 	}
-	if u.invSel >= n {
-		u.invSel = n - 1
+	d := it.Def()
+	if d == nil {
+		return it.Name()
 	}
-	if u.invSel < 0 {
-		u.invSel = 0
+	switch d.Kind {
+	case KindMelee, KindGrenade:
+		out := d.Name
+		if wd := d.Weapon(); wd != nil {
+			out += fmt.Sprintf("  dmg %d-%d  av %d  dv %d", wd.DmgMin, wd.DmgMax, wd.AV, wd.DV)
+		}
+		return out
+	case KindArmor:
+		return fmt.Sprintf("%s  protection melee %d%% acid %d%%", d.Name, d.ArmorMelee, d.ArmorAcid)
+	case KindMedical:
+		return fmt.Sprintf("%s  heal %d  charges %d", d.Name, d.Heal, it.Charges)
+	default:
+		return d.Name
 	}
 }
 
 func (u *UI) drawInventory() {
 	g := u.g
 	u.clear(0)
-	u.putStr(centerText("[ i ] inventory", screenW), 0, "[ i ] inventory", 2, 0)
-	inv := g.Player.Inventory
-	ground := u.groundItems()
-	invTitle := fmt.Sprintf("[ i ] items in inventory... (%d)", len(inv))
-	groundTitle := fmt.Sprintf("[ . ] items lying here... (%d)", len(ground))
-	u.putStr(1, 2, invTitle, 10, 0)
-	u.putStr(41, 2, groundTitle, 10, 0)
-	u.putStr(1, 3, strings.Repeat("~", 37), 2, 0)
-	u.putStr(41, 3, strings.Repeat("~", 37), 2, 0)
-	start := 0
-	if u.invTab == 0 && u.invSel >= 16 {
-		start = u.invSel - 15
-	}
-	for i := start; i < len(inv) && i < start+16; i++ {
-		it := inv[i]
-		y := 4 + (i - start)
-		mark := "  "
-		fg := uint8(11)
-		bg := uint8(0)
-		if u.invTab == 0 && i == u.invSel {
-			mark = "> "
-			fg = 0
-			bg = 7
+	u.putStr(centerText("[ i ] equipment", screenW), 0, "[ i ] equipment", 2, 0)
+
+	y := 3
+	slots := []int{SlotHands, SlotBody, SlotBelt1, SlotBelt2, SlotBelt3}
+	for _, slot := range slots {
+		it := g.Player.SlotItem(slot)
+		locked := false
+		if slot == SlotBelt2 && g.Player.Slots.BeltUnlocked < 2 {
+			locked = true
 		}
-		line := mark + it.Name()
-		w := it.Def()
-		if w != nil {
-			line += strings.Repeat(".", max(1, 30-len(line))) + fmt.Sprintf("%dg", w.Weight)
+		if slot == SlotBelt3 && g.Player.Slots.BeltUnlocked < 3 {
+			locked = true
 		}
-		u.putStr(1, y, fmt.Sprintf("%-38s", line), fg, bg)
-	}
-	gstart := 0
-	if u.invTab == 1 && u.invSel >= 16 {
-		gstart = u.invSel - 15
-	}
-	for i := gstart; i < len(ground) && i < gstart+16; i++ {
-		it := ground[i]
-		y := 4 + (i - gstart)
-		mark := "  "
-		fg := uint8(11)
-		bg := uint8(0)
-		if u.invTab == 1 && i == u.invSel {
-			mark = "> "
-			fg = 0
-			bg = 7
+		key := slotKey(slot)
+		label := slotName(slot)
+		if locked {
+			u.putStr(1, y, fmt.Sprintf("[%s] %-7s: locked (level %d)", key, label, 3+3*(slot-SlotBelt2)), 8, 0)
+			y += 2
+			continue
 		}
-		line := mark + it.Name()
-		if w := it.Def(); w != nil {
-			line += strings.Repeat(".", max(1, 30-len(line))) + fmt.Sprintf("%dg", w.Weight)
+		if key == "-" {
+			u.putStr(1, y, fmt.Sprintf("   %-7s: %s", label, itemSummary(it)), 11, 0)
+		} else {
+			u.putStr(1, y, fmt.Sprintf("[%s] %-7s: %s", key, label, itemSummary(it)), 11, 0)
 		}
-		u.putStr(41, y, fmt.Sprintf("%-38s", line), fg, bg)
+		y += 2
 	}
-	if len(inv) == 0 {
-		u.putStr(1, 4, "you are not carrying anything...", 8, 0)
-	}
-	if len(ground) == 0 {
-		u.putStr(41, 4, "there is nothing lying here...", 8, 0)
-	}
-	// Equipment panel.
-	u.putStr(1, 21, "[ # ] equipment...", 10, 0)
-	u.putStr(1, 22, strings.Repeat("~", 37), 2, 0)
-	slots := []string{"melee", "armor", "throwable", "tool"}
-	for i, name := range slots {
-		val := "none"
-		if it := g.Player.Equip[i]; it != nil {
-			val = it.Name()
-			if it.Charges > 0 {
-				val += fmt.Sprintf(" (%d)", it.Charges)
-			}
-		}
-		u.putStr(3, 23+i, fmt.Sprintf("%-8s: %s", name, val), 11, 0)
-	}
-	// Status.
-	u.putStr(1, 29, "[ & ] status...", 10, 0)
-	u.putStr(1, 30, strings.Repeat("~", 37), 2, 0)
-	u.putStr(3, 31, fmt.Sprintf("current weight: %dg", g.Player.Weight()), 11, 0)
-	u.putStr(3, 32, fmt.Sprintf("maximum weight: %dg", g.Player.MaxWeight()), 11, 0)
-	u.putStr(3, 33, fmt.Sprintf("burden: %s", g.Player.Burden()), 11, 0)
-	// Description panel.
-	u.putStr(41, 21, "[ ? ] description...", 10, 0)
-	u.putStr(41, 22, strings.Repeat("~", 37), 2, 0)
-	var sel *Item
-	list := u.activeList()
-	if len(list) > 0 && u.invSel < len(list) {
-		sel = list[u.invSel]
-	}
-	if sel != nil {
-		d := sel.Def()
-		if d != nil {
-			lines := wrapText(d.Desc, 37)
-			for i, l := range lines {
-				if i > 2 {
-					break
-				}
-				u.putStr(41, 23+i, l, 11, 0)
-			}
-			y := 27
-			u.putStr(41, y, "item data:", 8, 0)
-			y++
-			u.putStr(41, y, fmt.Sprintf("weight: %dg", d.Weight), 11, 0)
-			y++
-			if d.Kind == KindMelee || d.Kind == KindGrenade {
-				wd := d.Weapon()
-				if wd != nil {
-					u.putStr(41, y, fmt.Sprintf("dmg: %d-%d  av: %d  dv: %d", wd.DmgMin, wd.DmgMax, wd.AV, wd.DV), 11, 0)
-				} else {
-					u.putStr(41, y, "dmg: unknown", 11, 0)
-				}
-				y++
-			}
-			if d.Kind == KindArmor {
-				u.putStr(41, y, fmt.Sprintf("protection: melee %d%% acid %d%%", d.ArmorMelee, d.ArmorAcid), 11, 0)
-				y++
-			}
-			if d.Kind == KindGrenade {
-				u.putStr(41, y, "throwable: HE blast or fire", 11, 0)
-				y++
-			}
-			if d.Kind == KindMedical {
-				u.putStr(41, y, fmt.Sprintf("heal: %d  charges: %d", d.Heal, sel.Charges), 11, 0)
-				y++
-			}
-		}
-	}
-	u.fill(0, 48, screenW, 2, ' ', 8, 0)
-	u.putStr(1, 48, "z quit screen   tab pick up / drop item", 8, 0)
-	u.putStr(1, 49, "enter wield / wear / use   d drop   <> select", 8, 0)
+
+	ground := g.ItemAt(g.Player.X, g.Player.Y)
+	u.putStr(1, y+1, "[ , ] item here: "+itemSummary(ground), 10, 0)
+
+	u.fill(0, 46, screenW, 3, ' ', 8, 0)
+	u.putStr(1, 46, "a hands   c/d/e belt   A-E drop   z quit", 8, 0)
+	u.putStr(1, 47, "Body armour is worn; B drops it.", 8, 0)
+	u.putStr(1, 48, "Pick up with , on the map.", 8, 0)
 }
 
 func (u *UI) handleInventory(e *tcell.EventKey) {
 	g := u.g
-	list := u.activeList()
 	switch e.Key() {
-	case tcell.KeyUp:
-		u.invSel--
-		u.clampInvSel()
-	case tcell.KeyDown:
-		u.invSel++
-		u.clampInvSel()
-	case tcell.KeyTab:
-		u.invTab = 1 - u.invTab
-		u.invSel = 0
 	case tcell.KeyEscape:
 		g.State = StatePlaying
-	case tcell.KeyEnter:
-		if len(list) == 0 || u.invSel >= len(list) {
-			return
-		}
-		it := list[u.invSel]
-		if u.invTab == 1 {
-			g.RemoveItem(it)
-			g.Player.AddItem(it)
-			g.Msg("you picked up item: "+it.Name(), 10)
-			u.invSel = 0
-			u.clampInvSel()
-		} else {
-			g.UseItem(it)
-			if g.Options.Bool("optInvQuitAfterItemUse") {
-				g.State = StatePlaying
-			}
-		}
-	default:
-		switch e.Rune() {
-		case 'z', 'q', 'i':
-			g.State = StatePlaying
-		case 'd':
-			if u.invTab == 0 && len(list) > 0 && u.invSel < len(list) {
-				g.DropItem(list[u.invSel])
-				u.clampInvSel()
-			}
-		case 'j':
-			u.invSel++
-			u.clampInvSel()
-		case 'k':
-			u.invSel--
-			u.clampInvSel()
-		}
+		return
+	}
+	switch e.Rune() {
+	case 'a':
+		g.UseSlot(SlotHands)
+	case 'c':
+		g.UseSlot(SlotBelt1)
+	case 'd':
+		g.UseSlot(SlotBelt2)
+	case 'e':
+		g.UseSlot(SlotBelt3)
+	case 'A':
+		g.DropSlot(SlotHands)
+	case 'B':
+		g.DropSlot(SlotBody)
+	case 'C':
+		g.DropSlot(SlotBelt1)
+	case 'D':
+		g.DropSlot(SlotBelt2)
+	case 'E':
+		g.DropSlot(SlotBelt3)
+	case 'z', 'q', 'i':
+		g.State = StatePlaying
 	}
 }
 
@@ -237,7 +149,6 @@ func (u *UI) drawPlayerScreen() {
 		fmt.Sprintf("agility: %d", p.AGI),
 		fmt.Sprintf("intelligence: %d", p.INT),
 		fmt.Sprintf("health: %d/%d", p.HP, p.MaxHP),
-		fmt.Sprintf("weight: %d/%d", p.Weight(), p.MaxWeight()),
 		fmt.Sprintf("gold: %d", p.Gold),
 	}
 	for i, s := range attrs {

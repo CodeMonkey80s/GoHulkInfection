@@ -68,9 +68,6 @@ type UI struct {
 
 	titleSel   int
 	classSel   int
-	invTab     int // 0 inventory, 1 ground
-	invSel     int
-	invScroll  int
 	optSel     int
 	optScroll  int
 	helpSel    int
@@ -446,6 +443,13 @@ func (u *UI) drawMessages(y, rows int) {
 	}
 }
 
+func slotBrief(it *Item) string {
+	if it == nil {
+		return "-"
+	}
+	return it.Name()
+}
+
 func (u *UI) drawStatus(y int) {
 	g := u.g
 	p := g.Player
@@ -453,16 +457,16 @@ func (u *UI) drawStatus(y int) {
 	line1 := fmt.Sprintf("%-12s health: (%s)   exp: %d/%d   [lvl %d]", p.Name, p.HealthState(), p.XP, need, p.Level)
 	u.putStr(0, y, line1, 10, 0)
 	wear := "none"
-	if a := p.Equip[EquipArmor]; a != nil {
+	if a := p.BodyItem(); a != nil {
 		wear = a.Name()
 	}
 	wep := "none"
-	if w := p.Equip[EquipMelee]; w != nil {
+	if w := p.HandItem(); w != nil {
 		wep = w.Name()
 	}
-	line2 := fmt.Sprintf("weapon: %-16s wearing: %s", wep, wear)
+	line2 := fmt.Sprintf("hands: %-18s body: %-18s", wep, wear)
 	u.putStr(0, y+1, line2, 7, 0)
-	line3 := fmt.Sprintf("weight: %d/%d  burden: %s", p.Weight(), p.MaxWeight(), p.Burden())
+	line3 := fmt.Sprintf("belt: c:%s d:%s e:%s", slotBrief(p.SlotItem(SlotBelt1)), slotBrief(p.SlotItem(SlotBelt2)), slotBrief(p.SlotItem(SlotBelt3)))
 	if g.Options.Bool("optPlayerShowAVDV") {
 		line3 += fmt.Sprintf("  av:%d dv:%d", g.AttackValue(p, 1), g.DefenseValue(p))
 	}
@@ -675,7 +679,25 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 		g.MovePlayer(0, 1)
 	case '1':
 		g.MovePlayer(-1, 1)
-	case 'b':
+	case 'a':
+		g.UseSlot(SlotHands)
+	case 'c':
+		g.UseSlot(SlotBelt1)
+	case 'd':
+		g.UseSlot(SlotBelt2)
+	case 'e':
+		g.UseSlot(SlotBelt3)
+	case 'A':
+		g.DropSlot(SlotHands)
+	case 'B':
+		g.DropSlot(SlotBody)
+	case 'C':
+		g.DropSlot(SlotBelt1)
+	case 'D':
+		g.DropSlot(SlotBelt2)
+	case 'E':
+		g.DropSlot(SlotBelt3)
+	case 'v':
 		g.Bash()
 	case ',':
 		g.PickUp()
@@ -685,9 +707,6 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 		g.State = StateHelp
 	case 'i':
 		g.State = StateInventory
-		u.invSel = 0
-		u.invTab = 0
-		u.invScroll = 0
 	case 'l':
 		g.State = StateLook
 		g.LookX, g.LookY = g.Player.X, g.Player.Y

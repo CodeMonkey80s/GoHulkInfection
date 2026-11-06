@@ -138,7 +138,7 @@ func TestKillCreatesCorpse(t *testing.T) {
 func TestPlayerIsDefencelessWithoutWeapon(t *testing.T) {
 	g := NewGame(21)
 	g.SetupNewGame(0, "tester")
-	g.Player.Equip[EquipMelee] = nil
+	g.Player.Slots.Hands = nil
 	c := g.SpawnCritter(0, g.Player.X+1, g.Player.Y)
 	c.HP = 999
 	c.MaxHP = 999
@@ -153,7 +153,7 @@ func TestThrowLimitAndAmmoFreeThrowables(t *testing.T) {
 	g := NewGame(22)
 	g.SetupNewGame(0, "tester")
 	g.Options["optPlayerGodMode"] = 1
-	g.Player.Equip[EquipThrowable] = &Item{Proto: 41, X: -1, Y: -1}
+	g.Player.Slots.Hands = &Item{Proto: 41, X: -1, Y: -1}
 	radius := g.FOVRadius()
 
 	// A visible but out-of-range tile must be rejected and keep the grenade.
@@ -162,7 +162,7 @@ func TestThrowLimitAndAmmoFreeThrowables(t *testing.T) {
 	if g.Map.InBounds(farX, farY) {
 		g.Map.Visible[g.Map.idx(farX, farY)] = true
 		g.ThrowGrenade(farX, farY)
-		if g.Player.Equip[EquipThrowable] == nil {
+		if g.Player.Slots.Hands == nil {
 			t.Fatal("out-of-range throw consumed the grenade")
 		}
 	}
@@ -174,7 +174,7 @@ func TestThrowLimitAndAmmoFreeThrowables(t *testing.T) {
 	}
 	g.Map.Visible[g.Map.idx(nearX, nearY)] = true
 	g.ThrowGrenade(nearX, nearY)
-	if g.Player.Equip[EquipThrowable] != nil {
+	if g.Player.Slots.Hands != nil {
 		t.Fatal("in-range throw did not consume the grenade")
 	}
 }
@@ -221,6 +221,109 @@ func TestActiveScope(t *testing.T) {
 	for _, d := range ActiveOptionDefs() {
 		if inactiveOptions[d.Name] {
 			t.Fatalf("inactive option leaked into active list: %s", d.Name)
+		}
+	}
+}
+
+func TestPlayerSlotsStartAndBeltUnlock(t *testing.T) {
+	g := NewGame(31)
+	g.SetupNewGame(0, "tester")
+	if g.Player.Slots.Hands == nil || g.Player.Slots.Body == nil {
+		t.Fatal("starting hands/body missing")
+	}
+	if g.Player.Slots.BeltUnlocked != 1 {
+		t.Fatalf("starting belt unlock = %d, want 1", g.Player.Slots.BeltUnlocked)
+	}
+	if g.Player.Slots.Belt[0] == nil {
+		t.Fatal("starting belt item missing")
+	}
+	g.Player.Level = 2
+	g.Player.XP = 400
+	g.CheckLevelUp()
+	if g.Player.Slots.BeltUnlocked != 2 {
+		t.Fatalf("belt unlock after level 3 = %d", g.Player.Slots.BeltUnlocked)
+	}
+	g.Player.Level = 5
+	g.Player.XP = 1000
+	g.CheckLevelUp()
+	if g.Player.Slots.BeltUnlocked != 3 {
+		t.Fatalf("belt unlock after level 6 = %d", g.Player.Slots.BeltUnlocked)
+	}
+}
+
+func TestPickupAutoPlaceAndOneItemPerTile(t *testing.T) {
+	g := NewGame(32)
+	g.SetupNewGame(0, "tester")
+	g.State = StatePlaying
+	g.Player.Slots.Hands = nil
+	g.Player.Slots.Body = nil
+	g.Player.Slots.Belt = [3]*Item{}
+	g.Player.Slots.BeltUnlocked = 1
+
+	it := &Item{Proto: 8, X: g.Player.X, Y: g.Player.Y}
+	g.Items = append(g.Items, it)
+	g.PickUp()
+	if g.Player.Slots.Hands == nil || g.Player.Slots.Hands.Proto != 8 {
+		t.Fatal("item did not auto-place into Hands")
+	}
+	if g.ItemAt(g.Player.X, g.Player.Y) != nil {
+		t.Fatal("picked-up item remained on the ground")
+	}
+
+	// One item per tile: refusing to drop when occupied.
+	dropped := &Item{Proto: 47, X: -1, Y: -1, Charges: 1}
+	g.Player.Slots.Belt[0] = dropped
+	occupied := &Item{Proto: 48, X: g.Player.X, Y: g.Player.Y, Charges: 5}
+	g.Items = append(g.Items, occupied)
+	g.DropSlot(SlotBelt1)
+	if g.Player.Slots.Belt[0] != dropped {
+		t.Fatal("drop should have been refused on an occupied tile")
+	}
+}
+
+func TestPlayerSlotSaveRoundtrip(t *testing.T) {
+	g := NewGame(33)
+	g.SetupNewGame(1, "tester")
+	g.Player.Slots.BeltUnlocked = 3
+	g.Player.Slots.Belt[1] = &Item{Proto: 41, X: -1, Y: -1}
+	g.Player.Slots.Belt[2] = &Item{Proto: 47, X: -1, Y: -1, Charges: 1}
+	path := filepath.Join(t.TempDir(), "slots.json")
+	if err := g.SaveGame(path); err != nil {
+		t.Fatal(err)
+	}
+	g2 := NewGame(34)
+	if err := g2.LoadGame(path); err != nil {
+		t.Fatal(err)
+	}
+	if g2.Player.Slots.Hands == nil || g2.Player.Slots.Body == nil {
+		t.Fatal("slots not restored")
+	}
+	if g2.Player.Slots.BeltUnlocked != 3 {
+		t.Fatalf("belt unlock lost: %d", g2.Player.Slots.BeltUnlocked)
+	}
+	if g2.Player.Slots.Belt[1] == nil || g2.Player.Slots.Belt[1].Proto != 41 {
+		t.Fatal("belt 2 item lost")
+	}
+}
+
+func TestPlayerSlotMigration(t *testing.T) {
+	sc := saveCritter{Player: true, Equip: []saveItem{
+		{Proto: 16}, {Proto: 5}, {Proto: 41}, {Proto: 46},
+	}, Inv: []saveItem{{Proto: 47, Charges: 1}}}
+	c, removed := critterFromSave(sc, 2)
+	if removed != 0 {
+		t.Fatalf("unexpected removals: %d", removed)
+	}
+	if c.Slots.Hands == nil || c.Slots.Hands.Proto != 16 {
+		t.Fatal("hands migration failed")
+	}
+	if c.Slots.Body == nil || c.Slots.Body.Proto != 5 {
+		t.Fatal("body migration failed")
+	}
+	want := []int{41, 46, 47}
+	for i, proto := range want {
+		if c.Slots.Belt[i] == nil || c.Slots.Belt[i].Proto != proto {
+			t.Fatalf("belt %d = %v, want proto %d", i, c.Slots.Belt[i], proto)
 		}
 	}
 }

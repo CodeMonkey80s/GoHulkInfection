@@ -157,134 +157,23 @@ func (g *Game) PickUp() {
 	if g.State != StatePlaying {
 		return
 	}
-	items := g.ItemsAt(g.Player.X, g.Player.Y)
-	if len(items) == 0 {
+	it := g.ItemAt(g.Player.X, g.Player.Y)
+	if it == nil {
 		g.Msg("there is nothing to pick up here.", 8)
 		return
 	}
-	maxW := g.Player.MaxWeight()
-	for _, it := range items {
-		d := it.Def()
-		if d == nil {
-			continue
-		}
-		if g.Player.Weight()+d.Weight > maxW+maxW/4 {
-			g.Msg("the "+d.Name+" weights too much.", 12)
-			continue
-		}
-		g.RemoveItem(it)
-		g.Player.AddItem(it)
-		g.Msg("you picked up item: "+d.Name, 10)
-	}
-	g.EndPlayerTurn()
-}
-
-func (g *Game) DropItem(it *Item) {
-	if it == nil {
-		return
-	}
-	// Unequip if necessary.
-	for i, e := range g.Player.Equip {
-		if e == it {
-			g.Player.Equip[i] = nil
-		}
-	}
-	for i, cand := range g.Player.Inventory {
-		if cand == it {
-			g.Player.RemoveItemAt(i)
-			break
-		}
-	}
-	it.X, it.Y = g.Player.X, g.Player.Y
-	g.Items = append(g.Items, it)
-	g.Msg("you dropped item: "+it.Name(), 8)
-	g.EndPlayerTurn()
-}
-
-func (g *Game) UseItem(it *Item) {
-	if it == nil {
-		return
-	}
 	d := it.Def()
 	if d == nil {
 		return
 	}
-	switch d.Kind {
-	case KindMedical:
-		if it.Charges <= 0 {
-			it.Charges = d.Charges
-		}
-		heal := d.Heal
-		if heal <= 0 {
-			heal = 10
-		}
-		g.Player.HP += heal
-		if g.Player.HP > g.Player.MaxHP {
-			g.Player.HP = g.Player.MaxHP
-		}
-		it.Charges--
-		g.Msg(fmt.Sprintf("you use %s and heal %d health.", d.Name, heal), 10)
-		if it.Charges <= 0 {
-			g.removeFromInventory(it)
-		}
-		g.EndPlayerTurn()
-	case KindArmor:
-		g.WearItem(it)
-	case KindMelee, KindGrenade:
-		g.WieldItem(it)
-	default:
-		g.Msg("you cannot use "+d.Name+".", 8)
-	}
-}
-
-func (g *Game) removeFromInventory(it *Item) {
-	for i, cand := range g.Player.Inventory {
-		if cand == it {
-			g.Player.RemoveItemAt(i)
-			return
-		}
-	}
-}
-
-func (g *Game) WieldItem(it *Item) {
-	d := it.Def()
-	if d == nil {
+	if !g.Player.AutoPlaceItem(it) {
+		g.Msg("you have no free slot for "+d.Name+".", 8)
 		return
 	}
-	g.removeFromInventory(it)
-	switch d.Kind {
-	case KindMelee:
-		if old := g.Player.Equip[EquipMelee]; old != nil {
-			g.Player.AddItem(old)
-		}
-		it.Active = true
-		g.Player.Equip[EquipMelee] = it
-		g.Msg("you are now using "+d.Name+".", 10)
-	case KindArmor:
-		if old := g.Player.Equip[EquipArmor]; old != nil {
-			g.Player.AddItem(old)
-			g.Msg("you are now taken off "+old.Name()+".", 8)
-		}
-		it.Active = true
-		g.Player.Equip[EquipArmor] = it
-		g.Msg("you are now wearing "+d.Name+".", 10)
-	case KindGrenade:
-		if !ItemIsThrowable(it.Proto) {
-			g.Msg("you cannot use that.", 8)
-			return
-		}
-		if old := g.Player.Equip[EquipThrowable]; old != nil {
-			g.Player.AddItem(old)
-		}
-		g.Player.Equip[EquipThrowable] = it
-		g.Msg("you are now using "+d.Name+".", 10)
-	default:
-		g.Player.AddItem(it)
-	}
+	g.RemoveItem(it)
+	g.Msg("you picked up item: "+d.Name, 10)
 	g.EndPlayerTurn()
 }
-
-func (g *Game) WearItem(it *Item) { g.WieldItem(it) }
 
 func (g *Game) Bash() {
 	done := false

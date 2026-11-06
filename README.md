@@ -35,10 +35,13 @@ The player-facing command set is intentionally melee-focused.
 | `8 9 7 6 5 4 3 2 1` | move in eight directions / wait |
 | arrows | move (or move the cursor in look/throw modes) |
 | `f` | attack an adjacent enemy with the equipped melee weapon |
-| `b` | smash an adjacent door, wall or piece of furniture |
+| `a` | use the Hands item / report the weapon ready |
+| `c` `d` `e` | use, swap or consume Belt 1–3 |
+| `A` `B` `C` `D` `E` | drop Hands, Body, Belt 1–3 |
+| `v` | smash an adjacent door, wall or piece of furniture |
 | `t` | throw an HE grenade or molotov within sight range |
 | `,` | fast pick up |
-| `i` | inventory |
+| `i` | equipment |
 | `l` | look around |
 | `m` | message buffer |
 | `@` | character information |
@@ -53,6 +56,10 @@ The player-facing command set is intentionally melee-focused.
 
 Screens generally close with `z`, `q`, or `Esc`.  The player is defenceless
 without a melee weapon; there is no unarmed attack.
+
+The player has five equipment slots: Hands, Body, Belt 1–3.  Body armour is
+worn passively and removed/dropped with `B`.  Belt 2 and 3 unlock at levels 3
+and 6.
 
 ## Screens
 
@@ -78,7 +85,8 @@ without a melee weapon; there is no unarmed attack.
 * throwing only: HE grenades and molotov cocktails, limited to FOV range
 * recovered weapon table (attack/defense value and damage range per subtype)
 * armor damage reduction, armor wear, blood, corpses and limbs
-* item inventory, melee/armour/throwable equipment slots, weight and burden
+* five player slots: Hands, Body and three belt slots
+* one item maximum per ground tile; dropping onto an occupied tile is refused
 * skills, skill checks, experience, levels and free skill points
 * auto-opening doors, portals, bashing, acid/fire/smoke, rain
 * options screen wired to the gameplay (AI, doors, god/ghost mode, …)
