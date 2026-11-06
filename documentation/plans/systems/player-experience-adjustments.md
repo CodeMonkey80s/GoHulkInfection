@@ -37,6 +37,7 @@ Proposed fix:
 - Keep the current white-on-navy fallback in 16-colour mode.
 - Use `RoleDimText` for the controls line instead of the map-grey fallback.
 - Keep the description on row 45 and the controls on row 46.
+- Name the item on the selected tile, for example `Crowbar is lying here.`
 - If the description is too long, wrap or truncate it deliberately rather than
   letting it run off-screen.
 

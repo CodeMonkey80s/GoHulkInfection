@@ -2,6 +2,7 @@ package game
 
 import (
 	"fmt"
+	"unicode"
 )
 
 const (
@@ -797,11 +798,20 @@ func (g *Game) TileDescription(x, y int) string {
 	if d.Type == 3 {
 		desc += " (door)"
 	}
-	if len(g.ItemsAt(x, y)) > 0 {
-		desc += "; item lying here"
+	if items := g.ItemsAt(x, y); len(items) > 0 {
+		desc += "; " + capitalizeFirst(items[0].Name()) + " is lying here."
 	}
 	if c := g.CritterAt(x, y); c != nil && g.Map.Visible[g.Map.idx(x, y)] {
 		desc += "; the " + c.NameOrUnknown() + " is standing here"
 	}
 	return desc
+}
+
+func capitalizeFirst(s string) string {
+	if s == "" {
+		return s
+	}
+	r := []rune(s)
+	r[0] = unicode.ToUpper(r[0])
+	return string(r)
 }
