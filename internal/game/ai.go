@@ -10,7 +10,7 @@ func (g *Game) UpdateMonsters() {
 	if !g.Options.Bool("optGameUseAI") {
 		return
 	}
-	for _, c := range g.Critters {
+	for _, c := range append([]*Critter(nil), g.Critters...) {
 		if !c.IsAlive() {
 			continue
 		}
@@ -27,55 +27,170 @@ func (g *Game) UpdateMonsters() {
 }
 
 func (g *Game) MonsterTurn(c *Critter) {
-	p := g.Player
-	if p == nil || !p.IsAlive() {
-		return
-	}
-	dist := chebyshev(c.X, c.Y, p.X, p.Y)
-	canSee := dist <= 14 && g.Map.LineOfSight(c.X, c.Y, p.X, p.Y)
-	if canSee {
-		c.LastSeenX, c.LastSeenY = p.X, p.Y
-		c.Alert = 10
-		if c.Align == AlignNeutral && c.AI == AIAnimal {
-			// Animals only fight if wounded or attacked.
-			canSee = c.HP < c.MaxHP
-		}
-	}
 	switch c.AI {
 	case AIObserver:
+		p := g.Player
+		if p == nil || !p.IsAlive() {
+			return
+		}
+		dist := chebyshev(c.X, c.Y, p.X, p.Y)
+		canSee := dist <= 14 && g.Map.LineOfSight(c.X, c.Y, p.X, p.Y)
+		if canSee {
+			c.LastSeenX, c.LastSeenY = p.X, p.Y
+			c.Alert = 10
+		}
 		g.observerTurn(c, canSee, dist)
+	case AIVillager:
+		g.villagerTurn(c)
 	case AIAnimal:
-		g.animalTurn(c, canSee, dist)
+		g.animalTurn(c)
 	default:
-		g.zombieTurn(c, canSee, dist)
+		g.zombieTurn(c)
 	}
 }
 
-func (g *Game) zombieTurn(c *Critter, canSee bool, dist int) {
-	switch {
-	case canSee && dist <= 1:
-		g.MonsterAttack(c, g.Player)
-	case canSee:
-		g.stepToward(c, g.Player.X, g.Player.Y)
-	case c.Alert > 0:
-		c.Alert--
-		g.stepToward(c, c.LastSeenX, c.LastSeenY)
-	default:
-		g.wander(c)
+func (g *Game) zombieTurn(c *Critter) {
+	radius := 3
+	if c.Align == AlignEnemy && c.IsAnimal {
+		radius = 8
 	}
-}
-
-func (g *Game) animalTurn(c *Critter, canSee bool, dist int) {
-	if c.Align == AlignEnemy {
-		g.zombieTurn(c, canSee, dist)
+	target, dist := g.nearestHostile(c, radius)
+	if target != nil {
+		c.LastSeenX, c.LastSeenY = target.X, target.Y
+		c.Alert = 8
+		if dist <= 1 {
+			g.MonsterAttack(c, target)
+			return
+		}
+		g.stepToward(c, target.X, target.Y)
 		return
 	}
-	// Neutral animals flee when the player is close.
-	if canSee && dist <= 3 {
-		g.stepAway(c, g.Player.X, g.Player.Y)
+	if c.Alert > 0 {
+		c.Alert--
+		g.stepToward(c, c.LastSeenX, c.LastSeenY)
+		return
+	}
+	if c.Class == 1 && g.Roll(100) < 70 {
 		return
 	}
 	g.wander(c)
+}
+
+func (g *Game) animalTurn(c *Critter) {
+	if c.Align == AlignEnemy {
+		g.zombieTurn(c)
+		return
+	}
+	threat, _ := g.nearestAnimalThreat(c, 4)
+	if threat != nil {
+		g.stepAway(c, threat.X, threat.Y)
+		return
+	}
+	if g.Roll(100) < 60 {
+		return
+	}
+	g.wander(c)
+}
+
+func (g *Game) villagerTurn(c *Critter) {
+	enemy, dist := g.nearestHostile(c, 6)
+	if enemy == nil {
+		if g.Roll(100) < 50 {
+			return
+		}
+		g.wander(c)
+		return
+	}
+	armed := c.HandItem() != nil
+	if dist <= 1 {
+		if armed {
+			g.MonsterAttack(c, enemy)
+			return
+		}
+		if g.stepAway(c, enemy.X, enemy.Y) {
+			return
+		}
+		g.MonsterAttack(c, enemy)
+		return
+	}
+	if armed && dist <= 3 {
+		g.stepToward(c, enemy.X, enemy.Y)
+		return
+	}
+	if dist <= 5 {
+		g.stepAway(c, enemy.X, enemy.Y)
+		return
+	}
+	if g.Roll(100) < 50 {
+		return
+	}
+	g.wander(c)
+}
+
+func (g *Game) areHostile(a, b *Critter) bool {
+	if a == nil || b == nil || a == b {
+		return false
+	}
+	switch a.Align {
+	case AlignEnemy:
+		return b.Align == AlignPlayer || b.Align == AlignVillager || b.Align == AlignNeutral
+	case AlignVillager:
+		return b.Align == AlignEnemy
+	case AlignPlayer:
+		return b.Align == AlignEnemy
+	}
+	return false
+}
+
+func (g *Game) nearestHostile(c *Critter, maxDist int) (*Critter, int) {
+	best, bestDist := (*Critter)(nil), maxDist+1
+	consider := func(other *Critter) {
+		if other == nil || other == c || !other.IsAlive() || !g.areHostile(c, other) {
+			return
+		}
+		d := chebyshev(c.X, c.Y, other.X, other.Y)
+		if d > maxDist || d >= bestDist {
+			return
+		}
+		if !g.Map.LineOfSight(c.X, c.Y, other.X, other.Y) {
+			return
+		}
+		best, bestDist = other, d
+	}
+	if g.Player != nil && g.Player.IsAlive() {
+		consider(g.Player)
+	}
+	for _, other := range g.Critters {
+		consider(other)
+	}
+	return best, bestDist
+}
+
+func (g *Game) nearestAnimalThreat(c *Critter, maxDist int) (*Critter, int) {
+	best, bestDist := (*Critter)(nil), maxDist+1
+	consider := func(other *Critter) {
+		if other == nil || other == c || !other.IsAlive() {
+			return
+		}
+		if other.Align != AlignPlayer && other.Align != AlignEnemy {
+			return
+		}
+		d := chebyshev(c.X, c.Y, other.X, other.Y)
+		if d > maxDist || d >= bestDist {
+			return
+		}
+		if !g.Map.LineOfSight(c.X, c.Y, other.X, other.Y) {
+			return
+		}
+		best, bestDist = other, d
+	}
+	if g.Player != nil && g.Player.IsAlive() {
+		consider(g.Player)
+	}
+	for _, other := range g.Critters {
+		consider(other)
+	}
+	return best, bestDist
 }
 
 func (g *Game) observerTurn(c *Critter, canSee bool, dist int) {
@@ -104,8 +219,8 @@ func (g *Game) stepToward(c *Critter, tx, ty int) {
 		g.wander(c)
 		return
 	}
-	if other := g.CritterAt(nx, ny); other != nil {
-		if other.Player {
+	if other := g.CritterAt(nx, ny); other != nil && other != c {
+		if g.areHostile(c, other) {
 			g.MonsterAttack(c, other)
 		}
 		return
@@ -122,7 +237,7 @@ func (g *Game) stepToward(c *Critter, tx, ty int) {
 	g.applyMonsterTile(c)
 }
 
-func (g *Game) stepAway(c *Critter, fx, fy int) {
+func (g *Game) stepAway(c *Critter, fx, fy int) bool {
 	bestX, bestY := c.X, c.Y
 	bestD := chebyshev(c.X, c.Y, fx, fy)
 	for _, d := range dirs8 {
@@ -139,8 +254,10 @@ func (g *Game) stepAway(c *Critter, fx, fy int) {
 			bestX, bestY = nx, ny
 		}
 	}
+	moved := bestX != c.X || bestY != c.Y
 	c.X, c.Y = bestX, bestY
 	g.applyMonsterTile(c)
+	return moved
 }
 
 func (g *Game) wander(c *Critter) {
@@ -205,8 +322,10 @@ func (g *Game) findStep(c *Critter, tx, ty int) (int, int, bool) {
 			if blocked && !isDoor {
 				continue
 			}
-			if other := g.CritterAt(nx, ny); other != nil && !other.Player {
-				continue
+			if other := g.CritterAt(nx, ny); other != nil && other != c {
+				if nx != tx || ny != ty {
+					continue
+				}
 			}
 			visited[ni] = true
 			prev[ni] = cur

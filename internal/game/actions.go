@@ -10,6 +10,7 @@ func (g *Game) EndPlayerTurn() {
 		return
 	}
 	g.Turn++
+	g.processPendingRises()
 	g.applyPlayerTileEffects()
 	if g.Player.Poison > 0 {
 		if g.Turn%3 == 0 {
