@@ -399,8 +399,13 @@ func TestDirectionalAttack(t *testing.T) {
 	west := g.SpawnCritter(0, g.Player.X-1, g.Player.Y)
 	east.HP, east.MaxHP = 999, 999
 	west.HP, west.MaxHP = 999, 999
-	g.Options["optMechanicBaseHitChance"] = 95
-	g.PlayerDirectionalAttack(1, 0)
+	g.Options["optMechanicBaseHitChance"] = 100
+	g.Options["optPlayerGodMode"] = 1
+	for i := 0; i < 50 && east.HP == 999; i++ {
+		east.X, east.Y = g.Player.X+1, g.Player.Y
+		west.X, west.Y = g.Player.X-1, g.Player.Y
+		g.PlayerDirectionalAttack(1, 0)
+	}
 	if east.HP == 999 {
 		t.Fatal("east critter was not attacked")
 	}

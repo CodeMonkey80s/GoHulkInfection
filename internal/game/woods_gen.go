@@ -70,6 +70,7 @@ func (g *Game) generateWoodsLevel(level int) {
 	}
 	m.SetTile(startX, startY, tileDirtRoad)
 	m.SetTile(exitX, exitY, portalTile(0))
+	g.placeWoodsHuts(m, path, startX, startY, exitX, exitY)
 	g.placeWoodsLanterns(m, path)
 	g.scatterWoodsProps(m, startX, startY, exitX, exitY)
 

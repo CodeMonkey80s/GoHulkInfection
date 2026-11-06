@@ -393,6 +393,13 @@ func TestWoodsTileRoles(t *testing.T) {
 		int(tileLanternPost): RoleLanternGlow,
 		int(tileMud):         RoleMud,
 		int(tileReeds):       RoleReeds,
+		int(tileTable):       RoleFurniture,
+		int(tileChair):       RoleFurniture,
+		int(tileBed):         RoleCloth,
+		int(tileCrate):       RoleFurniture,
+		int(tileBarrel):      RoleFurniture,
+		int(tileFireplace):   RoleFirelight,
+		int(tileShelf):       RoleFurniture,
 	}
 	for id, want := range cases {
 		got, ok := TileColorRole(id)

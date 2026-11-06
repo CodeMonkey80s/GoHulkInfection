@@ -82,7 +82,7 @@ and 6.
 * recursive shadow-casting FOV (the algorithm credited in `contributors.txt`)
 * four level themes: woods, caves, temple of the underminer, time portal
 * woods levels 0–8 use an outdoor terrain pass with forest clusters, clearings,
-  a dirt road and lantern posts
+  a dirt road, lantern posts and road-facing huts with furniture
 * 24-bit woods palette with deterministic tile variation, true-colour UI
   panels and 16-colour DOS fallback
 * turn/energy based critters with zombie, observer and animal AI
