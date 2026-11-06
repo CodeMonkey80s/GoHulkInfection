@@ -105,3 +105,7 @@ layouts and what was exact vs. approximated.
 
 The original game is copyright © 2006, 2007 by Michał Przybyłowicz.  This port
 is a preservation/reimplementation effort and keeps the original notices.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
