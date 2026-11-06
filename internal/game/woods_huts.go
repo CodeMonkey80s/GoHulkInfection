@@ -7,8 +7,11 @@ type woodsHut struct {
 	doorY  int
 }
 
-func (g *Game) placeWoodsHuts(m *Map, path [][2]int, startX, startY, exitX, exitY int) []woodsHut {
-	want := 2 + g.Roll(5)
+func (g *Game) placeWoodsHuts(m *Map, path [][2]int, startX, startY, exitX, exitY, minHuts, maxHuts int) []woodsHut {
+	if maxHuts < minHuts {
+		maxHuts = minHuts
+	}
+	want := minHuts + g.Roll(maxHuts-minHuts+1)
 	huts := make([]woodsHut, 0, want)
 	if len(path) < 12 {
 		return huts
@@ -23,7 +26,7 @@ func (g *Game) placeWoodsHuts(m *Map, path [][2]int, startX, startY, exitX, exit
 			if len(huts) >= want {
 				return
 			}
-			for offset := 1; offset <= 5; offset++ {
+			for offset := 1; offset <= 10; offset++ {
 				if h, ok := g.tryPlaceHut(m, p, side, offset, startX, startY, exitX, exitY, huts); ok {
 					huts = append(huts, h)
 					return
@@ -79,7 +82,7 @@ func (g *Game) tryPlaceHut(m *Map, p, side [2]int, offset int, startX, startY, e
 	for y := y0; y <= y1; y++ {
 		for x := x0; x <= x1; x++ {
 			t := m.Tile(x, y)
-			if t == tileDirtRoad || t == portalTile(0) || t == tileRiverBank || isWoodsWater(t) {
+			if t == tileDirtRoad || t == tileWoodenBridge || t == portalTile(0) || t == tileRiverBank || isWoodsWater(t) || isWoodsStructure(t) {
 				return woodsHut{}, false
 			}
 		}

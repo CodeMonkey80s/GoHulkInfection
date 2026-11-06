@@ -31,6 +31,27 @@ var (
 	tileWoodenBridge uint8
 	tileStoneBridge  uint8
 	tileLilyPad      uint8
+	tileOrchardTree  uint8
+	tileBeehive      uint8
+	tileCiderPress   uint8
+	tileGravestone   uint8
+	tileIronFence    uint8
+	tileCryptDoor    uint8
+	tileMillStone    uint8
+	tileTent         uint8
+	tileCampfire     uint8
+	tileCage         uint8
+	tileDryingRack   uint8
+	tileMushroomRing uint8
+	tileDruidAltar   uint8
+	tileWell         uint8
+	tileCart         uint8
+	tileMarketStall  uint8
+	tileHaystack     uint8
+	tileKiln         uint8
+	tileChapelAltar  uint8
+	tileBellTower    uint8
+	tileWoodpile     uint8
 )
 
 var woodsTileRoles = map[int]ColorRole{}
@@ -126,6 +147,90 @@ func init() {
 		Name: "lily pad", Type: 1, Glyph: 'o', Color: 10,
 		BlockMove: false, BlockSight: false, Partner: -1,
 	})
+	tileOrchardTree = add(TileDef{
+		Name: "orchard tree", Type: 1, Glyph: 't', Color: 10,
+		BlockMove: true, BlockSight: true, Partner: -1,
+	})
+	tileBeehive = add(TileDef{
+		Name: "beehive", Type: 2, Glyph: 'B', Color: 14,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileCiderPress = add(TileDef{
+		Name: "cider press", Type: 2, Glyph: 'P', Color: 6,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileGravestone = add(TileDef{
+		Name: "gravestone", Type: 2, Glyph: '+', Color: 7,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileIronFence = add(TileDef{
+		Name: "iron fence", Type: 2, Glyph: '|', Color: 8,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileCryptDoor = add(TileDef{
+		Name: "crypt door", Type: 2, Glyph: '+', Color: 8,
+		BlockMove: true, BlockSight: true, Partner: -1,
+	})
+	tileMillStone = add(TileDef{
+		Name: "mill stone", Type: 2, Glyph: 'O', Color: 7,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileTent = add(TileDef{
+		Name: "tent", Type: 2, Glyph: '^', Color: 6,
+		BlockMove: true, BlockSight: true, Partner: -1,
+	})
+	tileCampfire = add(TileDef{
+		Name: "campfire", Type: 2, Glyph: '&', Color: 12,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileCage = add(TileDef{
+		Name: "cage", Type: 2, Glyph: 'X', Color: 8,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileDryingRack = add(TileDef{
+		Name: "drying rack", Type: 2, Glyph: '=', Color: 6,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileMushroomRing = add(TileDef{
+		Name: "mushroom ring", Type: 1, Glyph: '"', Color: 13,
+		BlockMove: false, BlockSight: false, Partner: -1,
+	})
+	tileDruidAltar = add(TileDef{
+		Name: "druid altar", Type: 2, Glyph: 'A', Color: 7,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileWell = add(TileDef{
+		Name: "well", Type: 2, Glyph: 'W', Color: 7,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileCart = add(TileDef{
+		Name: "cart", Type: 2, Glyph: 'D', Color: 6,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileMarketStall = add(TileDef{
+		Name: "market stall", Type: 2, Glyph: 'M', Color: 4,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileHaystack = add(TileDef{
+		Name: "haystack", Type: 2, Glyph: 'H', Color: 14,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileKiln = add(TileDef{
+		Name: "kiln", Type: 2, Glyph: 'K', Color: 8,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileChapelAltar = add(TileDef{
+		Name: "chapel altar", Type: 2, Glyph: 'A', Color: 14,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileBellTower = add(TileDef{
+		Name: "bell tower", Type: 2, Glyph: 'B', Color: 7,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileWoodpile = add(TileDef{
+		Name: "woodpile", Type: 2, Glyph: '=', Color: 6,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
 
 	woodsTileRoles = map[int]ColorRole{
 		int(tileDirtRoad):     RoleDirtRoad,
@@ -149,5 +254,26 @@ func init() {
 		int(tileWoodenBridge): RoleBridgeWood,
 		int(tileStoneBridge):  RoleStoneLight,
 		int(tileLilyPad):      RoleFrog,
+		int(tileOrchardTree):  RoleOrchardLeaf,
+		int(tileBeehive):      RoleHay,
+		int(tileCiderPress):   RoleFurniture,
+		int(tileGravestone):   RoleGravestone,
+		int(tileIronFence):    RoleIronFence,
+		int(tileCryptDoor):    RoleCrypt,
+		int(tileMillStone):    RoleStoneLight,
+		int(tileTent):         RoleCloth,
+		int(tileCampfire):     RoleFirelight,
+		int(tileCage):         RoleIronDark,
+		int(tileDryingRack):   RoleWoodWall,
+		int(tileMushroomRing): RolePotionPurple,
+		int(tileDruidAltar):   RoleAltarStone,
+		int(tileWell):         RoleStoneWall,
+		int(tileCart):         RoleWoodLight,
+		int(tileMarketStall):  RoleMarketCloth,
+		int(tileHaystack):     RoleHay,
+		int(tileKiln):         RoleStoneWall,
+		int(tileChapelAltar):  RoleAltarStone,
+		int(tileBellTower):    RoleStoneLight,
+		int(tileWoodpile):     RoleStump,
 	}
 }
