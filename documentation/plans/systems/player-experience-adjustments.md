@@ -1,6 +1,6 @@
 # Player Experience Adjustments — Classes, Intro, HUD and Viewport
 
-Status: **proposed**
+Status: **planned**
 Parent: [Feature plans](../README.md)
 Related: [Player redesign](player-redesign.md), [Woods level revamp](../woods/level-revamp.md), [Woods colour palette](../woods/color-palette.md)
 Scope: onboarding, class roster, intro text, HUD, look mode, starting belt slots and map viewport. Combat scope and the woods generator are unchanged.
@@ -21,26 +21,23 @@ player redesign where they differ.
 - Keep the whole map on screen and remove scrolling.
 - Start the player with enough belt capacity to make early loot choices.
 
-## 2. Look mode visibility
+## 2. Look mode description readability
 
-Current look mode draws the selected glyph with a fixed black foreground on a
-light-grey background. Items and terrain details can disappear against that
-highlight, especially after the true-colour background change.
+The cursor highlight is acceptable. The problem is the description line: it is
+hard to read against the current blue background.
 
 Proposed fix:
 
-- Use `RoleSelectionBackground` (`#4A5A3A`) and `RoleSelectionText`
-  (`#F2E6C9`) for the look/throw cursor in true-colour and 256-colour modes.
-- Keep the current black-on-silver highlight in 16-colour fallback.
-- Preserve the selected tile's item or critter foreground colour instead of
-  forcing black; draw it on the selection background.
-- Extend the look line to name what is there, for example:
-  `look: grass; item: bandage [12:4] arrows move  enter/esc quit`.
-- Keep the map background behind the cursor at the normal map background role;
-  only the selected cell is highlighted.
+- Keep the existing cursor highlight and tile glyph colours.
+- Draw the look description on `RolePanelBackground` (`#141812`) with
+  `RolePrimaryText` (`#D6CBB0`) in true-colour and 256-colour modes.
+- Keep the current white-on-navy fallback in 16-colour mode.
+- Use `RoleDimText` for the controls line instead of the map-grey fallback.
+- Keep the description on row 45 and the controls on row 46.
+- If the description is too long, wrap or truncate it deliberately rather than
+  letting it run off-screen.
 
-Acceptance: terrain, items and critters remain readable on the selected cell in
-all three colour modes.
+Acceptance: the look description is clearly readable in all three colour modes.
 
 ## 3. Starting belt slots
 
@@ -48,7 +45,7 @@ The player starts with **two unlocked belt slots**:
 
 - Belt 1 (`c`) — available from the start.
 - Belt 2 (`d`) — available from the start.
-- Belt 3 (`e`) — proposed unlock at level 4 (was level 6).
+- Belt 3 (`e`) — unlock stays at level 6.
 
 Starting kit placement:
 
@@ -70,7 +67,7 @@ focusing.
 |---|---:|---:|---:|---:|---|
 | The Butcher | 14 | 13 | 8 | 6 | Heavy melee bruiser; highest HP and melee, poor dodging and searching |
 | The Hunter | 10 | 9 | 13 | 8 | Fast scout; best perception and dodging, decent throwing |
-| The Field Medic | 8 | 11 | 9 | 13 | Sustain specialist; best metabolism and healing, weak melee |
+| The Medic | 8 | 11 | 9 | 13 | Sustain specialist; best metabolism and healing, weak melee |
 | The Mechanic | 11 | 12 | 8 | 11 | Door/wall breaker; good melee and searching, slow |
 | The Prepper | 9 | 10 | 11 | 10 | Balanced generalist; good searching and metabolism, no weakness |
 
@@ -80,7 +77,7 @@ Proposed skills:
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | Butcher | 35 | 40 | 70 | 90 | 0 | 0 | 35 | 55 | 15 |
 | Hunter | 70 | 75 | 35 | 65 | 0 | 40 | 60 | 45 | 30 |
-| Field Medic | 55 | 50 | 30 | 55 | 0 | 0 | 50 | 80 | 45 |
+| Medic | 55 | 50 | 30 | 55 | 0 | 0 | 50 | 80 | 45 |
 | Mechanic | 45 | 40 | 55 | 75 | 0 | 0 | 55 | 55 | 25 |
 | Prepper | 60 | 60 | 40 | 60 | 0 | 30 | 60 | 65 | 40 |
 
@@ -91,19 +88,19 @@ replace the improvised ones later):
 |---|---|---|---|---|
 | Butcher | hammer | jacket | bandage | armour vial |
 | Hunter | crowbar | jacket | bandage | armour vial |
-| Field Medic | pipe | jacket | medkit | bandage |
+| Medic | pipe | jacket | medkit | bandage |
 | Mechanic | wrench | jacket | bandage | armour vial |
 | Prepper | crowbar | jacket | medkit | bandage |
 
-Optional class traits, if we want more than stats:
+Passive traits are deferred to a later pass. Candidates:
 
 - Butcher: better bashing with heavy weapons.
 - Hunter: +1 FOV radius or faster spotting.
-- Field Medic: stronger healing from medical items.
+- Medic: stronger healing from medical items.
 - Mechanic: faster bashing of doors and wooden obstacles.
 - Prepper: slightly better loot/search results.
 
-Keep traits out of the first pass unless they are cheap to implement.
+Do not implement traits in this pass.
 
 Implementation note: add starting-kit fields to `ClassDef` or a separate class
 kit table instead of hard-coding `switch class` cases in `SetupNewGame`.
@@ -145,8 +142,8 @@ Current maps are 80×80 and scroll inside an 80×46 viewport. Remove scrolling:
 - Keep the camera code path available for a future large-map option, but do not
   use it in normal play.
 
-Open question: apply 80×46 to every theme now, or only to woods first. The
-simplest implementation is every theme, because the map viewport is global.
+Decision: apply 80×46 to **all themes** immediately. The map must never scroll
+in normal play.
 
 ## 7. HUD
 
@@ -168,56 +165,11 @@ Rules:
   details.
 - Row 47 holds the HUD; rows 48–49 stay clear.
 
-## 8. Title screen options
+## 8. Title screen — Containment Briefing
 
-Keep the words `HULK INFECTION` and the New game / Continue / Quit menu.
-Copyright becomes `copyright (c) 2026 <author>`.
-
-### Option A — The Dead Signal
-
-Bold, minimal, high-contrast title with a short warning line. Closest to the
-current screen but modernised.
-
-```text
-################################################################################
-#                                                                              #
-#      H  U  L  K     I  N  F  E  C  T  I  O  N                               #
-#      ==========================================                              #
-#                                                                              #
-#                    no one is coming to save you                              #
-#                                                                              #
-#                         [ new game ]                                         #
-#                         [ continue ]                                         #
-#                         [   quit   ]                                         #
-#                                                                              #
-#                                                                              #
-#                    copyright (c) 2026 <author>                               #
-################################################################################
-```
-
-### Option B — The Last Clearing
-
-An atmospheric ASCII scene: trees, a lone `@`, zombies and the title in the
-sky. Most distinct from the other menus, but more art to maintain.
-
-```text
-                    .   .   .   HULK INFECTION   .   .   .
-                 ~~~~~      the woods are listening      ~~~~~
-                          t    t      T      t
-                       t       @      z    t
-                     ~~~~~   ..  ...  ..   ~~~~~
-
-                          [ new game ]
-                          [ continue ]
-                          [   quit   ]
-
-                    copyright (c) 2026 <author>
-```
-
-### Option C — Containment Briefing
-
-A dark case-file/containment-report frame. Keeps the title prominent, gives the
-setting immediately, and is easy to implement with box-drawing characters.
+Chosen design: **Option C, Containment Briefing**. Keep the words
+`HULK INFECTION` and the New game / Continue / Quit menu. Copyright becomes
+`copyright (c) 2026 Michał Przybyłowicz`.
 
 ```text
 +------------------------------------------------------------------------------+
@@ -231,43 +183,42 @@ setting immediately, and is easy to implement with box-drawing characters.
 |  > continue                                                                  |
 |  > quit                                                                      |
 |                                                                              |
-|  copyright (c) 2026 <author>                                                 |
+|  copyright (c) 2026 Michał Przybyłowicz                                      |
 +------------------------------------------------------------------------------+
 ```
 
-Recommendation: **Option C**. It fits the grim tone, keeps the menu obvious and
-does not depend on a large ASCII illustration.
+The title remains the strongest element, the setting is stated immediately and
+the menu stays obvious. No large ASCII illustration is needed.
 
 ## 9. Implementation order
 
 1. Class data and starting kits, including two starting belt slots.
 2. Map size and viewport changes, plus generator/test updates.
 3. One-line HUD.
-4. Look-mode highlight and description.
+4. Look-mode description readability.
 5. Intro text.
 6. Chosen title screen.
 7. Save migration, tests and documentation updates.
 
 ## 10. Acceptance criteria
 
-- [ ] Look mode keeps terrain, items and critters readable on the selected cell.
+- [ ] Look-mode descriptions are clearly readable in all colour modes.
 - [ ] Player starts with two unlocked belt slots and a class-appropriate kit.
 - [ ] Five classes exist with distinct attributes, skills and starting equipment.
 - [ ] The intro states the infection source goal before play begins.
 - [ ] Maps are 80×46 and never scroll during normal play.
 - [ ] The permanent HUD is one line: HP, AP and weapon name.
 - [ ] The title screen keeps `HULK INFECTION` and the three menu options.
-- [ ] Title copyright reads `copyright (c) 2026 <author>`.
+- [ ] Title copyright reads `copyright (c) 2026 Michał Przybyłowicz`.
 - [ ] Existing saves migrate without crashing.
 - [ ] Caves, temple and time-portal levels still generate and remain reachable.
 
-## 11. Open decisions
+## 11. Resolved decisions
 
-- Which title design: A, B or C?
-- What name should appear in the copyright line?
-- Belt 3 unlock: level 4 as proposed, or keep level 6?
-- Should the 80×46 map size apply to every theme immediately?
-- Keep the five class names as proposed, or rename any of them?
-- Implement class traits now, or keep the first pass to stats and kits only?
-- Does “look mode barely visible” mean the cursor highlight, the description
-  line, or both?
+- Title design: **Containment Briefing**.
+- Copyright: `copyright (c) 2026 Michał Przybyłowicz`.
+- Belt 3 unlock stays at level 6.
+- Map size 80×46 applies to all themes; no scrolling in normal play.
+- Class names: Butcher, Hunter, Medic, Mechanic, Prepper.
+- Class passives are deferred to a later pass.
+- Look mode: keep the cursor highlight; fix the description line readability.
