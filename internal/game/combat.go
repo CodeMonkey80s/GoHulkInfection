@@ -208,6 +208,9 @@ func (g *Game) DamageCritter(target *Critter, dmg int, source *Critter, dtype in
 	if target.Align == AlignNeutral && source != nil && source.Player {
 		target.Align = AlignEnemy
 	}
+	if target.Align == AlignVillager && source != nil && source.Player {
+		target.Align = AlignEnemy
+	}
 	if target.Player && g.Options.Bool("optPlayerGodMode") {
 		g.Msg("your god mode absorbs the damage.", 8)
 		return
@@ -292,8 +295,47 @@ func (g *Game) KillCritter(target, killer *Critter) {
 		g.Msg(fmt.Sprintf("you gain %d experience points.", xp), 10)
 		g.CheckLevelUp()
 	}
+	if target.Align == AlignVillager && killer != nil && killer.Align == AlignEnemy && killer.Class == 1 {
+		g.PendingRises = append(g.PendingRises, PendingRise{X: target.X, Y: target.Y, Turns: 1 + g.Roll(3)})
+		g.Msg("the villager's body twitches.", 8)
+	}
 	g.CreateRemains(target)
 	g.RemoveCritter(target)
+}
+
+func (g *Game) processPendingRises() {
+	for i := 0; i < len(g.PendingRises); {
+		pr := &g.PendingRises[i]
+		pr.Turns--
+		if pr.Turns > 0 {
+			i++
+			continue
+		}
+		if g.spawnCritterNear(0, pr.X, pr.Y) != nil {
+			g.Msg("a villager rises as a zombie.", 12)
+		}
+		g.PendingRises = append(g.PendingRises[:i], g.PendingRises[i+1:]...)
+	}
+}
+
+func (g *Game) spawnCritterNear(proto, x, y int) *Critter {
+	if g.Map != nil && g.Map.IsPassable(x, y) && g.CritterAt(x, y) == nil {
+		return g.SpawnCritter(proto, x, y)
+	}
+	for radius := 1; radius <= 6; radius++ {
+		for dy := -radius; dy <= radius; dy++ {
+			for dx := -radius; dx <= radius; dx++ {
+				if abs(dx) != radius && abs(dy) != radius {
+					continue
+				}
+				nx, ny := x+dx, y+dy
+				if g.Map != nil && g.Map.IsPassable(nx, ny) && g.CritterAt(nx, ny) == nil {
+					return g.SpawnCritter(proto, nx, ny)
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func (g *Game) CreateRemains(c *Critter) {

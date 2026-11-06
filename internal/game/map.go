@@ -614,6 +614,16 @@ func (g *Game) SpawnPopulation() {
 		proto := pool[g.Roll(len(pool))]
 		g.SpawnCritter(proto, x, y)
 	}
+	if theme == 0 {
+		for i := 0; i < 2+g.Roll(3); i++ {
+			proto := villagerProtos[g.Roll(len(villagerProtos))]
+			g.spawnRandomCritter(proto, 10)
+		}
+		for i := 0; i < 3+g.Roll(4); i++ {
+			proto := neutralWoodsAnimals[g.Roll(len(neutralWoodsAnimals))]
+			g.spawnRandomCritter(proto, 8)
+		}
+	}
 	// Ground items.
 	itemPool := itemSpawnPool(theme, g.Level)
 	for i := 0; i < 8+g.Roll(10); i++ {
@@ -639,8 +649,12 @@ func spawnPool(theme, level int) []int {
 	switch theme {
 	case 0:
 		p := []int{0, 0, 1, 2, 3, 4, 14, 15}
+		p = append(p, villagerProto, rabbitProto, foxProto, boarProto, crowProto, frogProto)
 		if level > 3 {
-			p = append(p, 5, 6)
+			p = append(p, 5, 6, 14)
+		}
+		if level == 3 || level == 6 {
+			p = append(p, villagerProto, militiaProto, villagerProto)
 		}
 		return p
 	case 1:
@@ -680,29 +694,44 @@ func itemSpawnPool(theme, level int) []int {
 	return filterAvailableItems(base)
 }
 
+func (g *Game) spawnRandomCritter(proto, minDist int) *Critter {
+	for i := 0; i < 200; i++ {
+		x, y := g.Map.RandomFree(g.RNG)
+		if abs(x-g.Player.X)+abs(y-g.Player.Y) < minDist {
+			continue
+		}
+		if g.CritterAt(x, y) != nil {
+			continue
+		}
+		return g.SpawnCritter(proto, x, y)
+	}
+	return nil
+}
+
 func (g *Game) SpawnCritter(proto, x, y int) *Critter {
 	if proto < 0 || proto >= len(CritterDefs) {
 		return nil
 	}
 	d := &CritterDefs[proto]
 	c := &Critter{
-		Proto:  proto,
-		Name:   d.Name,
-		X:      x,
-		Y:      y,
-		STR:    d.STR,
-		TGH:    d.TGH,
-		AGI:    d.AGI,
-		INT:    d.INT,
-		SPD:    d.SPD,
-		Align:  d.Align,
-		Class:  d.Class,
-		AI:     d.AI,
-		Color:  d.Color,
-		Glyph:  d.Glyph,
-		Skills: d.Skills,
-		Level:  d.Level,
-		XP:     d.XP,
+		Proto:    proto,
+		Name:     d.Name,
+		X:        x,
+		Y:        y,
+		STR:      d.STR,
+		TGH:      d.TGH,
+		AGI:      d.AGI,
+		INT:      d.INT,
+		SPD:      d.SPD,
+		Align:    d.Align,
+		Class:    d.Class,
+		AI:       d.AI,
+		Color:    d.Color,
+		Glyph:    d.Glyph,
+		Skills:   d.Skills,
+		Level:    d.Level,
+		XP:       d.XP,
+		IsAnimal: d.Class == 0,
 	}
 	c.MaxHP = c.TGH * 3
 	if c.MaxHP < 1 {
@@ -728,6 +757,20 @@ func (g *Game) SpawnCritter(proto, x, y int) *Critter {
 			c.Equip[EquipMelee] = &Item{Proto: 8 + g.Roll(4), X: -1, Y: -1}
 		} else {
 			c.Equip[EquipArmor] = &Item{Proto: 5 + g.Roll(3), X: -1, Y: -1}
+		}
+	}
+	if c.Align == AlignVillager {
+		if c.Name == "militia" || g.Roll(100) < 40 {
+			proto := itemProtoByName("club")
+			if g.Roll(2) == 0 {
+				proto = itemProtoByName("spear")
+			}
+			if proto >= 0 {
+				c.Equip[EquipMelee] = &Item{Proto: proto, X: -1, Y: -1}
+			}
+		}
+		if g.Roll(100) < 30 {
+			c.Equip[EquipArmor] = &Item{Proto: 5, X: -1, Y: -1}
 		}
 	}
 	g.Critters = append(g.Critters, c)

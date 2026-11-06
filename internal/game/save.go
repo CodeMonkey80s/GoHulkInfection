@@ -80,24 +80,25 @@ type saveMap struct {
 }
 
 type saveGame struct {
-	Version     int            `json:"version"`
-	Map         saveMap        `json:"map"`
-	Player      saveCritter    `json:"player"`
-	PlayerName  string         `json:"player_name"`
-	PlayerClass int            `json:"player_class"`
-	Critters    []saveCritter  `json:"critters"`
-	Items       []saveItem     `json:"items"`
-	Messages    []saveMessage  `json:"messages"`
-	Turn        int            `json:"turn"`
-	Level       int            `json:"level"`
-	Theme       int            `json:"theme"`
-	Weather     int            `json:"weather"`
-	WeatherLeft int            `json:"weather_left"`
-	Options     map[string]int `json:"options"`
-	HintsShown  int            `json:"hints"`
-	FreePoints  int            `json:"free_points"`
-	Score       int            `json:"score"`
-	WoodLoot    []int          `json:"wood_loot,omitempty"`
+	Version      int            `json:"version"`
+	Map          saveMap        `json:"map"`
+	Player       saveCritter    `json:"player"`
+	PlayerName   string         `json:"player_name"`
+	PlayerClass  int            `json:"player_class"`
+	Critters     []saveCritter  `json:"critters"`
+	Items        []saveItem     `json:"items"`
+	Messages     []saveMessage  `json:"messages"`
+	Turn         int            `json:"turn"`
+	Level        int            `json:"level"`
+	Theme        int            `json:"theme"`
+	Weather      int            `json:"weather"`
+	WeatherLeft  int            `json:"weather_left"`
+	Options      map[string]int `json:"options"`
+	HintsShown   int            `json:"hints"`
+	FreePoints   int            `json:"free_points"`
+	Score        int            `json:"score"`
+	WoodLoot     []int          `json:"wood_loot,omitempty"`
+	PendingRises []PendingRise  `json:"pending_rises,omitempty"`
 }
 
 func itemToSave(it *Item) saveItem {
@@ -291,20 +292,21 @@ func critterFromSave(s saveCritter, version int) (*Critter, int) {
 
 func (g *Game) SaveGame(path string) error {
 	s := saveGame{
-		Version:     saveVersion,
-		Player:      critterToSave(g.Player),
-		PlayerName:  g.PlayerName,
-		PlayerClass: g.PlayerClass,
-		Turn:        g.Turn,
-		Level:       g.Level,
-		Theme:       g.Theme,
-		Weather:     int(g.Weather),
-		WeatherLeft: g.WeatherLeft,
-		Options:     map[string]int(g.Options),
-		HintsShown:  g.HintsShown,
-		FreePoints:  g.FreePoints,
-		Score:       g.Score,
-		WoodLoot:    append([]int(nil), g.WoodLoot[:]...),
+		Version:      saveVersion,
+		Player:       critterToSave(g.Player),
+		PlayerName:   g.PlayerName,
+		PlayerClass:  g.PlayerClass,
+		Turn:         g.Turn,
+		Level:        g.Level,
+		Theme:        g.Theme,
+		Weather:      int(g.Weather),
+		WeatherLeft:  g.WeatherLeft,
+		Options:      map[string]int(g.Options),
+		HintsShown:   g.HintsShown,
+		FreePoints:   g.FreePoints,
+		Score:        g.Score,
+		WoodLoot:     append([]int(nil), g.WoodLoot[:]...),
+		PendingRises: append([]PendingRise(nil), g.PendingRises...),
 	}
 	s.Map = saveMap{
 		W: g.Map.W, H: g.Map.H, Tiles: g.Map.Tiles, Seen: g.Map.Seen, Visible: g.Map.Visible,
@@ -355,6 +357,7 @@ func (g *Game) LoadGame(path string) error {
 	g.HintsShown = s.HintsShown
 	g.FreePoints = s.FreePoints
 	g.Score = s.Score
+	g.PendingRises = s.PendingRises
 	if validWoodLootAssignment(s.WoodLoot) {
 		copy(g.WoodLoot[:], s.WoodLoot)
 	} else {

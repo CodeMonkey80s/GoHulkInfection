@@ -17,7 +17,7 @@ This folder contains the current plans for the woods theme.
 4. **Water and roads** — implemented: meandering rivers/ponds, banks, reeds, lily pads and road bridges.
 5. **Level identities** — implemented: nine `WoodLevelSpec` definitions and unique landmarks.
 6. **Items and signature loot** — implemented: wood-specific food, tools, weapons, armour, potions, relics and per-level signature categories.
-7. **Factions and AI** — villagers, neutral animals, zombie aggro and villager conversion.
+7. **Factions and AI** — implemented: villagers, neutral animals, local zombie aggro and villager conversion.
 8. **Exit placement and validation** — random edge/middle/landmark exits, connectivity tests and polish.
 
 The level revamp is the larger structural plan; the palette can be implemented

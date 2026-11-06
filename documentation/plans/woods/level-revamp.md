@@ -12,8 +12,10 @@ road-facing huts with doors, windows and furniture. Rivers/ponds, reeds, lily
 pads and road bridges are implemented as the first water pass. Each wood level
 now has its named identity and a unique landmark. Wood-specific food, tools,
 weapons, armour, potions and relics are appended, with a shuffled signature
-loot category assigned to each level and guaranteed near its landmark. Caves,
-temple and time-portal levels still use the section generator.
+loot category assigned to each level and guaranteed near its landmark. Villagers,
+neutral animals, zombie target selection and villager-to-zombie conversion are
+implemented. Caves, temple and time-portal levels still use the section
+generator.
 
 This document describes the next major map-content pass for the Go port. The
 goal is to stop treating every level as a reused room-section grid and give
@@ -338,7 +340,7 @@ general nearest-valid-target selection based on faction and aggro state.
 - [x] Phase 4 — river/pond generation and bridges
 - [x] Phase 5 — nine wood-level specifications and unique landmarks
 - [x] Phase 6 — signature loot and wood-specific item pools
-- [ ] Phase 7 — villager/animal factions, zombie aggro and conversion
+- [x] Phase 7 — villager/animal factions, zombie aggro and conversion
 - [ ] Phase 8 — exit placement, connectivity validation, visual polish and tests
 
 ### 3.11 Acceptance criteria

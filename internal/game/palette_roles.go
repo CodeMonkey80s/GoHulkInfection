@@ -152,6 +152,9 @@ func ItemColorRole(proto int) (ColorRole, bool) {
 
 // CritterColorRole returns the palette role for a critter prototype.
 func CritterColorRole(proto int) (ColorRole, bool) {
+	if role, ok := woodsCritterRoles[proto]; ok {
+		return role, true
+	}
 	if proto < 0 || proto >= len(CritterDefs) {
 		return "", false
 	}

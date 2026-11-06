@@ -36,6 +36,7 @@ const (
 	AlignPlayer = iota
 	AlignEnemy
 	AlignNeutral
+	AlignVillager
 )
 
 const (
@@ -43,6 +44,7 @@ const (
 	AIObserver
 	AIAnimal
 	AIPlayer
+	AIVillager
 )
 
 const (
@@ -233,6 +235,12 @@ type Message struct {
 	Turn  int
 }
 
+type PendingRise struct {
+	X     int `json:"x"`
+	Y     int `json:"y"`
+	Turns int `json:"turns"`
+}
+
 type Options map[string]int
 
 func NewOptions() Options {
@@ -333,6 +341,7 @@ type Game struct {
 	Score        int
 	StartTime    int64
 	WoodLoot     [9]int
+	PendingRises []PendingRise
 	// temporary screen data
 	ScrollMsg    int
 	PendingThrow int
