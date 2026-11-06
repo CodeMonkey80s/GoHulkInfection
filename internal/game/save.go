@@ -6,6 +6,8 @@ import (
 	"os"
 )
 
+const saveVersion = 2
+
 type saveItem struct {
 	Proto   int  `json:"p"`
 	Charges int  `json:"c,omitempty"`
@@ -39,7 +41,6 @@ type saveCritter struct {
 	Gold      int            `json:"gold"`
 	Inv       []saveItem     `json:"inv"`
 	Equip     []saveItem     `json:"eq"`
-	Tactics   int            `json:"tac"`
 	Blood     int            `json:"bl"`
 	Poison    int            `json:"po"`
 	LastSeenX int            `json:"lsx"`
@@ -86,7 +87,6 @@ type saveGame struct {
 	HintsShown  int            `json:"hints"`
 	FreePoints  int            `json:"free_points"`
 	Score       int            `json:"score"`
-	Target      int            `json:"target"`
 }
 
 func itemToSave(it *Item) saveItem {
@@ -108,7 +108,7 @@ func critterToSave(c *Critter) saveCritter {
 		Proto: c.Proto, Name: c.Name, X: c.X, Y: c.Y, HP: c.HP, MaxHP: c.MaxHP,
 		STR: c.STR, TGH: c.TGH, AGI: c.AGI, INT: c.INT, SPD: c.SPD, Skills: c.Skills,
 		Align: c.Align, Class: c.Class, AI: c.AI, Color: c.Color, Glyph: c.Glyph,
-		Player: c.Player, Energy: c.Energy, Level: c.Level, XP: c.XP, Gold: c.Gold, Tactics: c.Tactics, Blood: c.Blood,
+		Player: c.Player, Energy: c.Energy, Level: c.Level, XP: c.XP, Gold: c.Gold, Blood: c.Blood,
 		Poison: c.Poison, LastSeenX: c.LastSeenX, LastSeenY: c.LastSeenY,
 		Alert: c.Alert, Dead: c.Dead,
 	}
@@ -121,31 +121,68 @@ func critterToSave(c *Critter) saveCritter {
 	return s
 }
 
-func critterFromSave(s saveCritter) *Critter {
+func critterFromSave(s saveCritter, version int) (*Critter, int) {
+	removed := 0
 	c := &Critter{
 		Proto: s.Proto, Name: s.Name, X: s.X, Y: s.Y, HP: s.HP, MaxHP: s.MaxHP,
 		STR: s.STR, TGH: s.TGH, AGI: s.AGI, INT: s.INT, SPD: s.SPD, Skills: s.Skills,
 		Align: s.Align, Class: s.Class, AI: s.AI, Color: s.Color, Glyph: s.Glyph,
-		Player: s.Player, Energy: s.Energy, Level: s.Level, XP: s.XP, Gold: s.Gold, Tactics: s.Tactics, Blood: s.Blood,
+		Player: s.Player, Energy: s.Energy, Level: s.Level, XP: s.XP, Gold: s.Gold, Blood: s.Blood,
 		Poison: s.Poison, LastSeenX: s.LastSeenX, LastSeenY: s.LastSeenY,
-		Alert: s.Alert, Dead: s.Dead, Target: -1,
+		Alert: s.Alert, Dead: s.Dead,
 	}
 	for _, si := range s.Inv {
+		if si.Proto < 0 {
+			continue
+		}
+		if !ItemAvailable(si.Proto) {
+			removed++
+			continue
+		}
 		if it := itemFromSave(si); it != nil {
 			c.Inventory = append(c.Inventory, it)
 		}
 	}
-	for i := 0; i < NumEquipSlots; i++ {
-		if i < len(s.Equip) {
-			c.Equip[i] = itemFromSave(s.Equip[i])
+	if version < 2 {
+		// Old layout: melee, ranged, armor, grenade, tool.
+		if len(s.Equip) > 1 && s.Equip[1].Proto >= 0 && !ItemAvailable(s.Equip[1].Proto) {
+			removed++
+		}
+		want := [NumEquipSlots]int{0, 2, 3, 4}
+		for i, oldIndex := range want {
+			if oldIndex < len(s.Equip) {
+				si := s.Equip[oldIndex]
+				if si.Proto < 0 {
+					continue
+				}
+				if !ItemAvailable(si.Proto) {
+					removed++
+					continue
+				}
+				c.Equip[i] = itemFromSave(si)
+			}
+		}
+	} else {
+		for i := 0; i < NumEquipSlots; i++ {
+			if i < len(s.Equip) {
+				si := s.Equip[i]
+				if si.Proto < 0 {
+					continue
+				}
+				if !ItemAvailable(si.Proto) {
+					removed++
+					continue
+				}
+				c.Equip[i] = itemFromSave(si)
+			}
 		}
 	}
-	return c
+	return c, removed
 }
 
 func (g *Game) SaveGame(path string) error {
 	s := saveGame{
-		Version:     1,
+		Version:     saveVersion,
 		Player:      critterToSave(g.Player),
 		PlayerName:  g.PlayerName,
 		PlayerClass: g.PlayerClass,
@@ -158,7 +195,6 @@ func (g *Game) SaveGame(path string) error {
 		HintsShown:  g.HintsShown,
 		FreePoints:  g.FreePoints,
 		Score:       g.Score,
-		Target:      g.Target,
 	}
 	s.Map = saveMap{
 		W: g.Map.W, H: g.Map.H, Tiles: g.Map.Tiles, Seen: g.Map.Seen, Visible: g.Map.Visible,
@@ -190,7 +226,8 @@ func (g *Game) LoadGame(path string) error {
 	if err := json.Unmarshal(data, &s); err != nil {
 		return err
 	}
-	g.Player = critterFromSave(s.Player)
+	removed := 0
+	g.Player, removed = critterFromSave(s.Player, s.Version)
 	g.PlayerName = s.PlayerName
 	g.PlayerClass = s.PlayerClass
 	g.Turn = s.Turn
@@ -205,7 +242,6 @@ func (g *Game) LoadGame(path string) error {
 	g.HintsShown = s.HintsShown
 	g.FreePoints = s.FreePoints
 	g.Score = s.Score
-	g.Target = s.Target
 	g.Map = &Map{
 		W: s.Map.W, H: s.Map.H, Tiles: s.Map.Tiles, Seen: s.Map.Seen, Visible: s.Map.Visible,
 		Blood: s.Map.Blood, Fire: s.Map.Fire, Acid: s.Map.Acid, Smoke: s.Map.Smoke,
@@ -213,10 +249,16 @@ func (g *Game) LoadGame(path string) error {
 	}
 	g.Critters = nil
 	for _, sc := range s.Critters {
-		g.Critters = append(g.Critters, critterFromSave(sc))
+		c, n := critterFromSave(sc, s.Version)
+		removed += n
+		g.Critters = append(g.Critters, c)
 	}
 	g.Items = nil
 	for _, si := range s.Items {
+		if !ItemAvailable(si.Proto) {
+			removed++
+			continue
+		}
 		if it := itemFromSave(si); it != nil {
 			g.Items = append(g.Items, it)
 		}
@@ -224,6 +266,9 @@ func (g *Game) LoadGame(path string) error {
 	g.Messages = nil
 	for _, m := range s.Messages {
 		g.Messages = append(g.Messages, Message{Text: m.Text, Color: m.Color, Turn: m.Turn})
+	}
+	if removed > 0 {
+		g.Msg(fmt.Sprintf("%d obsolete item(s) removed by the melee-only ruleset.", removed), 8)
 	}
 	g.State = StatePlaying
 	g.UpdateFOV()

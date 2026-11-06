@@ -1,8 +1,11 @@
 # Command & Scope Reduction — Melee-Focused Redesign
 
-Status: **proposed**  
+Status: **in progress**
 Parent: [Feature plans](../README.md)  
 Scope: global player command set and combat systems; first validated in the woods
+
+Implementation status: first pass implemented on branch
+`feature/command-scope-reduction`; pending review and merge.
 
 This document proposes cutting the command surface down to what fits a
 zombie-slashing, melee-focused roguelike. The goal is not to remove depth — it
@@ -46,7 +49,6 @@ commands carry more weight.
 
 | System | Recommendation |
 |---|---|
-| Tactics | Keep one stance command for melee depth; if the command set must be minimal, cut this first |
 | Equipment slots | Reduce to melee, armour and a single throwable slot; no ranged slot |
 | Skills | Keep only perception, dodging, melee, throwing, metabolism and focusing |
 | AI | Keep faction/target layer, but remove ranged monster attacks for now |
@@ -63,6 +65,7 @@ commands carry more weight.
 | Target line / current-target status | Only throwing needs a cursor |
 | Weapon activation | Melee weapons are always ready |
 | Swap weapons | Only one melee slot remains |
+| Tactics / stance | Removed; combat is straightforward melee |
 | Clean yourself | Blood can fade automatically |
 | Search | Loot is visible; no hidden-search minigame for now |
 | Operate | Doors auto-open on move; portals use the existing use-portal command |
@@ -99,14 +102,8 @@ This is the target player-facing command set:
 | `Esc` | cancel / back |
 | `Tab` / `Enter` | inventory panel / use item |
 
-Optional, if we keep tactics:
-
-| Key | Command |
-|---|---|
-| `T` | change melee stance |
-
 Cut from the player-facing set: `A`, `a`, `c`, `C`, `W`, `` ` ``, `=`, `h`,
-`/`, `n`, `o`, `R`, `s`, `w`, and the six debug keys. The recovered bindings
+`/`, `n`, `o`, `R`, `s`, `w`, `T`, and the six debug keys. The recovered bindings
 remain available as historical data, but the help screen should show only the
 active command set.
 
@@ -248,7 +245,6 @@ Keep:
 
 ## 8. Open questions
 
-- Keep the tactics command, or cut it to reduce the command set further?
 - Keep bash as a separate command, or let melee attacks damage adjacent doors/furniture?
 - Should molotovs require a bottle + fuel, or remain simple loot items?
 - Should grenades explode immediately or have a short fuse?

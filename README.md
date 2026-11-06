@@ -20,7 +20,7 @@ go build -o hulk-infection .
 
 Requirements:
 
-* Go 1.21+ (tested with Go 1.27)
+* Go 1.24+
 * a terminal of at least 80×50 cells with UTF-8 support
 * the `tcell` dependency is fetched by `go mod tidy` / `go build`
 
@@ -28,44 +28,31 @@ The game writes `hi_save.json` in the current directory when you save.
 
 ## Controls
 
-These are the key bindings recovered from the original key-binding table.
+The player-facing command set is intentionally melee-focused.
 
 | Key | Action |
 | --- | --- |
 | `8 9 7 6 5 4 3 2 1` | move in eight directions / wait |
-| arrows | move (or move the cursor in look/aim/throw modes) |
-| `A` | activate / deactivate current weapon |
-| `a` | aim, select a target |
-| `b` | bash a wall or door |
-| `c` | check ammo |
-| `C` | clear current target |
-| `W` | clean yourself |
-| `` ` `` | dump options to the message log |
-| `=` | dump options to the message log |
+| arrows | move (or move the cursor in look/throw modes) |
+| `f` | attack an adjacent enemy with the equipped melee weapon |
+| `b` | smash an adjacent door, wall or piece of furniture |
+| `t` | throw an HE grenade or molotov within sight range |
 | `,` | fast pick up |
-| `f` | fight / fire / use weapon |
-| `?` or `/` | help / key bindings |
-| `h` | highlight spotted critters |
 | `i` | inventory |
 | `l` | look around |
 | `m` | message buffer |
-| `n` | select nearest target |
-| `o` | operate door / portal |
-| `O` | options |
 | `@` | character information |
-| `R` | fast reload |
-| `S` | save and quit |
-| `s` | search |
-| `w` | swap weapons |
 | `x` | skill levels |
-| `T` | change tactic (defensive / normal / aggressive) |
-| `t` | throw grenade |
+| `O` | options |
+| `?` | help / key bindings |
+| `S` | save and quit |
 | `>` | use portal / stairs / elevator |
 | `]` or `F7` | jump directly to the next map |
 | `[` or `F8` | jump directly to the previous map |
 | `Q` | quit |
 
-Screens generally close with `z`, `q`, or `Esc`.
+Screens generally close with `z`, `q`, or `Esc`.  The player is defenceless
+without a melee weapon; there is no unarmed attack.
 
 ## Screens
 
@@ -74,7 +61,7 @@ Screens generally close with `z`, `q`, or `Esc`.
 * message log and message-buffer screen
 * inventory, equipment and ground-item screen with item data
 * character sheet, skill-level screen, options screen, key-binding screen
-* look mode, aim mode, grenade-throw cursor
+* look mode and grenade/molotov throw cursor
 * save/load, death and victory screens
 
 ## Game systems
@@ -87,13 +74,14 @@ Screens generally close with `z`, `q`, or `Esc`.
 * recursive shadow-casting FOV (the algorithm credited in `contributors.txt`)
 * four level themes: woods, caves, temple of the underminer, time portal
 * turn/energy based critters with zombie, observer and animal AI
-* melee, ranged burst fire, reloading, thrown grenades and explosions
+* melee combat with recovered weapon AV/DV and damage values
+* throwing only: HE grenades and molotov cocktails, limited to FOV range
 * recovered weapon table (attack/defense value and damage range per subtype)
 * armor damage reduction, armor wear, blood, corpses and limbs
-* item inventory, equipment slots, weight and burden
+* item inventory, melee/armour/throwable equipment slots, weight and burden
 * skills, skill checks, experience, levels and free skill points
-* doors, portals, searching, bashing, acid/fire/smoke, rain
-* options screen wired to the gameplay (AI, doors, target line, god/ghost mode, …)
+* auto-opening doors, portals, bashing, acid/fire/smoke, rain
+* options screen wired to the gameplay (AI, doors, god/ghost mode, …)
 * JSON save/load
 
 ## Fidelity notes

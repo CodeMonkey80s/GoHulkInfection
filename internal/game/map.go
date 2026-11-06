@@ -365,7 +365,6 @@ func (g *Game) GenerateLevel(level int) {
 		g.Player = &Critter{Proto: -1, Player: true, Align: AlignPlayer, Class: 4}
 	}
 	g.Player.X, g.Player.Y = px, py
-	g.Player.Target = -1
 	// Make sure the starting room is connected to the main corridor grid.
 	carveH(m, min(px, 20), max(px, 20), py, floorTile(theme))
 	carveV(m, 20, min(py, 5), max(py, 5), floorTile(theme))
@@ -421,7 +420,6 @@ func (g *Game) GenerateLevel(level int) {
 	g.Map = m
 	g.Critters = nil
 	g.Items = nil
-	g.Target = -1
 	g.Level = level
 	g.Options["optGameLevelID"] = level
 	g.Theme = theme
@@ -429,7 +427,7 @@ func (g *Game) GenerateLevel(level int) {
 	g.SpawnPopulation()
 	// Starting hint.
 	if g.Options.Bool("optGameHints") {
-		h := Hints[g.HintsShown%len(Hints)]
+		h := ActiveHints[g.HintsShown%len(ActiveHints)]
 		g.HintsShown++
 		g.Msg("hint: "+h, 10)
 	}
@@ -596,17 +594,8 @@ func (g *Game) SpawnPopulation() {
 		}
 		proto := itemPool[g.Roll(len(itemPool))]
 		it := &Item{Proto: proto, X: x, Y: y}
-		if d := it.Def(); d != nil && d.Kind == KindAmmo {
-			it.Charges = d.MaxAmmo
-		}
-		if d := it.Def(); d != nil && (d.Kind == KindMedical || d.Kind == KindRanged) {
-			it.Charges = d.Clip
-			if d.Kind == KindRanged && it.Charges == 0 {
-				it.Charges = d.MaxAmmo
-			}
-			if d.Kind == KindMedical && it.Charges == 0 {
-				it.Charges = d.Charges
-			}
+		if d := it.Def(); d != nil && d.Kind == KindMedical {
+			it.Charges = d.Charges
 		}
 		g.Items = append(g.Items, it)
 	}
@@ -645,18 +634,21 @@ func spawnPool(theme, level int) []int {
 func itemSpawnPool(theme, level int) []int {
 	base := []int{46, 47, 48, 8, 9, 10, 11, 12, 5}
 	if level > 2 {
-		base = append(base, 22, 35, 35, 6, 15, 16)
+		base = append(base, 6, 15, 16, 17, 18, 19, 7)
+	}
+	if level > 4 {
+		base = append(base, 41)
 	}
 	if level > 6 {
-		base = append(base, 17, 18, 19, 29, 36, 41, 7, 43)
+		base = append(base, 13, 14, 18, 19, 42)
 	}
 	if level > 12 {
-		base = append(base, 20, 21, 23, 24, 25, 26, 27, 28, 30, 31, 32, 33, 34, 37, 38, 39, 40, 42, 44, 45)
+		base = append(base, 13, 14, 17, 18, 19, 5, 6, 7)
 	}
 	if theme == 2 {
-		base = append(base, 14, 15, 16, 17, 21)
+		base = append(base, 14, 15, 16, 17)
 	}
-	return base
+	return filterAvailableItems(base)
 }
 
 func (g *Game) SpawnCritter(proto, x, y int) *Critter {
@@ -682,7 +674,6 @@ func (g *Game) SpawnCritter(proto, x, y int) *Critter {
 		Skills: d.Skills,
 		Level:  d.Level,
 		XP:     d.XP,
-		Target: -1,
 	}
 	c.MaxHP = c.TGH * 3
 	if c.MaxHP < 1 {
@@ -702,19 +693,13 @@ func (g *Game) SpawnCritter(proto, x, y int) *Critter {
 		}
 		c.XP += c.XP * (scale - 1) / 3
 	}
-	// Give some monsters equipment.
+	// Give some monsters melee equipment.
 	if c.Class == 1 && g.Roll(3) == 0 {
-		switch g.Roll(4) {
-		case 0:
+		if g.Roll(2) == 0 {
 			c.Equip[EquipMelee] = &Item{Proto: 8 + g.Roll(4), X: -1, Y: -1}
-		case 1:
+		} else {
 			c.Equip[EquipArmor] = &Item{Proto: 5 + g.Roll(3), X: -1, Y: -1}
-		case 2:
-			c.Equip[EquipRanged] = &Item{Proto: 22, X: -1, Y: -1, Charges: 18}
 		}
-	}
-	if c.AI == AIObserver {
-		c.Equip[EquipRanged] = &Item{Proto: 22, X: -1, Y: -1, Charges: 18}
 	}
 	g.Critters = append(g.Critters, c)
 	return c
@@ -724,17 +709,15 @@ func (g *Game) SetupNewGame(class int, name string) {
 	g.PlayerClass = class
 	g.PlayerName = name
 	g.Player = &Critter{
-		Proto:   -1,
-		Name:    name,
-		Player:  true,
-		Align:   AlignPlayer,
-		Class:   4,
-		AI:      AIPlayer,
-		Color:   14,
-		Glyph:   '@',
-		Tactics: TacticNormal,
-		Target:  -1,
-		Dead:    false,
+		Proto:  -1,
+		Name:   name,
+		Player: true,
+		Align:  AlignPlayer,
+		Class:  4,
+		AI:     AIPlayer,
+		Color:  14,
+		Glyph:  '@',
+		Dead:   false,
 	}
 	c := &ClassDefs[class]
 	g.Player.STR = c.STR
@@ -762,11 +745,10 @@ func (g *Game) SetupNewGame(class int, name string) {
 		g.Player.AddItem(&Item{Proto: 48, X: -1, Y: -1, Charges: 5})
 		g.Player.AddItem(&Item{Proto: 41, X: -1, Y: -1})
 	case 1: // marine
-		g.Player.Equip[EquipRanged] = &Item{Proto: 22, X: -1, Y: -1, Charges: 18, Active: true}
+		g.Player.Equip[EquipMelee] = &Item{Proto: 10, X: -1, Y: -1, Active: true}
 		for i := 0; i < 3; i++ {
-			g.Player.AddItem(&Item{Proto: 35, X: -1, Y: -1, Charges: 18})
+			g.Player.AddItem(&Item{Proto: 47, X: -1, Y: -1, Charges: 1})
 		}
-		g.Player.AddItem(&Item{Proto: 47, X: -1, Y: -1, Charges: 1})
 		g.Player.AddItem(&Item{Proto: 48, X: -1, Y: -1, Charges: 5})
 		g.Player.AddItem(&Item{Proto: 41, X: -1, Y: -1})
 	case 2: // warpcrafter
@@ -785,15 +767,22 @@ func (g *Game) SetupNewGame(class int, name string) {
 	g.GenerateLevel(0)
 }
 
-func (g *Game) UpdateFOV() {
-	if g.Map == nil || g.Player == nil {
-		return
+func (g *Game) FOVRadius() int {
+	if g.Player == nil {
+		return 7
 	}
 	radius := 7 + g.Player.Skill(SkillPerception)/20
 	if g.Options.Bool("optPlayerGhostMode") {
 		radius += 2
 	}
-	g.Map.FOV(g.Player.X, g.Player.Y, radius)
+	return radius
+}
+
+func (g *Game) UpdateFOV() {
+	if g.Map == nil || g.Player == nil {
+		return
+	}
+	g.Map.FOV(g.Player.X, g.Player.Y, g.FOVRadius())
 }
 
 func (g *Game) TileDescription(x, y int) string {
