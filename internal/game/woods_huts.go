@@ -23,7 +23,7 @@ func (g *Game) placeWoodsHuts(m *Map, path [][2]int, startX, startY, exitX, exit
 			if len(huts) >= want {
 				return
 			}
-			for offset := 1; offset <= 3; offset++ {
+			for offset := 1; offset <= 5; offset++ {
 				if h, ok := g.tryPlaceHut(m, p, side, offset, startX, startY, exitX, exitY, huts); ok {
 					huts = append(huts, h)
 					return
@@ -78,7 +78,8 @@ func (g *Game) tryPlaceHut(m *Map, p, side [2]int, offset int, startX, startY, e
 	}
 	for y := y0; y <= y1; y++ {
 		for x := x0; x <= x1; x++ {
-			if m.Tile(x, y) == tileDirtRoad || m.Tile(x, y) == portalTile(0) {
+			t := m.Tile(x, y)
+			if t == tileDirtRoad || t == portalTile(0) || t == tileRiverBank || isWoodsWater(t) {
 				return woodsHut{}, false
 			}
 		}
@@ -100,7 +101,7 @@ func (g *Game) tryPlaceHut(m *Map, p, side [2]int, offset int, startX, startY, e
 	}
 	m.SetTile(doorX, doorY, tileWoodenDoor)
 	for k := 1; k < offset; k++ {
-		m.SetTile(p[0]+side[0]*k, p[1]+side[1]*k, tileDirtRoad)
+		g.setWoodsRoadTile(m, p[0]+side[0]*k, p[1]+side[1]*k)
 	}
 	hut := woodsHut{x0: x0, y0: y0, x1: x1, y1: y1, doorX: doorX, doorY: doorY}
 	g.placeHutWindows(m, hut)

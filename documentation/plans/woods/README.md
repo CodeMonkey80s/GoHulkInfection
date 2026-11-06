@@ -14,7 +14,7 @@ This folder contains the current plans for the woods theme.
 1. **Palette foundation** — implemented: true-colour support with 16-colour fallback and the core woods palette.
 2. **Terrain generator** — implemented: grass, forest clusters, clearings, bushes, roads and lanterns.
 3. **Structures** — implemented: road-facing huts with doors, windows and furniture.
-4. **Water and roads** — river/pond generation and bridges.
+4. **Water and roads** — implemented: meandering rivers/ponds, banks, reeds, lily pads and road bridges.
 5. **Level identities** — nine `WoodLevelSpec` definitions and unique landmarks.
 6. **Items and signature loot** — new wood-specific weapons, armour, tools, food and per-level signature categories.
 7. **Factions and AI** — villagers, neutral animals, zombie aggro and villager conversion.

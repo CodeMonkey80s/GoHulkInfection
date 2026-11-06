@@ -8,7 +8,8 @@ Scope: **woods levels 0–8 only**
 Implementation status: the first outdoor terrain pass is implemented for woods
 levels 0–8: grass, forest clusters, clearings, bushes, brambles, a dirt road,
 lantern posts and scattered props. The first hut pass is also implemented:
-road-facing huts with doors, windows and furniture. Caves, temple and
+road-facing huts with doors, windows and furniture. Rivers/ponds, reeds, lily
+pads and road bridges are implemented as the first water pass. Caves, temple and
 time-portal levels still use the section generator.
 
 This document describes the next major map-content pass for the Go port. The
@@ -331,7 +332,7 @@ general nearest-valid-target selection based on faction and aggro state.
 - [ ] Phase 1b — item kinds, item prototypes and weapon entries
 - [x] Phase 2 — woods terrain generator: grass, forest clusters, bushes, roads, lanterns
 - [x] Phase 3 — huts, doors, windows, furniture, road-facing placement
-- [ ] Phase 4 — river/pond generation and bridges
+- [x] Phase 4 — river/pond generation and bridges
 - [ ] Phase 5 — nine wood-level specifications and unique landmarks
 - [ ] Phase 6 — signature loot and wood-specific item pools
 - [ ] Phase 7 — villager/animal factions, zombie aggro and conversion

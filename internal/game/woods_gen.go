@@ -63,12 +63,15 @@ func (g *Game) generateWoodsLevel(level int) {
 	for _, c := range clearings {
 		clearWoodsArea(m, c[0], c[1], c[2], 2)
 	}
+	g.generateWoodsWater(m)
+	clearWoodsArea(m, startX, startY, 2, 1)
+	clearWoodsArea(m, exitX, exitY, 2, 1)
 
 	path := g.findWoodsRoad(m, startX, startY, exitX, exitY)
 	for _, p := range path {
-		m.SetTile(p[0], p[1], tileDirtRoad)
+		g.setWoodsRoadTile(m, p[0], p[1])
 	}
-	m.SetTile(startX, startY, tileDirtRoad)
+	g.setWoodsRoadTile(m, startX, startY)
 	m.SetTile(exitX, exitY, portalTile(0))
 	g.placeWoodsHuts(m, path, startX, startY, exitX, exitY)
 	g.placeWoodsLanterns(m, path)
@@ -168,6 +171,12 @@ func clearWoodsArea(m *Map, cx, cy, radius, edge int) {
 
 func woodsRoadCost(t uint8) int {
 	switch t {
+	case tileDeepWater:
+		return 40
+	case tileShallowWater, tileLilyPad:
+		return 16
+	case tileRiverBank:
+		return 2
 	case tileBramble, tileFallenLog, tileDeadTree, tileLanternPost:
 		return 18
 	case 3, 4: // tree, big tree
