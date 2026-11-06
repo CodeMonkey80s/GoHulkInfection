@@ -965,14 +965,30 @@ func (u *UI) drawConfirm() {
 			width = n
 		}
 	}
-	width += 4
-	height := len(lines) + 2
+	width += 6
+	height := len(lines) + 4
 	x := (screenW - width) / 2
 	y := (screenH - height) / 2
-	const bg = uint8(4)
-	u.fill(x, y, width, height, ' ', 15, bg)
+
+	bg := u.uiColor(RolePanelBackground, 0)
+	fg := u.uiColor(RolePrimaryText, 15)
+	border := u.uiColor(RoleDanger, 12)
+
+	u.fillTcell(x, y, width, height, ' ', fg, bg)
+	for xx := x + 1; xx < x+width-1; xx++ {
+		u.putTcell(xx, y, '-', border, bg)
+		u.putTcell(xx, y+height-1, '-', border, bg)
+	}
+	for yy := y + 1; yy < y+height-1; yy++ {
+		u.putTcell(x, yy, '|', border, bg)
+		u.putTcell(x+width-1, yy, '|', border, bg)
+	}
+	u.putTcell(x, y, '+', border, bg)
+	u.putTcell(x+width-1, y, '+', border, bg)
+	u.putTcell(x, y+height-1, '+', border, bg)
+	u.putTcell(x+width-1, y+height-1, '+', border, bg)
 	for i, l := range lines {
-		u.putStr(x+2, y+1+i, l, 15, bg)
+		u.putStrTcell(x+3, y+2+i, l, fg, bg)
 	}
 }
 

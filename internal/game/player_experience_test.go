@@ -260,6 +260,41 @@ func TestSaveMigrationGrantsTwoBeltSlots(t *testing.T) {
 	}
 }
 
+func TestQuitConfirmUsesReadablePanelColours(t *testing.T) {
+	g := NewGame(707)
+	u, s := newTestUI(g, ColorModeTrueColor)
+	defer s.Fini()
+	u.drawConfirm()
+	s.Show()
+	text := screenText(s)
+	if !strings.Contains(text, "are you sure you want to quit") {
+		t.Fatal("quit confirmation text missing")
+	}
+	wantBG := u.uiColor(RolePanelBackground, 0)
+	wantFG := u.uiColor(RolePrimaryText, 15)
+	if !wantBG.IsRGB() || !wantFG.IsRGB() {
+		t.Fatalf("quit panel colours are not true colour: bg=%v fg=%v", wantBG, wantFG)
+	}
+	cells, w, h := s.GetContents()
+	foundText := false
+	for y := 0; y < h && !foundText; y++ {
+		for x := 0; x < w; x++ {
+			cell := cells[y*w+x]
+			if len(cell.Runes) == 0 || cell.Runes[0] == ' ' {
+				continue
+			}
+			fg, bg, _ := cell.Style.Decompose()
+			if fg == wantFG && bg == wantBG {
+				foundText = true
+				break
+			}
+		}
+	}
+	if !foundText {
+		t.Fatal("quit confirmation text does not use the readable panel colours")
+	}
+}
+
 func TestTitleAndIntroText(t *testing.T) {
 	g := NewGame(702)
 	g.State = StateTitle
