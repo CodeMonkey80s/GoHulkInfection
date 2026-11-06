@@ -15,15 +15,6 @@ func isAdjacent(a, b *Critter) bool {
 	return a != nil && b != nil && chebyshev(a.X, a.Y, b.X, b.Y) <= 1 && !(a.X == b.X && a.Y == b.Y)
 }
 
-func (c *Critter) HasRanged() bool {
-	w := c.Equip[EquipRanged]
-	if w == nil {
-		return false
-	}
-	d := w.Def()
-	return d != nil && d.Kind == KindRanged
-}
-
 func (c *Critter) CurrentWeapon() *Item {
 	if w := c.Equip[EquipMelee]; w != nil {
 		return w
@@ -32,19 +23,20 @@ func (c *Critter) CurrentWeapon() *Item {
 }
 
 func (g *Game) attackSkill(c *Critter, mode int) int {
-	skill := SkillUnarmed
 	switch mode {
 	case 1:
-		skill = SkillMelee
-	case 2:
-		skill = SkillRanged
+		return c.Skill(SkillMelee)
 	case 3:
-		skill = SkillThrowing
+		return c.Skill(SkillThrowing)
+	default:
+		// Monsters may still use natural attacks.  The player never attacks
+		// without a weapon.
+		return c.Skill(SkillUnarmed)
 	}
-	return c.Skill(skill)
 }
 
-// AttackValue computes the attacker's AV for a given attack mode.
+// AttackValue computes the attacker's AV for a given attack mode:
+// 0 = natural/unarmed, 1 = melee, 3 = throwing.
 func (g *Game) AttackValue(c *Critter, mode int) int {
 	av := g.attackSkill(c, mode) + c.AGI
 	switch mode {
@@ -54,14 +46,8 @@ func (g *Game) AttackValue(c *Critter, mode int) int {
 				av += wd.AV * 2
 			}
 		}
-	case 2:
-		if w := c.Equip[EquipRanged]; w != nil {
-			if wd := w.Def().Weapon(); wd != nil {
-				av += wd.AV * 2
-			}
-		}
 	case 3:
-		if w := c.Equip[EquipGrenade]; w != nil {
+		if w := c.Equip[EquipThrowable]; w != nil {
 			if wd := w.Def().Weapon(); wd != nil {
 				av += wd.AV * 2
 			}
@@ -73,8 +59,8 @@ func (g *Game) AttackValue(c *Critter, mode int) int {
 	case TacticDefensive:
 		av = av * 80 / 100
 	}
-	if mode == 2 || mode == 3 {
-		// Ranged attacks are harder when an enemy is adjacent.
+	if mode == 3 {
+		// Throwing is harder when an enemy is adjacent.
 		for _, other := range g.Critters {
 			if other.IsAlive() && other != c && chebyshev(c.X, c.Y, other.X, other.Y) <= 1 {
 				av = av * g.Options.Get("optMechanicAVModEnemyIsNear") / 100
@@ -95,14 +81,9 @@ func (g *Game) DefenseValue(c *Critter) int {
 		if wd := w.Def().Weapon(); wd != nil {
 			dv += wd.DV
 		}
-	} else if w := c.Equip[EquipRanged]; w != nil {
-		if wd := w.Def().Weapon(); wd != nil {
-			dv += wd.DV
-		}
 	}
 	if arm := c.Equip[EquipArmor]; arm != nil {
 		if d := arm.Def(); d != nil {
-			// Heavier armor slightly reduces dodging.
 			dv -= d.Weight / 4000
 		}
 	}
@@ -141,8 +122,6 @@ func (g *Game) HitChance(attacker, defender *Critter, mode int) int {
 		dv2 = 200
 	}
 	chance := base + av*av1/av2 - dv*dv1/dv2
-	// Focusing helps land criticals rather than raw hits; a small bonus keeps
-	// high-level fights from stalling.
 	chance += attacker.Skill(SkillFocusing) / 20
 	if chance < 5 {
 		chance = 5
@@ -153,33 +132,44 @@ func (g *Game) HitChance(attacker, defender *Critter, mode int) int {
 	return chance
 }
 
-func (g *Game) PlayerAttack(target *Critter) {
-	if target == nil || !target.IsAlive() {
-		g.Msg("there is no target set...", 12)
+// PlayerMeleeAttack is the targetless melee command.  It attacks the nearest
+// adjacent critter; enemies are preferred over neutral creatures on ties.
+func (g *Game) PlayerMeleeAttack() {
+	p := g.Player
+	if p == nil || !p.IsAlive() {
 		return
 	}
-	if g.Player == nil {
+	if p.Equip[EquipMelee] == nil {
+		g.Msg("you are defenceless without a weapon.", 12)
 		return
 	}
-	if isAdjacent(g.Player, target) {
-		g.PlayerMelee(target)
+	var target *Critter
+	best := 99
+	for _, c := range g.Critters {
+		if !c.IsAlive() || !isAdjacent(p, c) {
+			continue
+		}
+		d := chebyshev(p.X, p.Y, c.X, c.Y)
+		if d < best || (d == best && c.Align == AlignEnemy) {
+			best = d
+			target = c
+		}
+	}
+	if target == nil {
+		g.Msg("there is no enemy adjacent.", 8)
 		return
 	}
-	if g.Player.HasRanged() {
-		g.PlayerFire(target)
-		return
-	}
-	g.Msg("the "+target.NameOrUnknown()+" is too far for melee attack...", 12)
+	g.PlayerMelee(target)
 }
 
 func (g *Game) PlayerMelee(target *Critter) {
 	p := g.Player
-	mode := 1
 	weapon := p.Equip[EquipMelee]
 	if weapon == nil {
-		mode = 0
+		g.Msg("you are defenceless without a weapon.", 12)
+		return
 	}
-	chance := g.HitChance(p, target, mode)
+	chance := g.HitChance(p, target, 1)
 	if !g.Chance(chance) {
 		g.Msg("you attack and miss.", 7)
 		if target.IsAlive() {
@@ -189,16 +179,12 @@ func (g *Game) PlayerMelee(target *Critter) {
 		return
 	}
 	dmg := g.RollRange(1, 4)
-	desc := "fists"
-	if weapon != nil {
-		if d := weapon.Def(); d != nil {
-			desc = d.Name
-			if wd := d.Weapon(); wd != nil {
-				dmg = g.RollRange(wd.DmgMin, wd.DmgMax) + p.STR/3 + p.Skill(SkillMelee)/10
-			}
+	desc := "weapon"
+	if d := weapon.Def(); d != nil {
+		desc = d.Name
+		if wd := d.Weapon(); wd != nil {
+			dmg = g.RollRange(wd.DmgMin, wd.DmgMax) + p.STR/3 + p.Skill(SkillMelee)/10
 		}
-	} else {
-		dmg = p.Skill(SkillUnarmed)/8 + p.STR/2 + g.Roll(4)
 	}
 	if p.Skill(SkillFocusing) > 0 && g.Chance(p.Skill(SkillFocusing)/4) {
 		dmg = dmg * 3 / 2
@@ -207,100 +193,6 @@ func (g *Game) PlayerMelee(target *Critter) {
 	g.Msg(fmt.Sprintf("you attack with %s and hit.", desc), 7)
 	g.DamageCritter(target, dmg, p, 0)
 	g.EndPlayerTurn()
-}
-
-func (g *Game) PlayerFire(target *Critter) {
-	p := g.Player
-	w := p.Equip[EquipRanged]
-	if w == nil {
-		g.Msg("you do not have a ranged weapon ready.", 12)
-		return
-	}
-	d := w.Def()
-	if d == nil {
-		return
-	}
-	if !w.Active {
-		g.Msg("the "+d.Name+" needs to be activated first...", 12)
-		return
-	}
-	if d.AmmoType < 49 && d.AmmoType >= 0 {
-		if w.Charges <= 0 {
-			g.Msg("your "+d.Name+" has empty clip.", 12)
-			return
-		}
-	}
-	dist := chebyshev(p.X, p.Y, target.X, target.Y)
-	if dist > d.Range {
-		g.Msg("the "+target.NameOrUnknown()+" is too far for melee attack...", 12)
-		return
-	}
-	if !g.Map.LineOfSight(p.X, p.Y, target.X, target.Y) {
-		g.Msg("you do not see the target.", 12)
-		return
-	}
-	shots := d.Burst
-	if shots < 1 {
-		shots = 1
-	}
-	if d.AmmoType < 49 && shots > w.Charges {
-		shots = w.Charges
-	}
-	if shots < 1 {
-		g.Msg("your "+d.Name+" has empty clip.", 12)
-		return
-	}
-	g.Msg("you fire with "+d.Name+".", 7)
-	hits := 0
-	for i := 0; i < shots; i++ {
-		if d.AmmoType < 49 && w.Charges > 0 {
-			w.Charges--
-		}
-		// A critter standing in the line of fire may absorb the shot.
-		if t := g.LineOfFireTarget(p, target); t != nil && t != target {
-			if g.Chance(g.Options.Get("optMechanicLineOfFireHitChance")) {
-				g.Msg("your shot hits "+t.NameOrUnknown()+" in the line of fire!", 12)
-				g.DamageCritter(t, d.Damage, p, 1)
-				continue
-			}
-		}
-		chance := g.HitChance(p, target, 2)
-		if !g.Chance(chance) {
-			continue
-		}
-		dmg := 1
-		if wd := d.Weapon(); wd != nil {
-			dmg = g.RollRange(wd.DmgMin, wd.DmgMax) + p.Skill(SkillRanged)/10
-		}
-		g.DamageCritter(target, dmg, p, 1)
-		hits++
-		if !target.IsAlive() {
-			break
-		}
-	}
-	if hits == 0 && target.IsAlive() {
-		g.Msg("you miss.", 7)
-	}
-	if d.AmmoType < 49 {
-		g.Msg(fmt.Sprintf("%d rounds left.", w.Charges), 8)
-	}
-	g.EndPlayerTurn()
-}
-
-func (g *Game) LineOfFireTarget(from, target *Critter) *Critter {
-	line := g.Map.Line(from.X, from.Y, target.X, target.Y)
-	for _, p := range line {
-		if p[0] == target.X && p[1] == target.Y {
-			return nil
-		}
-		if c := g.CritterAt(p[0], p[1]); c != nil && c != from && c != target {
-			return c
-		}
-		if g.Map.BlocksSight(p[0], p[1]) {
-			return nil
-		}
-	}
-	return nil
 }
 
 func (g *Game) MonsterRetaliate(c *Critter) {
@@ -370,7 +262,6 @@ func (g *Game) DamageCritter(target *Critter, dmg int, source *Critter, dtype in
 			if dmg < 1 {
 				dmg = 1
 			}
-			// Armor wears down.
 			if g.Options.Bool("optGameSendDamageToItems") && g.Chance(5) {
 				arm.Charges--
 				if arm.Charges < 0 {
@@ -404,7 +295,7 @@ func (g *Game) KillCritter(target, killer *Critter) {
 	}
 	deadMsgs := []string{
 		"the " + target.NameOrUnknown() + " dies in pain.",
-		"you slay the " + target.NameOrUnknown() + " with mighty punch.",
+		"you cleave the " + target.NameOrUnknown() + " apart.",
 		"you hit a vital spot, the " + target.NameOrUnknown() + " is wasted.",
 		"the " + target.NameOrUnknown() + " dies.",
 	}
@@ -431,26 +322,28 @@ func (g *Game) CreateRemains(c *Critter) {
 		}
 	}
 	if g.Options.Bool("optMapCreateCorpses") {
-		proto := 0
-		if c.Class == 0 {
-			proto = 0
-		}
-		g.Items = append(g.Items, &Item{Proto: proto, X: c.X, Y: c.Y})
+		g.Items = append(g.Items, &Item{Proto: 0, X: c.X, Y: c.Y})
 	}
 	if g.Options.Bool("optMapCreateLimbs") && g.Chance(45) {
 		proto := 1 + g.Roll(4)
 		g.Items = append(g.Items, &Item{Proto: proto, X: c.X, Y: c.Y})
 	}
-	if g.Chance(40) {
-		g.Items = append(g.Items, &Item{Proto: 41 + g.Roll(5), X: c.X, Y: c.Y})
+	if g.Chance(15) {
+		proto := 41 // HE grenade
+		if g.Roll(2) == 0 {
+			proto = 42 // molotov cocktail
+		}
+		g.Items = append(g.Items, &Item{Proto: proto, X: c.X, Y: c.Y})
 	}
-	// Drop carried equipment.
 	for _, it := range c.Inventory {
+		if !ItemAvailable(it.Proto) {
+			continue
+		}
 		it.X, it.Y = c.X, c.Y
 		g.Items = append(g.Items, it)
 	}
 	for _, it := range c.Equip {
-		if it != nil {
+		if it != nil && ItemAvailable(it.Proto) {
 			it.X, it.Y = c.X, c.Y
 			g.Items = append(g.Items, it)
 		}
@@ -478,7 +371,8 @@ func (g *Game) CheckLevelUp() {
 	}
 }
 
-// Explode damages everything in a radius and leaves fire/acid behind.
+// Explode damages everything in a radius.  kind 1 leaves fire behind
+// (molotov); kind 0 is a plain high-explosive blast.
 func (g *Game) Explode(x, y, radius, damage, kind int) {
 	if radius < 1 {
 		radius = 1
@@ -498,22 +392,17 @@ func (g *Game) Explode(x, y, radius, damage, kind int) {
 		}
 		g.DamageCritter(c, dmg, nil, 1)
 	}
-	for dy := -radius; dy <= radius; dy++ {
-		for dx := -radius; dx <= radius; dx++ {
-			nx, ny := x+dx, y+dy
-			if !g.Map.InBounds(nx, ny) || chebyshev(x, y, nx, ny) > radius {
-				continue
-			}
-			if g.Map.BlocksMove(nx, ny) {
-				continue
-			}
-			switch kind {
-			case 1: // incendiary
+	if kind == 1 {
+		for dy := -radius; dy <= radius; dy++ {
+			for dx := -radius; dx <= radius; dx++ {
+				nx, ny := x+dx, y+dy
+				if !g.Map.InBounds(nx, ny) || chebyshev(x, y, nx, ny) > radius {
+					continue
+				}
+				if g.Map.BlocksMove(nx, ny) {
+					continue
+				}
 				g.Map.Fire[g.Map.idx(nx, ny)] = 15 + g.Roll(15)
-			case 2: // acid
-				g.Map.Acid[g.Map.idx(nx, ny)] = 15 + g.Roll(15)
-			case 3: // smoke
-				g.Map.Smoke[g.Map.idx(nx, ny)] = 20 + g.Roll(20)
 			}
 		}
 	}
@@ -522,11 +411,26 @@ func (g *Game) Explode(x, y, radius, damage, kind int) {
 	}
 }
 
+func (g *Game) hasThrowable() bool {
+	if it := g.Player.Equip[EquipThrowable]; it != nil && ItemIsThrowable(it.Proto) {
+		return true
+	}
+	for _, it := range g.Player.Inventory {
+		if ItemIsThrowable(it.Proto) {
+			return true
+		}
+	}
+	return false
+}
+
+// ThrowGrenade throws the selected HE grenade or molotov at a visible tile
+// within the player's current FOV radius.
 func (g *Game) ThrowGrenade(x, y int) {
-	it := g.Player.Equip[EquipGrenade]
-	if it == nil {
+	it := g.Player.Equip[EquipThrowable]
+	if it == nil || !ItemIsThrowable(it.Proto) {
+		it = nil
 		for _, cand := range g.Player.Inventory {
-			if d := cand.Def(); d != nil && d.Kind == KindGrenade {
+			if ItemIsThrowable(cand.Proto) {
 				it = cand
 				break
 			}
@@ -540,9 +444,17 @@ func (g *Game) ThrowGrenade(x, y int) {
 	if d == nil {
 		return
 	}
-	// Remove from wherever it is.
-	if it == g.Player.Equip[EquipGrenade] {
-		g.Player.Equip[EquipGrenade] = nil
+	if !g.Map.InBounds(x, y) || !g.Map.Visible[g.Map.idx(x, y)] {
+		g.Msg("you can only throw at visible tiles.", 8)
+		return
+	}
+	radius := g.FOVRadius()
+	if chebyshev(g.Player.X, g.Player.Y, x, y) > radius {
+		g.Msg("that is beyond your throwing range.", 8)
+		return
+	}
+	if it == g.Player.Equip[EquipThrowable] {
+		g.Player.Equip[EquipThrowable] = nil
 	} else {
 		for i, cand := range g.Player.Inventory {
 			if cand == it {
@@ -552,105 +464,40 @@ func (g *Game) ThrowGrenade(x, y int) {
 		}
 	}
 	g.Msg("you throw your "+d.Name+".", 7)
-	// Grenade lands at target or first wall.
+	// The projectile stops at the first blocking tile before the target.
 	lx, ly := g.Player.X, g.Player.Y
-	line := g.Map.Line(g.Player.X, g.Player.Y, x, y)
-	for _, p := range line {
+	for _, p := range g.Map.Line(g.Player.X, g.Player.Y, x, y) {
 		if g.Map.BlocksMove(p[0], p[1]) {
 			break
 		}
 		lx, ly = p[0], p[1]
-		if chebyshev(g.Player.X, g.Player.Y, p[0], p[1]) > d.Range {
+	}
+	// Throwing skill controls scatter; an adjacent enemy makes the throw
+	// less accurate.
+	accuracy := 60 + g.Player.Skill(SkillThrowing)/2
+	for _, c := range g.Critters {
+		if c.IsAlive() && isAdjacent(g.Player, c) {
+			accuracy = accuracy * g.Options.Get("optMechanicAVModEnemyIsNear") / 100
 			break
 		}
 	}
-	kind := 0
-	switch d.WeaponSub {
-	case 15:
-		kind = 1
-	case 0:
-		kind = 2
-	}
-	if d.Name == "smoke grenade" {
-		kind = 3
-	}
-	if d.Name == "flashbang grenade" {
-		for _, c := range g.Critters {
-			if c.IsAlive() && chebyshev(c.X, c.Y, lx, ly) <= 3 {
-				c.Alert = 0
-			}
+	if !g.Chance(accuracy) {
+		nx := lx + g.RollRange(-1, 1)
+		ny := ly + g.RollRange(-1, 1)
+		if g.Map.InBounds(nx, ny) && !g.Map.BlocksMove(nx, ny) {
+			lx, ly = nx, ny
+			g.Msg("the throw lands off target.", 8)
 		}
-		g.Msg("a blinding flash fills the area.", 15)
-		g.EndPlayerTurn()
-		return
 	}
-	radius := 2 + d.Radius/4
+	blastRadius := 2 + d.Radius/4
 	dmg := 10
 	if wd := d.Weapon(); wd != nil {
 		dmg = g.RollRange(wd.DmgMin, wd.DmgMax)
 	}
-	g.Explode(lx, ly, radius, dmg+g.Player.Skill(SkillThrowing)/4, kind)
-	g.EndPlayerTurn()
-}
-
-func (g *Game) Reload(c *Critter) {
-	if c == nil || !c.Player {
-		return
+	kind := 0
+	if d.Name == "molotov cocktail" {
+		kind = 1
 	}
-	w := c.Equip[EquipRanged]
-	if w == nil {
-		g.Msg("there is nothing to reload.", 12)
-		return
-	}
-	d := w.Def()
-	if d == nil {
-		return
-	}
-	if d.AmmoType >= 49 || d.MaxAmmo <= 0 {
-		g.Msg("your "+d.Name+" does not need to be reloaded. the clip is full.", 8)
-		return
-	}
-	if w.Charges >= d.MaxAmmo {
-		g.Msg("your "+d.Name+" does not need to be reloaded. the clip is full.", 8)
-		return
-	}
-	for i, it := range c.Inventory {
-		ad := it.Def()
-		if ad == nil || ad.Kind != KindAmmo || ad.AmmoType != d.AmmoType {
-			continue
-		}
-		need := d.MaxAmmo - w.Charges
-		take := it.Charges
-		if take > need {
-			take = need
-		}
-		w.Charges += take
-		it.Charges -= take
-		if it.Charges <= 0 {
-			c.RemoveItemAt(i)
-		}
-		g.Msg("you reload your "+d.Name+".", 8)
-		g.Msg(fmt.Sprintf("%d rounds left of %s.", w.Charges, ad.Name), 8)
-		g.EndPlayerTurn()
-		return
-	}
-	g.Msg("you do not have proper ammunition for your "+d.Name+".", 12)
-}
-
-func (g *Game) CheckAmmo() {
-	w := g.Player.Equip[EquipRanged]
-	if w == nil {
-		g.Msg("you are not holding any weapon that uses ammo.", 8)
-		return
-	}
-	d := w.Def()
-	if d == nil {
-		return
-	}
-	if d.AmmoType >= 49 {
-		g.Msg("the "+d.Name+" uses an internal power source.", 8)
-		return
-	}
-	g.Msg(fmt.Sprintf("you check the ammo for your %s, there are %d rounds left.", d.Name, w.Charges), 8)
+	g.Explode(lx, ly, blastRadius, dmg+g.Player.Skill(SkillThrowing)/4, kind)
 	g.EndPlayerTurn()
 }

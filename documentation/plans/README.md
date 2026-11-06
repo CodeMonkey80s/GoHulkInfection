@@ -27,7 +27,7 @@ own revamp plans are written.
 
 | Feature | Status | Document |
 |---|---|---|
-| Command and scope reduction — melee-only combat, no ranged/unarmed, FOV-limited throwing | Proposed | [systems/command-scope-reduction.md](systems/command-scope-reduction.md) |
+| Command and scope reduction — melee-only combat, no ranged/unarmed, FOV-limited throwing | In progress | [systems/command-scope-reduction.md](systems/command-scope-reduction.md) |
 
 The woods plan intentionally includes the first pass of:
 

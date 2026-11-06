@@ -101,7 +101,7 @@ func (u *UI) drawInventory() {
 	// Equipment panel.
 	u.putStr(1, 21, "[ # ] equipment...", 10, 0)
 	u.putStr(1, 22, strings.Repeat("~", 37), 2, 0)
-	slots := []string{"melee", "ranged", "armor", "grenade", "tool"}
+	slots := []string{"melee", "armor", "throwable", "tool"}
 	for i, name := range slots {
 		val := "none"
 		if it := g.Player.Equip[i]; it != nil {
@@ -141,7 +141,7 @@ func (u *UI) drawInventory() {
 			y++
 			u.putStr(41, y, fmt.Sprintf("weight: %dg", d.Weight), 11, 0)
 			y++
-			if d.Kind == KindMelee || d.Kind == KindRanged || d.Kind == KindGrenade {
+			if d.Kind == KindMelee || d.Kind == KindGrenade {
 				wd := d.Weapon()
 				if wd != nil {
 					u.putStr(41, y, fmt.Sprintf("dmg: %d-%d  av: %d  dv: %d", wd.DmgMin, wd.DmgMax, wd.AV, wd.DV), 11, 0)
@@ -151,15 +151,11 @@ func (u *UI) drawInventory() {
 				y++
 			}
 			if d.Kind == KindArmor {
-				u.putStr(41, y, fmt.Sprintf("protection: melee %d%% ranged %d%% acid %d%%", d.ArmorMelee, d.ArmorRanged, d.ArmorAcid), 11, 0)
+				u.putStr(41, y, fmt.Sprintf("protection: melee %d%% acid %d%%", d.ArmorMelee, d.ArmorAcid), 11, 0)
 				y++
 			}
-			if d.Kind == KindRanged {
-				u.putStr(41, y, fmt.Sprintf("clip: %d/%d  burst: %d", sel.Charges, d.MaxAmmo, d.Burst), 11, 0)
-				y++
-			}
-			if d.Kind == KindAmmo {
-				u.putStr(41, y, fmt.Sprintf("rounds: %d", d.MaxAmmo), 11, 0)
+			if d.Kind == KindGrenade {
+				u.putStr(41, y, "throwable: HE blast or fire", 11, 0)
 				y++
 			}
 			if d.Kind == KindMedical {
@@ -253,10 +249,10 @@ func (u *UI) drawPlayerScreen() {
 	u.putStr(41, 8, fmt.Sprintf("skill points: %d", g.FreePoints), 11, 0)
 	u.putStr(41, 10, "[ %% ] experience...", 10, 0)
 	u.putStr(41, 11, strings.Repeat("~", 37), 2, 0)
-	for i, name := range SkillNames {
+	for i, skill := range ActiveSkills {
 		y := 13 + i
-		val := p.Skill(i)
-		u.putStr(43, y, fmt.Sprintf("%-16s %3d  %s", name, val, skillLevelName(val)), 11, 0)
+		val := p.Skill(skill)
+		u.putStr(43, y, fmt.Sprintf("%-16s %3d  %s", SkillNames[skill], val, skillLevelName(val)), 11, 0)
 	}
 	u.fill(0, 48, screenW, 2, ' ', 8, 0)
 	u.putStr(1, 48, "z quit screen", 8, 0)
@@ -317,7 +313,7 @@ func (u *UI) drawSkills() {
 	u.putStr(centerText("[ x ] character skill levels", screenW), 0, "[ x ] character skill levels", 2, 0)
 	u.putStr(1, 2, fmt.Sprintf("[ %% ] level / experience...  level: %d  experience: %d  skill points: %d", p.Level, p.XP, g.FreePoints), 10, 0)
 	u.putStr(1, 3, strings.Repeat("~", 76), 2, 0)
-	for i, name := range SkillNames {
+	for i, skill := range ActiveSkills {
 		y := 5 + i*2
 		mark := "  "
 		fg := uint8(11)
@@ -327,10 +323,10 @@ func (u *UI) drawSkills() {
 			fg = 0
 			bg = 7
 		}
-		line := fmt.Sprintf("%s%-18s %3d  %-10s", mark, name, p.Skill(i), skillLevelName(p.Skill(i)))
+		line := fmt.Sprintf("%s%-18s %3d  %-10s", mark, SkillNames[skill], p.Skill(skill), skillLevelName(p.Skill(skill)))
 		u.putStr(2, y, fmt.Sprintf("%-74s", line), fg, bg)
 		if i == u.skillSel {
-			u.putStr(3, y+1, SkillDescs[i], 8, 0)
+			u.putStr(3, y+1, SkillDescs[skill], 8, 0)
 		}
 	}
 	u.fill(0, 42, screenW, 2, ' ', 8, 0)
@@ -342,9 +338,9 @@ func (u *UI) handleSkills(e *tcell.EventKey) {
 	g := u.g
 	switch e.Key() {
 	case tcell.KeyUp:
-		u.skillSel = (u.skillSel + NumSkills - 1) % NumSkills
+		u.skillSel = (u.skillSel + len(ActiveSkills) - 1) % len(ActiveSkills)
 	case tcell.KeyDown:
-		u.skillSel = (u.skillSel + 1) % NumSkills
+		u.skillSel = (u.skillSel + 1) % len(ActiveSkills)
 	case tcell.KeyEscape:
 		g.State = StatePlaying
 	case tcell.KeyEnter:
@@ -356,9 +352,9 @@ func (u *UI) handleSkills(e *tcell.EventKey) {
 		case '+':
 			u.spendSkillPoint()
 		case 'k':
-			u.skillSel = (u.skillSel + NumSkills - 1) % NumSkills
+			u.skillSel = (u.skillSel + len(ActiveSkills) - 1) % len(ActiveSkills)
 		case 'j':
-			u.skillSel = (u.skillSel + 1) % NumSkills
+			u.skillSel = (u.skillSel + 1) % len(ActiveSkills)
 		}
 	}
 }
@@ -369,23 +365,31 @@ func (u *UI) spendSkillPoint() {
 		g.Msg("you do not have any free skill points.", 8)
 		return
 	}
-	if g.Player.Skill(u.skillSel) >= 95 {
+	skill := ActiveSkills[u.skillSel]
+	if g.Player.Skill(skill) >= 95 {
 		g.Msg("this skill is already at maximum.", 8)
 		return
 	}
 	g.FreePoints--
 	inc := 1 + g.Roll(3)
-	g.Player.Skills[u.skillSel] += inc
-	if g.Player.Skills[u.skillSel] > 95 {
-		g.Player.Skills[u.skillSel] = 95
+	g.Player.Skills[skill] += inc
+	if g.Player.Skills[skill] > 95 {
+		g.Player.Skills[skill] = 95
 	}
-	g.Msg(fmt.Sprintf("%s increased by %d.", SkillNames[u.skillSel], inc), 10)
+	g.Msg(fmt.Sprintf("%s increased by %d.", SkillNames[skill], inc), 10)
 }
 
 func (u *UI) drawOptions() {
 	g := u.g
+	opts := ActiveOptionDefs()
 	u.clear(0)
 	u.putStr(centerText("[ = ] options", screenW), 0, "[ = ] options", 2, 0)
+	if u.optSel >= len(opts) {
+		u.optSel = len(opts) - 1
+	}
+	if u.optSel < 0 {
+		u.optSel = 0
+	}
 	visible := 39
 	if u.optSel < u.optScroll {
 		u.optScroll = u.optSel
@@ -395,10 +399,10 @@ func (u *UI) drawOptions() {
 	}
 	for i := 0; i < visible; i++ {
 		idx := u.optScroll + i
-		if idx >= len(OptionDefs) {
+		if idx >= len(opts) {
 			break
 		}
-		d := &OptionDefs[idx]
+		d := &opts[idx]
 		mark := "  "
 		fg := uint8(11)
 		bg := uint8(0)
@@ -410,7 +414,7 @@ func (u *UI) drawOptions() {
 		line := fmt.Sprintf("%s%-38s %4d (%d)", mark, d.Name, g.Options.Get(d.Name), d.Max)
 		u.putStr(1, 2+i, fmt.Sprintf("%-76s", line), fg, bg)
 	}
-	d := &OptionDefs[u.optSel]
+	d := &opts[u.optSel]
 	u.putStr(1, 42, "[ ? ] description...", 10, 0)
 	u.putStr(1, 43, strings.Repeat("~", 76), 2, 0)
 	for i, l := range wrapText(d.Desc, 76) {
@@ -426,41 +430,48 @@ func (u *UI) drawOptions() {
 
 func (u *UI) handleOptions(e *tcell.EventKey) {
 	g := u.g
+	opts := ActiveOptionDefs()
+	if u.optSel >= len(opts) {
+		u.optSel = len(opts) - 1
+	}
+	if u.optSel < 0 {
+		u.optSel = 0
+	}
 	switch e.Key() {
 	case tcell.KeyUp:
 		u.optSel--
 		if u.optSel < 0 {
-			u.optSel = len(OptionDefs) - 1
+			u.optSel = len(opts) - 1
 		}
 	case tcell.KeyDown:
 		u.optSel++
-		if u.optSel >= len(OptionDefs) {
+		if u.optSel >= len(opts) {
 			u.optSel = 0
 		}
 	case tcell.KeyLeft:
-		g.ChangeOption(OptionDefs[u.optSel].Name, -1)
+		g.ChangeOption(opts[u.optSel].Name, -1)
 	case tcell.KeyRight:
-		g.ChangeOption(OptionDefs[u.optSel].Name, 1)
+		g.ChangeOption(opts[u.optSel].Name, 1)
 	case tcell.KeyEscape:
 		g.State = StatePlaying
 	case tcell.KeyEnter:
-		g.ToggleOption(OptionDefs[u.optSel].Name)
+		g.ToggleOption(opts[u.optSel].Name)
 	default:
 		switch e.Rune() {
 		case 'z', 'q', 'O':
 			g.State = StatePlaying
 		case '4':
-			g.ChangeOption(OptionDefs[u.optSel].Name, -1)
+			g.ChangeOption(opts[u.optSel].Name, -1)
 		case '6':
-			g.ChangeOption(OptionDefs[u.optSel].Name, 1)
+			g.ChangeOption(opts[u.optSel].Name, 1)
 		case 'k':
 			u.optSel--
 			if u.optSel < 0 {
-				u.optSel = len(OptionDefs) - 1
+				u.optSel = len(opts) - 1
 			}
 		case 'j':
 			u.optSel++
-			if u.optSel >= len(OptionDefs) {
+			if u.optSel >= len(opts) {
 				u.optSel = 0
 			}
 		}
@@ -514,10 +525,10 @@ func (u *UI) drawHelp() {
 	}
 	for i := 0; i < visible; i++ {
 		idx := u.helpScroll + i
-		if idx >= len(KeyBindings) {
+		if idx >= len(ActiveKeyBindings) {
 			break
 		}
-		k := KeyBindings[idx]
+		k := ActiveKeyBindings[idx]
 		mark := "  "
 		fg := uint8(11)
 		bg := uint8(0)
@@ -529,7 +540,7 @@ func (u *UI) drawHelp() {
 		line := fmt.Sprintf("%s<%s> %s", mark, keyLabel(k), k.Name)
 		u.putStr(1, 4+i, fmt.Sprintf("%-76s", line), fg, bg)
 	}
-	k := KeyBindings[u.helpSel]
+	k := ActiveKeyBindings[u.helpSel]
 	u.putStr(1, 43, "[ ? ] description...", 10, 0)
 	u.putStr(1, 44, strings.Repeat("~", 76), 2, 0)
 	u.putStr(1, 45, k.Desc, 11, 0)
@@ -542,11 +553,11 @@ func (u *UI) handleHelp(e *tcell.EventKey) {
 	case tcell.KeyUp:
 		u.helpSel--
 		if u.helpSel < 0 {
-			u.helpSel = len(KeyBindings) - 1
+			u.helpSel = len(ActiveKeyBindings) - 1
 		}
 	case tcell.KeyDown:
 		u.helpSel++
-		if u.helpSel >= len(KeyBindings) {
+		if u.helpSel >= len(ActiveKeyBindings) {
 			u.helpSel = 0
 		}
 	case tcell.KeyPgUp:
@@ -556,8 +567,8 @@ func (u *UI) handleHelp(e *tcell.EventKey) {
 		}
 	case tcell.KeyPgDn:
 		u.helpSel += 20
-		if u.helpSel >= len(KeyBindings) {
-			u.helpSel = len(KeyBindings) - 1
+		if u.helpSel >= len(ActiveKeyBindings) {
+			u.helpSel = len(ActiveKeyBindings) - 1
 		}
 	case tcell.KeyEscape:
 		u.g.State = StatePlaying
@@ -567,13 +578,13 @@ func (u *UI) handleHelp(e *tcell.EventKey) {
 			u.g.State = StatePlaying
 		case 'j':
 			u.helpSel++
-			if u.helpSel >= len(KeyBindings) {
+			if u.helpSel >= len(ActiveKeyBindings) {
 				u.helpSel = 0
 			}
 		case 'k':
 			u.helpSel--
 			if u.helpSel < 0 {
-				u.helpSel = len(KeyBindings) - 1
+				u.helpSel = len(ActiveKeyBindings) - 1
 			}
 		}
 	}

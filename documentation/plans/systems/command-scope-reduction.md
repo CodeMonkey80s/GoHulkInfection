@@ -1,8 +1,11 @@
 # Command & Scope Reduction — Melee-Focused Redesign
 
-Status: **proposed**  
+Status: **in progress**
 Parent: [Feature plans](../README.md)  
 Scope: global player command set and combat systems; first validated in the woods
+
+Implementation status: first pass implemented on branch
+`feature/command-scope-reduction`; pending review and merge.
 
 This document proposes cutting the command surface down to what fits a
 zombie-slashing, melee-focused roguelike. The goal is not to remove depth — it

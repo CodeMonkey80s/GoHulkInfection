@@ -44,9 +44,8 @@ const (
 
 const (
 	EquipMelee = iota
-	EquipRanged
 	EquipArmor
-	EquipGrenade
+	EquipThrowable
 	EquipTool
 	NumEquipSlots
 )
@@ -136,7 +135,6 @@ type Critter struct {
 	Tactics   int
 	Blood     int
 	Poison    int
-	Target    int // index into Game.Critters, -1 for none
 	LastSeenX int
 	LastSeenY int
 	Alert     int
@@ -175,8 +173,8 @@ func (c *Critter) Weapon() *Item {
 	return c.Equip[EquipMelee]
 }
 
-func (c *Critter) RangedWeapon() *Item {
-	return c.Equip[EquipRanged]
+func (c *Critter) Throwable() *Item {
+	return c.Equip[EquipThrowable]
 }
 
 func (c *Critter) Armor() *Item {
@@ -269,15 +267,6 @@ func (c *Critter) RemoveItemAt(i int) *Item {
 	return it
 }
 
-func (c *Critter) HasAmmo(ammoType int) bool {
-	for _, it := range c.Inventory {
-		if d := it.Def(); d != nil && d.Kind == KindAmmo && d.AmmoType == ammoType && it.Charges > 0 {
-			return true
-		}
-	}
-	return false
-}
-
 type Message struct {
 	Text  string
 	Color uint8
@@ -301,14 +290,13 @@ func NewOptions() Options {
 		"optMapHighlightSpottedCritters": 1, "optMapResetFOVAfterAction": 0,
 		"optMapResetCursorPosition": 0, "optMapShadeColor": 1, "optMapUseMemoryMap": 1,
 		"optMechanicAcidEatItemChance": 30, "optMechanicBaseHitChance": 50,
-		"optMechanicBaseTileDV": 40, "optMechanicAVMod1": 100, "optMechanicAVMod2": 200,
+		"optMechanicAVMod1": 100, "optMechanicAVMod2": 200,
 		"optMechanicDVMod1": 100, "optMechanicDVMod2": 200,
-		"optMechanicAVModEnemyIsNear": 75, "optMechanicLineOfFireHitChance": 12,
+		"optMechanicAVModEnemyIsNear": 75,
 		"optPlayerAlwaysSpotCritters": 0, "optPlayerAttackOnMove": 1,
 		"optPlayerAutoOpenDoor": 1, "optPlayerDisplayItemInfoInStatus": 1,
 		"optPlayerDisplaySkillValues": 1, "optPlayerFreePointsPerLevel": 1,
-		"optPlayerClearTargetResetTactics": 0, "optPlayerGhostMode": 0,
-		"optPlayerGodMode": 0, "optPlayerUseTargetLine": 1, "optPlayerShowAVDV": 1,
+		"optPlayerGhostMode": 0, "optPlayerGodMode": 0, "optPlayerShowAVDV": 1,
 		"optPlayerWins": 0,
 	}
 	for i := range OptionDefs {
@@ -352,7 +340,6 @@ const (
 	StateHelp
 	StateMessages
 	StateLook
-	StateAim
 	StateThrow
 	StateQuitConfirm
 	StateGameOver
@@ -376,9 +363,6 @@ type Game struct {
 	State        GameState
 	CursorX      int
 	CursorY      int
-	Target       int
-	AimTargets   []int
-	AimPos       int
 	LookX, LookY int
 	SavePath     string
 	RNG          *rand.Rand
@@ -397,7 +381,6 @@ func NewGame(seed int64) *Game {
 	g := &Game{
 		RNG:      rand.New(rand.NewSource(seed)),
 		Options:  NewOptions(),
-		Target:   -1,
 		SavePath: "hi_save.json",
 		Running:  true,
 	}
@@ -409,7 +392,6 @@ func NewGame(seed int64) *Game {
 		Class:   4,
 		X:       -1,
 		Y:       -1,
-		Target:  -1,
 		Gold:    0,
 		Tactics: TacticNormal,
 	}
@@ -501,33 +483,6 @@ func (g *Game) RemoveCritter(c *Critter) {
 	for i, x := range g.Critters {
 		if x == c {
 			g.Critters = append(g.Critters[:i], g.Critters[i+1:]...)
-			if g.Target == i {
-				g.Target = -1
-			} else if g.Target > i {
-				g.Target--
-			}
-			return
-		}
-	}
-}
-
-func (g *Game) PlayerTarget() *Critter {
-	if g.Target < 0 || g.Target >= len(g.Critters) {
-		return nil
-	}
-	c := g.Critters[g.Target]
-	if !c.IsAlive() {
-		g.Target = -1
-		return nil
-	}
-	return c
-}
-
-func (g *Game) SetTarget(c *Critter) {
-	g.Target = -1
-	for i, x := range g.Critters {
-		if x == c {
-			g.Target = i
 			return
 		}
 	}

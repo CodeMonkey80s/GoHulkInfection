@@ -1,9 +1,6 @@
 package game
 
-import (
-	"fmt"
-	"sort"
-)
+import "fmt"
 
 func (g *Game) EndPlayerTurn() {
 	if g.State == StateGameOver || g.State == StateVictory {
@@ -34,9 +31,6 @@ func (g *Game) EndPlayerTurn() {
 	g.UpdateMonsters()
 	g.decayTileEffects()
 	g.UpdateFOV()
-	if g.PlayerTarget() == nil {
-		g.Target = -1
-	}
 	if !g.Player.IsAlive() {
 		g.State = StateGameOver
 	}
@@ -122,8 +116,7 @@ func (g *Game) MovePlayer(dx, dy int) {
 	}
 	if c := g.CritterAt(nx, ny); c != nil {
 		if g.Options.Bool("optPlayerAttackOnMove") {
-			g.SetTarget(c)
-			g.PlayerAttack(c)
+			g.PlayerMelee(c)
 			return
 		}
 		g.Msg("the "+c.NameOrUnknown()+" blocks your way...", 8)
@@ -237,16 +230,8 @@ func (g *Game) UseItem(it *Item) {
 		g.EndPlayerTurn()
 	case KindArmor:
 		g.WearItem(it)
-	case KindMelee, KindRanged, KindGrenade:
+	case KindMelee, KindGrenade:
 		g.WieldItem(it)
-	case KindAmmo:
-		if w := g.Player.Equip[EquipRanged]; w != nil {
-			if wd := w.Def(); wd != nil && wd.AmmoType == d.AmmoType {
-				g.Reload(g.Player)
-				return
-			}
-		}
-		g.Msg("you cannot use "+d.Name+" right now.", 8)
 	default:
 		g.Msg("you cannot use "+d.Name+".", 8)
 	}
@@ -266,7 +251,6 @@ func (g *Game) WieldItem(it *Item) {
 	if d == nil {
 		return
 	}
-	// Remove from inventory if present.
 	g.removeFromInventory(it)
 	switch d.Kind {
 	case KindMelee:
@@ -275,16 +259,6 @@ func (g *Game) WieldItem(it *Item) {
 		}
 		it.Active = true
 		g.Player.Equip[EquipMelee] = it
-		g.Msg("you are now using "+d.Name+".", 10)
-	case KindRanged:
-		if old := g.Player.Equip[EquipRanged]; old != nil {
-			g.Player.AddItem(old)
-		}
-		it.Active = true
-		if it.Charges == 0 && d.AmmoType < 49 {
-			it.Charges = d.MaxAmmo
-		}
-		g.Player.Equip[EquipRanged] = it
 		g.Msg("you are now using "+d.Name+".", 10)
 	case KindArmor:
 		if old := g.Player.Equip[EquipArmor]; old != nil {
@@ -295,10 +269,14 @@ func (g *Game) WieldItem(it *Item) {
 		g.Player.Equip[EquipArmor] = it
 		g.Msg("you are now wearing "+d.Name+".", 10)
 	case KindGrenade:
-		if old := g.Player.Equip[EquipGrenade]; old != nil {
+		if !ItemIsThrowable(it.Proto) {
+			g.Msg("you cannot use that.", 8)
+			return
+		}
+		if old := g.Player.Equip[EquipThrowable]; old != nil {
 			g.Player.AddItem(old)
 		}
-		g.Player.Equip[EquipGrenade] = it
+		g.Player.Equip[EquipThrowable] = it
 		g.Msg("you are now using "+d.Name+".", 10)
 	default:
 		g.Player.AddItem(it)
@@ -307,80 +285,6 @@ func (g *Game) WieldItem(it *Item) {
 }
 
 func (g *Game) WearItem(it *Item) { g.WieldItem(it) }
-
-func (g *Game) ActivateWeapon() {
-	w := g.Player.Equip[EquipRanged]
-	if w == nil {
-		w = g.Player.Equip[EquipMelee]
-	}
-	if w == nil {
-		g.Msg("there is nothing to activate...", 8)
-		return
-	}
-	d := w.Def()
-	if d == nil {
-		return
-	}
-	if w.Active {
-		w.Active = false
-		g.Msg("you deactivated your "+d.Name, 8)
-	} else {
-		w.Active = true
-		g.Msg("you activated your "+d.Name, 10)
-	}
-	g.EndPlayerTurn()
-}
-
-func (g *Game) SwapWeapons() {
-	a := g.Player.Equip[EquipMelee]
-	b := g.Player.Equip[EquipRanged]
-	if a == nil && b == nil {
-		g.Msg("there is nothing to swap.", 8)
-		return
-	}
-	if a != nil && b != nil && isAdjacent(g.Player, g.PlayerTargetOrNearest()) {
-		g.Msg("you cannot swap weapons with an enemy nearby.", 12)
-		return
-	}
-	g.Player.Equip[EquipMelee], g.Player.Equip[EquipRanged] = b, a
-	g.Msg("you swap your weapons.", 8)
-	g.EndPlayerTurn()
-}
-
-func (g *Game) CleanYourself() {
-	g.Player.Blood = 0
-	g.Msg("you clean up yourself and your hands.", 8)
-	g.EndPlayerTurn()
-}
-
-func (g *Game) Search() {
-	skill := g.Player.Skill(SkillSearching)
-	g.Msg("searching...", 8)
-	if g.Chance(20 + skill/2) {
-		// Find a random nearby item if any; otherwise spawn a small find.
-		x, y := g.Player.X, g.Player.Y
-		found := false
-		for dy := -4; dy <= 4 && !found; dy++ {
-			for dx := -4; dx <= 4 && !found; dx++ {
-				for _, it := range g.Items {
-					if it.X == x+dx && it.Y == y+dy {
-						g.Msg("you found something !", 10)
-						found = true
-					}
-				}
-			}
-		}
-		if !found {
-			proto := 48
-			if g.Chance(30) {
-				proto = 46
-			}
-			g.Items = append(g.Items, &Item{Proto: proto, X: x, Y: y, Charges: ItemDefs[proto].Charges})
-			g.Msg("you found something !", 10)
-		}
-	}
-	g.EndPlayerTurn()
-}
 
 func (g *Game) Bash() {
 	done := false
@@ -405,34 +309,6 @@ func (g *Game) Bash() {
 		return
 	}
 	g.EndPlayerTurn()
-}
-
-func (g *Game) Operate() {
-	// Stand on a door?
-	if d := g.Map.Def(g.Player.X, g.Player.Y); d.Type == 3 {
-		if d.BlockMove {
-			g.OpenDoor(g.Player.X, g.Player.Y)
-		} else {
-			g.CloseDoor(g.Player.X, g.Player.Y)
-		}
-		g.EndPlayerTurn()
-		return
-	}
-	for _, dir := range dirs8 {
-		x, y := g.Player.X+dir[0], g.Player.Y+dir[1]
-		if d := g.Map.Def(x, y); d.Type == 3 {
-			if d.BlockMove {
-				g.OpenDoor(x, y)
-				g.Msg("the "+d.Name+" opens.", 8)
-			} else {
-				g.CloseDoor(x, y)
-				g.Msg("the "+d.Name+" closes.", 8)
-			}
-			g.EndPlayerTurn()
-			return
-		}
-	}
-	g.Msg("there is nothing to operate here.", 8)
 }
 
 func (g *Game) UsePortal() {
@@ -499,109 +375,4 @@ func (g *Game) ChangeTactics() {
 	names := []string{"defensive", "normal", "aggressive"}
 	g.Msg("you changed tactic to "+names[p.Tactics], 8)
 	g.EndPlayerTurn()
-}
-
-func (g *Game) PlayerTargetOrNearest() *Critter {
-	if t := g.PlayerTarget(); t != nil {
-		return t
-	}
-	return g.NearestTarget()
-}
-
-func (g *Game) NearestTarget() *Critter {
-	var best *Critter
-	bestD := 99999
-	for _, c := range g.Critters {
-		if !c.IsAlive() {
-			continue
-		}
-		i := g.Map.idx(c.X, c.Y)
-		if !g.Map.Visible[i] {
-			continue
-		}
-		d := chebyshev(g.Player.X, g.Player.Y, c.X, c.Y)
-		if d < bestD {
-			bestD = d
-			best = c
-		}
-	}
-	return best
-}
-
-func (g *Game) BuildAimTargets() {
-	type tc struct {
-		c *Critter
-		d int
-	}
-	var list []tc
-	for _, c := range g.Critters {
-		if !c.IsAlive() {
-			continue
-		}
-		i := g.Map.idx(c.X, c.Y)
-		if !g.Map.Visible[i] {
-			continue
-		}
-		list = append(list, tc{c, chebyshev(g.Player.X, g.Player.Y, c.X, c.Y)})
-	}
-	sort.Slice(list, func(i, j int) bool { return list[i].d < list[j].d })
-	g.AimTargets = nil
-	for _, t := range list {
-		g.AimTargets = append(g.AimTargets, g.indexOfCritter(t.c))
-	}
-	if len(g.AimTargets) == 0 {
-		g.Msg("there is no target set...", 8)
-		return
-	}
-	g.AimPos = 0
-	if t := g.PlayerTarget(); t != nil {
-		for i, idx := range g.AimTargets {
-			if idx >= 0 && idx < len(g.Critters) && g.Critters[idx] == t {
-				g.AimPos = i
-				break
-			}
-		}
-	}
-	g.SetTarget(g.Critters[g.AimTargets[g.AimPos]])
-	g.Msg("new target selected, now targetting "+g.Critters[g.AimTargets[g.AimPos]].NameOrUnknown()+".", 8)
-}
-
-func (g *Game) indexOfCritter(c *Critter) int {
-	for i, x := range g.Critters {
-		if x == c {
-			return i
-		}
-	}
-	return -1
-}
-
-func (g *Game) NextAimTarget(dir int) {
-	if len(g.AimTargets) == 0 {
-		return
-	}
-	g.AimPos = (g.AimPos + dir + len(g.AimTargets)) % len(g.AimTargets)
-	idx := g.AimTargets[g.AimPos]
-	if idx >= 0 && idx < len(g.Critters) {
-		g.SetTarget(g.Critters[idx])
-		g.Msg("new target selected, now targetting "+g.Critters[idx].NameOrUnknown()+".", 8)
-	}
-}
-
-func (g *Game) NextNearestTarget() {
-	t := g.NearestTarget()
-	if t == nil {
-		g.Msg("trying to find nearest target... not found !", 8)
-		return
-	}
-	g.SetTarget(t)
-	g.Msg("new target selected, now targetting "+t.NameOrUnknown()+".", 8)
-}
-
-func (g *Game) ClearTarget() {
-	g.Target = -1
-	g.Msg("target cleared.", 8)
-	if g.Options.Bool("optPlayerClearTargetResetTactics") {
-		g.Player.Tactics = TacticNormal
-		g.Msg(" and tactic set to normal", 8)
-	}
 }

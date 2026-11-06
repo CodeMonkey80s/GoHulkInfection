@@ -92,29 +92,7 @@ func (g *Game) observerTurn(c *Critter, canSee bool, dist int) {
 		g.MonsterAttack(c, g.Player)
 		return
 	}
-	if c.HasRanged() {
-		w := c.Equip[EquipRanged]
-		d := w.Def()
-		if d != nil && dist <= d.Range && g.Map.LineOfSight(c.X, c.Y, g.Player.X, g.Player.Y) {
-			g.MonsterRangedAttack(c, g.Player)
-			return
-		}
-	}
 	g.stepToward(c, g.Player.X, g.Player.Y)
-}
-
-func (g *Game) MonsterRangedAttack(c, target *Critter) {
-	chance := g.HitChance(c, target, 2)
-	if !g.Chance(chance) {
-		g.Msg("the "+c.NameOrUnknown()+" fires at you and misses.", 7)
-		return
-	}
-	dmg := g.RollRange(c.DmgMin, c.DmgMax)
-	if dmg < 1 {
-		dmg = c.STR / 2
-	}
-	g.Msg("the "+c.NameOrUnknown()+" fires at you and hits.", 12)
-	g.DamageCritter(target, dmg, c, 1)
 }
 
 func (g *Game) stepToward(c *Critter, tx, ty int) {

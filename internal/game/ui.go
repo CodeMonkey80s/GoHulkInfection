@@ -181,9 +181,6 @@ func (u *UI) draw() {
 	case StateLook:
 		u.drawGame()
 		u.drawLookOverlay()
-	case StateAim:
-		u.drawGame()
-		u.drawAimOverlay()
 	case StateThrow:
 		u.drawGame()
 		u.drawThrowOverlay()
@@ -279,12 +276,11 @@ func (u *UI) drawCharCreate() {
 		u.putStr(2, 13+i, l, 10, 0)
 	}
 	u.putStr(2, 17, fmt.Sprintf("strength:%d  toughness:%d  agility:%d  intelligence:%d", c.STR, c.TGH, c.AGI, c.INT), 7, 0)
-	names := []string{"perception", "dodging", "unarmed combat", "weapon melee", "weapon ranged", "throwing", "searching", "metabolism", "focusing"}
-	for i, n := range names {
+	for i, skill := range ActiveSkills {
 		col, row := i/3, i%3
 		x := 2 + col*26
 		y := 19 + row
-		u.putStr(x, y, fmt.Sprintf("%-16s %3d", n, c.Skills[i]), 10, 0)
+		u.putStr(x, y, fmt.Sprintf("%-16s %3d", SkillNames[skill], c.Skills[skill]), 10, 0)
 	}
 	u.putStr(2, 23, "name: "+u.g.PlayerName, 14, 0)
 	u.putStr(2, 24, "arrows: select class   r: reroll name   enter: begin", 8, 0)
@@ -381,28 +377,11 @@ func (u *UI) drawGame() {
 			u.put(sx, sy, r, fg, bg)
 		}
 	}
-	// target line (drawn before the cursor highlight so it cannot cover it)
-	if t := g.PlayerTarget(); t != nil && g.Options.Bool("optPlayerUseTargetLine") {
-		line := g.Map.Line(g.Player.X, g.Player.Y, t.X, t.Y)
-		for _, p := range line {
-			sx, sy := p[0]-left, p[1]-top
-			if sx >= 0 && sy >= 0 && sx < screenW && sy < mapViewH {
-				if p[0] == t.X && p[1] == t.Y {
-					continue
-				}
-				u.put(sx, sy, '.', 8, 0)
-			}
-		}
-	}
-	// Highlight the cursor/target tile in look, aim and throw modes.
+	// Highlight the cursor tile in look and throw modes.
 	hx, hy, hasHighlight := 0, 0, false
 	switch g.State {
 	case StateLook, StateThrow:
 		hx, hy, hasHighlight = g.LookX, g.LookY, true
-	case StateAim:
-		if t := g.PlayerTarget(); t != nil {
-			hx, hy, hasHighlight = t.X, t.Y, true
-		}
 	}
 	if hasHighlight {
 		sx, sy := hx-left, hy-top
@@ -415,8 +394,8 @@ func (u *UI) drawGame() {
 	u.drawStatus(46)
 }
 
-// CellForHighlight returns the glyph/colour of a world cell for the look/aim/
-// throw cursor.  Unexplored cells are shown as '?'.
+// CellForHighlight returns the glyph/colour of a world cell for the look/throw
+// cursor.  Unexplored cells are shown as '?'.
 func (g *Game) CellForHighlight(x, y int) (rune, uint8) {
 	if g.Map == nil || !g.Map.InBounds(x, y) {
 		return '?', 8
@@ -477,12 +456,12 @@ func (u *UI) drawStatus(y int) {
 	if a := p.Equip[EquipArmor]; a != nil {
 		wear = a.Name()
 	}
-	tgt := "nothing"
-	if t := g.PlayerTarget(); t != nil {
-		tgt = t.NameOrUnknown()
+	wep := "none"
+	if w := p.Equip[EquipMelee]; w != nil {
+		wep = w.Name()
 	}
 	tac := []string{"defensive", "normal", "aggressive"}[p.Tactics]
-	line2 := fmt.Sprintf("wearing: %-18s target: %-18s tactic: %s", wear, tgt, tac)
+	line2 := fmt.Sprintf("weapon: %-16s wearing: %-14s tactic: %s", wep, wear, tac)
 	u.putStr(0, y+1, line2, 7, 0)
 	line3 := fmt.Sprintf("weight: %d/%d  burden: %s", p.Weight(), p.MaxWeight(), p.Burden())
 	if g.Options.Bool("optPlayerShowAVDV") {
@@ -549,8 +528,6 @@ func (u *UI) handleKey(e *tcell.EventKey) {
 		u.handleMessages(e)
 	case StateLook:
 		u.handleLook(e)
-	case StateAim:
-		u.handleAim(e)
 	case StateThrow:
 		u.handleThrow(e)
 	case StateQuitConfirm:
@@ -699,83 +676,40 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 		g.MovePlayer(0, 1)
 	case '1':
 		g.MovePlayer(-1, 1)
-	case 'A':
-		g.ActivateWeapon()
-	case 'a':
-		g.BuildAimTargets()
-		if len(g.AimTargets) > 0 {
-			g.State = StateAim
-		}
 	case 'b':
 		g.Bash()
-	case 'c':
-		g.ClearTarget()
-	case 'C':
-		g.CheckAmmo()
-	case 'W':
-		g.CleanYourself()
-	case '`':
-		g.State = StateMessages
-		u.msgScroll = 0
-	case '=':
-		g.DumpOptions()
 	case ',':
 		g.PickUp()
 	case 'f':
-		if t := g.PlayerTargetOrNearest(); t != nil {
-			g.SetTarget(t)
-			g.PlayerAttack(t)
-		} else {
-			g.Msg("there is no target set...", 8)
-		}
+		g.PlayerMeleeAttack()
 	case '?':
 		g.State = StateHelp
-	case 'h':
-		name := "optMapHighlightSpottedCritters"
-		g.ToggleOption(name)
-		if g.Options.Bool(name) {
-			g.Msg("highlight mode enabled.", 8)
-		} else {
-			g.Msg("highlight mode disabled.", 8)
-		}
 	case 'i':
 		g.State = StateInventory
 		u.invSel = 0
 		u.invTab = 0
 		u.invScroll = 0
-	case '/':
-		g.State = StateHelp
 	case 'l':
 		g.State = StateLook
 		g.LookX, g.LookY = g.Player.X, g.Player.Y
 	case 'm':
 		g.State = StateMessages
 		u.msgScroll = 0
-	case 'n':
-		g.NextNearestTarget()
-	case 'o':
-		g.Operate()
 	case 'O':
 		g.State = StateOptions
 		u.optSel = 0
 		u.optScroll = 0
 	case '@':
 		g.State = StatePlayerScreen
-	case 'R':
-		g.Reload(g.Player)
 	case 'S':
 		g.SaveAndQuit()
-	case 's':
-		g.Search()
-	case 'w':
-		g.SwapWeapons()
 	case 'x':
 		g.State = StateSkills
 		u.skillSel = 0
 	case 'T':
 		g.ChangeTactics()
 	case 't':
-		if g.Player.Equip[EquipGrenade] != nil || hasGrenade(g.Player) {
+		if g.hasThrowable() {
 			g.State = StateThrow
 			g.LookX, g.LookY = g.Player.X, g.Player.Y
 		} else {
@@ -797,15 +731,6 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 	if e.Key() == tcell.KeyEscape {
 		g.State = StateQuitConfirm
 	}
-}
-
-func hasGrenade(c *Critter) bool {
-	for _, it := range c.Inventory {
-		if d := it.Def(); d != nil && d.Kind == KindGrenade {
-			return true
-		}
-	}
-	return false
 }
 
 func (u *UI) drawConfirm() {
@@ -872,9 +797,9 @@ func (u *UI) handleGameOver(e *tcell.EventKey) {
 func (u *UI) drawLookOverlay() {
 	g := u.g
 	desc := g.TileDescription(g.LookX, g.LookY)
+	u.fill(0, 42, screenW, 2, ' ', 8, 0)
 	u.fill(0, 42, screenW, 1, ' ', 15, 1)
 	u.putStr(1, 42, desc, 15, 1)
-	u.fill(0, 43, screenW, 1, ' ', 8, 0)
 	u.putStr(1, 43, fmt.Sprintf("look: [%d:%d] arrows move  enter/esc quit", g.LookX, g.LookY), 8, 0)
 }
 
@@ -907,60 +832,38 @@ func (u *UI) handleLook(e *tcell.EventKey) {
 	}
 }
 
-func (u *UI) drawAimOverlay() {
-	g := u.g
-	t := g.PlayerTarget()
-	line := ""
-	if t != nil {
-		chance := g.HitChance(g.Player, t, 1)
-		line = fmt.Sprintf("aim: %s  distance=%d  hit=%d%%", t.NameOrUnknown(), chebyshev(g.Player.X, g.Player.Y, t.X, t.Y), chance)
-	}
-	u.fill(0, 42, screenW, 1, ' ', 15, 1)
-	u.putStr(1, 42, line, 15, 1)
-	u.putStr(1, 43, "tab/n next target   enter select   esc cancel", 8, 0)
-}
-
-func (u *UI) handleAim(e *tcell.EventKey) {
-	g := u.g
-	switch e.Key() {
-	case tcell.KeyTab:
-		g.NextAimTarget(1)
-	case tcell.KeyBacktab:
-		g.NextAimTarget(-1)
-	case tcell.KeyEscape:
-		g.State = StatePlaying
-	case tcell.KeyEnter:
-		g.State = StatePlaying
-	default:
-		switch e.Rune() {
-		case 'n':
-			g.NextAimTarget(1)
-		case 'p':
-			g.NextAimTarget(-1)
-		case 'z':
-			g.State = StatePlaying
-		}
-	}
-}
-
 func (u *UI) drawThrowOverlay() {
 	g := u.g
+	u.fill(0, 42, screenW, 2, ' ', 8, 0)
 	u.fill(0, 42, screenW, 1, ' ', 15, 1)
-	u.putStr(1, 42, fmt.Sprintf("throw: target [%d:%d]  enter throw  esc cancel", g.LookX, g.LookY), 15, 1)
+	u.putStr(1, 42, fmt.Sprintf("throw: target [%d:%d]  range %d  enter throw  esc cancel", g.LookX, g.LookY, g.FOVRadius()), 15, 1)
 	u.putStr(1, 43, "arrows move cursor", 8, 0)
+}
+
+func (g *Game) moveThrowCursor(dx, dy int) {
+	nx, ny := g.LookX+dx, g.LookY+dy
+	if !g.Map.InBounds(nx, ny) || !g.Map.Visible[g.Map.idx(nx, ny)] {
+		g.Msg("you can only target visible tiles.", 8)
+		return
+	}
+	if chebyshev(g.Player.X, g.Player.Y, nx, ny) > g.FOVRadius() {
+		g.Msg("that is beyond your throwing range.", 8)
+		return
+	}
+	g.LookX, g.LookY = nx, ny
 }
 
 func (u *UI) handleThrow(e *tcell.EventKey) {
 	g := u.g
 	switch e.Key() {
 	case tcell.KeyUp:
-		g.LookY--
+		g.moveThrowCursor(0, -1)
 	case tcell.KeyDown:
-		g.LookY++
+		g.moveThrowCursor(0, 1)
 	case tcell.KeyLeft:
-		g.LookX--
+		g.moveThrowCursor(-1, 0)
 	case tcell.KeyRight:
-		g.LookX++
+		g.moveThrowCursor(1, 0)
 	case tcell.KeyEscape:
 		g.State = StatePlaying
 	case tcell.KeyEnter:
@@ -969,13 +872,13 @@ func (u *UI) handleThrow(e *tcell.EventKey) {
 	default:
 		switch e.Rune() {
 		case '8':
-			g.LookY--
+			g.moveThrowCursor(0, -1)
 		case '2':
-			g.LookY++
+			g.moveThrowCursor(0, 1)
 		case '4':
-			g.LookX--
+			g.moveThrowCursor(-1, 0)
 		case '6':
-			g.LookX++
+			g.moveThrowCursor(1, 0)
 		case 'z':
 			g.State = StatePlaying
 		}
@@ -999,14 +902,17 @@ func (u *UI) debugSpawnCritter() {
 func (u *UI) debugSpawnItem() {
 	g := u.g
 	x, y := g.Player.X, g.Player.Y
-	proto := g.Roll(len(ItemDefs))
-	it := &Item{Proto: proto, X: x, Y: y, Charges: ItemDefs[proto].Clip}
-	if ItemDefs[proto].Kind == KindAmmo {
-		it.Charges = ItemDefs[proto].MaxAmmo
+	for {
+		proto := g.Roll(len(ItemDefs))
+		if !ItemAvailable(proto) {
+			continue
+		}
+		it := &Item{Proto: proto, X: x, Y: y, Charges: ItemDefs[proto].Clip}
+		if ItemDefs[proto].Kind == KindMedical {
+			it.Charges = ItemDefs[proto].Charges
+		}
+		g.Items = append(g.Items, it)
+		g.Msg("debug: spawned item "+it.Name()+".", 10)
+		return
 	}
-	if ItemDefs[proto].Kind == KindMedical {
-		it.Charges = ItemDefs[proto].Charges
-	}
-	g.Items = append(g.Items, it)
-	g.Msg("debug: spawned item "+it.Name()+".", 10)
 }
