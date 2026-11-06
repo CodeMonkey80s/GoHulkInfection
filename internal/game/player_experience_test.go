@@ -196,6 +196,30 @@ func TestInventoryCommaPicksUpItem(t *testing.T) {
 	}
 }
 
+func TestMovingOntoItemAnnouncesIt(t *testing.T) {
+	g := NewGame(706)
+	g.SetupNewGame(0, "tester")
+	g.State = StatePlaying
+	var dx, dy int
+	found := false
+	for _, d := range dirs8 {
+		nx, ny := g.Player.X+d[0], g.Player.Y+d[1]
+		if g.Map.IsPassable(nx, ny) && g.CritterAt(nx, ny) == nil && g.ItemAt(nx, ny) == nil {
+			dx, dy, found = d[0], d[1], true
+			break
+		}
+	}
+	if !found {
+		t.Fatal("no free adjacent tile for movement test")
+	}
+	g.Items = append(g.Items, &Item{Proto: 10, X: g.Player.X + dx, Y: g.Player.Y + dy})
+	g.MovePlayer(dx, dy)
+	msgs := g.LastMessages(1)
+	if len(msgs) != 1 || msgs[0].Text != "Crowbar is lying here." {
+		t.Fatalf("last message = %q, want item announcement", msgs)
+	}
+}
+
 func TestLookDescriptionNamesGroundItem(t *testing.T) {
 	g := NewGame(705)
 	g.SetupNewGame(0, "tester")

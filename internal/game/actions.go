@@ -126,6 +126,7 @@ func (g *Game) MovePlayer(dx, dy int) {
 	if g.Options.Bool("optPlayerGhostMode") {
 		g.Player.X, g.Player.Y = nx, ny
 		g.UpdateFOV()
+		g.announceGroundItem()
 		g.EndPlayerTurn()
 		return
 	}
@@ -145,7 +146,14 @@ func (g *Game) MovePlayer(dx, dy int) {
 	}
 	g.Player.X, g.Player.Y = nx, ny
 	g.UpdateFOV()
+	g.announceGroundItem()
 	g.EndPlayerTurn()
+}
+
+func (g *Game) announceGroundItem() {
+	if it := g.ItemAt(g.Player.X, g.Player.Y); it != nil {
+		g.Msg(capitalizeFirst(it.Name())+" is lying here.", 10)
+	}
 }
 
 func (g *Game) WaitTurn() {
