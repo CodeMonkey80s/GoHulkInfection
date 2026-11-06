@@ -28,9 +28,10 @@ func (h *roadHeap) Pop() interface{} {
 // first-pass outdoor terrain generator: grass, forest density, clearings,
 // a main dirt road and lantern posts.
 func (g *Game) generateWoodsLevel(level int) {
+	spec := woodLevelSpecFor(level)
 	m := NewMap(mapWidth, mapHeight)
 	m.Theme = 0
-	m.Name = LevelThemes[0]
+	m.Name = spec.Name
 	for i := range m.Tiles {
 		m.Tiles[i] = 2 // grass
 	}
@@ -73,7 +74,8 @@ func (g *Game) generateWoodsLevel(level int) {
 	}
 	g.setWoodsRoadTile(m, startX, startY)
 	m.SetTile(exitX, exitY, portalTile(0))
-	g.placeWoodsHuts(m, path, startX, startY, exitX, exitY)
+	g.placeWoodsLandmark(m, level, path, startX, startY, exitX, exitY)
+	g.placeWoodsHuts(m, path, startX, startY, exitX, exitY, spec.HutMin, spec.HutMax)
 	g.placeWoodsLanterns(m, path)
 	g.scatterWoodsProps(m, startX, startY, exitX, exitY)
 

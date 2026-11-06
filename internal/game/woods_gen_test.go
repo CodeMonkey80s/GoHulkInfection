@@ -72,14 +72,53 @@ func TestWoodsGeneratorBuildsHuts(t *testing.T) {
 					}
 				}
 			}
-			if doors < 2 || doors > 6 {
-				t.Fatalf("level %d seed %d has %d hut doors, want 2-6", level, seed, doors)
+			spec := woodLevelSpecFor(level)
+			maxDoors := spec.HutMax
+			if level == 0 || level == 3 {
+				maxDoors++ // landmark shed/mill house also has a wooden door
+			}
+			if doors < spec.HutMin || doors > maxDoors {
+				t.Fatalf("level %d seed %d has %d hut doors, want %d-%d", level, seed, doors, spec.HutMin, maxDoors)
 			}
 			if windows == 0 {
 				t.Fatalf("level %d seed %d has no hut windows", level, seed)
 			}
 			if furniture == 0 {
 				t.Fatalf("level %d seed %d has no hut furniture", level, seed)
+			}
+		}
+	}
+}
+
+func TestWoodsLandmarks(t *testing.T) {
+	expected := [][]uint8{
+		{tileWoodpile},
+		{tileOrchardTree, tileBeehive, tileCiderPress},
+		{tileGravestone, tileIronFence, tileCryptDoor},
+		{tileMillStone},
+		{tileTent, tileCampfire, tileCage, tileDryingRack},
+		{tileMushroomRing, tileDruidAltar, 12},
+		{tileWell, tileMarketStall, tileCart, tileHaystack},
+		{tileKiln},
+		{tileChapelAltar, tileBellTower, tileGravestone},
+	}
+	for level := 0; level < 9; level++ {
+		for seed := int64(0); seed < 5; seed++ {
+			g := NewGame(seed + int64(level)*5000)
+			g.SetupNewGame(0, "tester")
+			g.GenerateLevel(level)
+			spec := woodLevelSpecFor(level)
+			if g.Map.Name != spec.Name {
+				t.Fatalf("level %d name = %q, want %q", level, g.Map.Name, spec.Name)
+			}
+			counts := map[uint8]int{}
+			for _, tile := range g.Map.Tiles {
+				counts[tile]++
+			}
+			for _, tile := range expected[level] {
+				if counts[tile] == 0 {
+					t.Fatalf("level %d seed %d missing landmark tile %d", level, seed, tile)
+				}
 			}
 		}
 	}
