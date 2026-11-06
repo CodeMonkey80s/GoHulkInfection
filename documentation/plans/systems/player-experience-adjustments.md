@@ -53,7 +53,7 @@ The player starts with **two unlocked belt slots**:
 Starting kit placement:
 
 - Belt 1: a healing item (medkit or bandage depending on class).
-- Belt 2: a second consumable (bandage or armour vial).
+- Belt 2: starts empty so early loot has a free slot.
 - Belt 3: empty until unlocked.
 
 Update `PlayerSlots{BeltUnlocked: 2}`, the starting-kit setup, save migration,
@@ -89,11 +89,11 @@ the improvised ones later):
 
 | Class | Hands | Body | Belt 1 | Belt 2 |
 |---|---|---|---|---|
-| Butcher | hammer | jacket | bandage | armour vial |
-| Hunter | crowbar | jacket | bandage | armour vial |
-| Medic | pipe | jacket | medkit | bandage |
-| Mechanic | wrench | jacket | bandage | armour vial |
-| Prepper | crowbar | jacket | medkit | bandage |
+| Butcher | hammer | jacket | bandage | — |
+| Hunter | crowbar | jacket | bandage | — |
+| Medic | pipe | jacket | medkit | — |
+| Mechanic | wrench | jacket | bandage | — |
+| Prepper | crowbar | jacket | medkit | — |
 
 Passive traits are deferred to a later pass. Candidates:
 

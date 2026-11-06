@@ -47,17 +47,17 @@ type StartingKit struct {
 func ClassStartingKit(class int) StartingKit {
 	switch class {
 	case 0: // Butcher
-		return StartingKit{Hands: 11, Body: 5, Belt: []int{47, ArmourVialProto}}
+		return StartingKit{Hands: 11, Body: 5, Belt: []int{47}}
 	case 1: // Hunter
-		return StartingKit{Hands: 10, Body: 5, Belt: []int{47, ArmourVialProto}}
+		return StartingKit{Hands: 10, Body: 5, Belt: []int{47}}
 	case 2: // Medic
-		return StartingKit{Hands: 8, Body: 5, Belt: []int{48, 47}}
+		return StartingKit{Hands: 8, Body: 5, Belt: []int{48}}
 	case 3: // Mechanic
-		return StartingKit{Hands: 12, Body: 5, Belt: []int{47, ArmourVialProto}}
+		return StartingKit{Hands: 12, Body: 5, Belt: []int{47}}
 	case 4: // Prepper
-		return StartingKit{Hands: 10, Body: 5, Belt: []int{48, 47}}
+		return StartingKit{Hands: 10, Body: 5, Belt: []int{48}}
 	default:
-		return StartingKit{Hands: 10, Body: 5, Belt: []int{47, ArmourVialProto}}
+		return StartingKit{Hands: 10, Body: 5, Belt: []int{47}}
 	}
 }
 
