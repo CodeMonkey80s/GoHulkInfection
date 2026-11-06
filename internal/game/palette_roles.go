@@ -136,13 +136,13 @@ func ItemColorRole(proto int) (ColorRole, bool) {
 	switch ItemDefs[proto].Kind {
 	case KindArmor:
 		return RoleLeather, true
-	case KindMelee, KindRanged:
+	case KindMelee, KindRanged, KindTool:
 		return RoleSteel, true
-	case KindAmmo:
+	case KindAmmo, KindRelic:
 		return RoleGoldRelic, true
 	case KindGrenade:
 		return RoleFireEmber, true
-	case KindMedical:
+	case KindMedical, KindFood:
 		return RoleHealthGood, true
 	case KindBodyPart:
 		return RoleGuts, true

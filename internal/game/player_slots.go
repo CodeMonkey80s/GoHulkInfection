@@ -1,6 +1,9 @@
 package game
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // Player slot helpers. Monsters keep using the legacy Inventory/Equip fields.
 
@@ -104,7 +107,7 @@ func ItemIsHandItem(d *ItemDef) bool {
 		return false
 	}
 	switch d.Kind {
-	case KindMelee, KindGrenade:
+	case KindMelee, KindGrenade, KindTool:
 		return true
 	}
 	return false
@@ -216,6 +219,67 @@ func (g *Game) playerConsumeMedical(it *Item) bool {
 	return true
 }
 
+func (g *Game) playerConsumeFood(it *Item) bool {
+	if it == nil {
+		return false
+	}
+	d := it.Def()
+	if d == nil || d.Kind != KindFood {
+		return false
+	}
+	if it.Charges <= 0 {
+		it.Charges = d.Charges
+		if it.Charges <= 0 {
+			it.Charges = 1
+		}
+	}
+	if d.Heal < 0 {
+		dmg := -d.Heal
+		g.Msg("you eat the "+d.Name+" and feel sick.", 12)
+		g.DamageCritter(g.Player, dmg, nil, 2)
+	} else {
+		heal := d.Heal
+		if heal <= 0 {
+			heal = 1
+		}
+		g.Player.HP += heal
+		if g.Player.HP > g.Player.MaxHP {
+			g.Player.HP = g.Player.MaxHP
+		}
+		g.Msg(fmt.Sprintf("you eat %s and recover %d health.", d.Name, heal), 10)
+	}
+	it.Charges--
+	return true
+}
+
+func (g *Game) playerUseTool(it *Item) bool {
+	if it == nil {
+		return false
+	}
+	d := it.Def()
+	if d == nil || d.Kind != KindTool {
+		return false
+	}
+	name := strings.ToLower(d.Name)
+	switch {
+	case strings.Contains(name, "torch"), strings.Contains(name, "lantern"):
+		g.Msg("you light the "+d.Name+".", 10)
+	case strings.Contains(name, "whetstone"):
+		g.Msg("you run the whetstone along your weapon.", 8)
+	case strings.Contains(name, "rope"):
+		g.Msg("you coil the rope. climbing is not implemented yet.", 8)
+	case strings.Contains(name, "shovel"):
+		g.Msg("you test the shovel. digging is not implemented yet.", 8)
+	case strings.Contains(name, "lockpick"):
+		g.Msg("you test the lockpick. locks are not implemented yet.", 8)
+	case strings.Contains(name, "fishing rod"):
+		g.Msg("you ready the fishing rod. fishing is not implemented yet.", 8)
+	default:
+		g.Msg("you use the "+d.Name+".", 8)
+	}
+	return true
+}
+
 // UseSlot performs the context-sensitive action for a player slot.
 func (g *Game) UseSlot(slot int) {
 	it := g.Player.SlotItem(slot)
@@ -241,6 +305,19 @@ func (g *Game) UseSlot(slot int) {
 				}
 				g.EndPlayerTurn()
 			}
+		case KindFood:
+			if g.playerConsumeFood(it) {
+				if it.Charges <= 0 {
+					g.Player.Slots.Hands = nil
+				}
+				g.EndPlayerTurn()
+			}
+		case KindTool:
+			if g.playerUseTool(it) {
+				g.EndPlayerTurn()
+			}
+		case KindRelic:
+			g.Msg("you turn the "+d.Name+" over. it is a relic of the old world.", 8)
 		default:
 			g.Msg("you cannot use "+d.Name+" from your hands.", 8)
 		}
@@ -248,7 +325,7 @@ func (g *Game) UseSlot(slot int) {
 		g.Msg("your "+d.Name+" is worn.", 8)
 	case SlotBelt1, SlotBelt2, SlotBelt3:
 		switch d.Kind {
-		case KindMelee, KindGrenade:
+		case KindMelee, KindGrenade, KindTool:
 			old := g.Player.Slots.Hands
 			g.Player.Slots.Hands = it
 			g.Player.SetSlotItem(slot, old)
@@ -256,6 +333,13 @@ func (g *Game) UseSlot(slot int) {
 			g.EndPlayerTurn()
 		case KindMedical:
 			if g.playerConsumeMedical(it) {
+				if it.Charges <= 0 {
+					g.Player.SetSlotItem(slot, nil)
+				}
+				g.EndPlayerTurn()
+			}
+		case KindFood:
+			if g.playerConsumeFood(it) {
 				if it.Charges <= 0 {
 					g.Player.SetSlotItem(slot, nil)
 				}

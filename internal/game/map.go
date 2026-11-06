@@ -11,16 +11,18 @@ const (
 )
 
 type Map struct {
-	W, H    int
-	Tiles   []uint8
-	Seen    []bool
-	Visible []bool
-	Blood   []uint8
-	Fire    []int
-	Acid    []int
-	Smoke   []int
-	Theme   int
-	Name    string
+	W, H      int
+	Tiles     []uint8
+	Seen      []bool
+	Visible   []bool
+	Blood     []uint8
+	Fire      []int
+	Acid      []int
+	Smoke     []int
+	Theme     int
+	Name      string
+	LandmarkX int
+	LandmarkY int
 }
 
 func NewMap(w, h int) *Map {
@@ -449,6 +451,9 @@ func (g *Game) finishLevel(m *Map, level, theme int) {
 	g.Theme = theme
 	g.Weather = WeatherClear
 	g.SpawnPopulation()
+	if theme == 0 && level >= 0 && level < len(g.WoodLoot) {
+		g.spawnSignatureLoot(level)
+	}
 	// Starting hint.
 	if g.Options.Bool("optGameHints") {
 		h := ActiveHints[g.HintsShown%len(ActiveHints)]
@@ -735,6 +740,7 @@ func (g *Game) SetupNewGame(class int, name string) {
 	}
 	g.PlayerClass = class
 	g.PlayerName = name
+	g.WoodLoot = newWoodLootAssignment(g.RNG)
 	g.Player = &Critter{
 		Proto:  -1,
 		Name:   name,

@@ -1,6 +1,9 @@
 package game
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 func (g *Game) EndPlayerTurn() {
 	if g.State == StateGameOver || g.State == StateVictory {
@@ -190,6 +193,17 @@ func (g *Game) Bash() {
 		td := g.Map.Def(x, y)
 		if td.Type == 3 || td.BlockMove {
 			chance := 20 + g.Player.STR*2
+			if w := g.Player.HandItem(); w != nil {
+				if d := w.Def(); d != nil {
+					name := strings.ToLower(d.Name)
+					switch {
+					case strings.Contains(name, "axe"), strings.Contains(name, "hatchet"):
+						chance += 25
+					case strings.Contains(name, "saw"):
+						chance += 15
+					}
+				}
+			}
 			if g.Chance(chance) {
 				g.Map.SetTile(x, y, floorTile(g.Theme))
 				g.Msg("you smash the "+td.Name+"!", 12)
