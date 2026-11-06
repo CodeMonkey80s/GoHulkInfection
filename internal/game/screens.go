@@ -32,7 +32,7 @@ func slotKey(slot int) string {
 	case SlotBelt2:
 		return "d"
 	case SlotBelt3:
-		return "e"
+		return "r"
 	}
 	return "-"
 }
@@ -72,7 +72,7 @@ func itemSummary(it *Item) string {
 func (u *UI) drawInventory() {
 	g := u.g
 	u.fill(0, 0, screenW, 24, ' ', 7, 0)
-	u.putStr(centerText("[ i ] player slots", screenW), 0, "[ i ] player slots", 2, 0)
+	u.putStr(centerText("[ e ] equipment", screenW), 0, "[ e ] equipment", 2, 0)
 	u.putStr(1, 1, "key  slot     item              stats                         action", 8, 0)
 
 	slots := []int{SlotHands, SlotBody, SlotBelt1, SlotBelt2, SlotBelt3}
@@ -110,16 +110,16 @@ func (u *UI) drawInventory() {
 	u.putStr(2, 10, "O", 14, 0)
 	u.putStr(1, 11, "/|\\", 14, 0)
 	u.putStr(1, 12, "/ \\", 14, 0)
-	u.putStr(16, 10, "a-e  act / swap / consume", 8, 0)
-	u.putStr(16, 11, "A-E  drop", 8, 0)
+	u.putStr(16, 10, "a/c/d/r  act / swap / consume", 8, 0)
+	u.putStr(16, 11, "A-D/R  drop", 8, 0)
 	u.putStr(16, 12, "B    unequip body", 8, 0)
-	u.putStr(16, 13, "i/z  close", 8, 0)
+	u.putStr(16, 13, "e/z  close", 8, 0)
 
 	ground := g.ItemAt(g.Player.X, g.Player.Y)
-	u.putStr(1, 16, "[ , ] item here: "+itemSummary(ground), 10, 0)
+	u.putStr(1, 16, "[ g ] item here: "+itemSummary(ground), 10, 0)
 
 	u.fill(0, 22, screenW, 2, ' ', 8, 0)
-	u.putStr(1, 22, "a hands   c/d/e belt   , pick up   A-E drop   i/z close", 8, 0)
+	u.putStr(1, 22, "a hands   c/d/r belt   g get   A-D/R drop   e/z close", 8, 0)
 	u.putStr(1, 23, "Body armour is worn; B drops it.", 8, 0)
 }
 
@@ -195,7 +195,7 @@ func (u *UI) handleInventory(e *tcell.EventKey) {
 		g.UseSlot(SlotBelt1)
 	case 'd':
 		g.UseSlot(SlotBelt2)
-	case 'e':
+	case 'r':
 		g.UseSlot(SlotBelt3)
 	case 'A':
 		g.DropSlot(SlotHands)
@@ -205,11 +205,11 @@ func (u *UI) handleInventory(e *tcell.EventKey) {
 		g.DropSlot(SlotBelt1)
 	case 'D':
 		g.DropSlot(SlotBelt2)
-	case 'E':
+	case 'R':
 		g.DropSlot(SlotBelt3)
-	case ',':
+	case 'g':
 		g.PickUp()
-	case 'z', 'q', 'i':
+	case 'z', 'q', 'e':
 		g.State = StatePlaying
 	}
 }
@@ -634,7 +634,7 @@ func (u *UI) handleMessages(e *tcell.EventKey) {
 		u.g.State = StatePlaying
 	default:
 		switch e.Rune() {
-		case 'z', 'q', 'm', '`':
+		case 'z', 'q', '~', '`':
 			u.g.State = StatePlaying
 		}
 	}

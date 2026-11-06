@@ -400,7 +400,7 @@ func (g *Game) CheckLevelUp() {
 		}
 		if p.Slots.BeltUnlocked < 3 && p.Level >= 6 {
 			p.Slots.BeltUnlocked = 3
-			g.Msg("you can now use belt slot 3 [e].", 10)
+			g.Msg("you can now use belt slot 3 [r].", 10)
 		}
 	}
 }

@@ -44,7 +44,7 @@ Use five player slots:
 | Body | `B` (unequip/drop) | armour | Worn automatically; AP is applied immediately. No action key. |
 | Belt 1 | `c` | any non-body item | Available from the start. |
 | Belt 2 | `d` | any non-body item | Available from the start. |
-| Belt 3 | `e` | any non-body item | Unlocked at level 6. |
+| Belt 3 | `r` | any non-body item | Unlocked at level 6. |
 
 There is **no backpack and no general inventory**. Five slots total.
 
@@ -64,7 +64,7 @@ This is the core of the redesign.
 Proposal:
 
 - level 1: Belt 1 (`c`) and Belt 2 (`d`)
-- level 6: Belt 3 (`e`)
+- level 6: Belt 3 (`r`)
 
 Unlock messages appear in the message line. Locked slots are shown in the HUD
 as unavailable until earned.
@@ -75,7 +75,7 @@ Every slot has one context-sensitive action key and one drop key.
 
 ### Movement and directional attack
 
-- Arrows and the numpad move the player in eight directions.
+- Arrows and `u i o / j k l / m , .` move the player in eight directions.
 - Moving into an enemy attacks it (bump attack).
 - `f` followed by a direction performs a deliberate directional melee attack
   without moving.
@@ -100,7 +100,7 @@ Throwing is **deferred** to a later plan.
 | `a` | Hands | Use a tool; a weapon reports that it is ready; throwables are deferred |
 | `c` | Belt 1 | Use, swap, or consume the item |
 | `d` | Belt 2 | Use, swap, or consume the item |
-| `e` | Belt 3 | Use, swap, or consume the item |
+| `r` | Belt 3 | Use, swap, or consume the item |
 
 Body armour has no action key. Equipping it immediately applies its AP and DV
 penalty; `B` unequips and drops it.
@@ -113,7 +113,7 @@ penalty; `B` unequips and drops it.
 | `B` | Unequip and drop Body armour |
 | `C` | Drop Belt 1 item |
 | `D` | Drop Belt 2 item |
-| `E` | Drop Belt 3 item |
+| `R` | Drop Belt 3 item |
 
 Dropping succeeds only if the current tile has no item on it.
 
@@ -128,7 +128,7 @@ Dropping succeeds only if the current tile has no item on it.
 
 ### Belt actions
 
-`c`, `d`, `e` depend on the item:
+`c`, `d`, `r` depend on the item:
 
 | Belt item | Action |
 |---|---|
@@ -155,9 +155,9 @@ Armour is purely passive:
 With a full Body slot, a second armour item cannot be picked up until the
 current armour is removed.
 
-### Player-slot overlay (`i`)
+### Equipment overlay (`e`)
 
-`i` opens a top overlay showing only the player slots:
+`e` opens a top overlay showing only the player slots:
 
 - key bindings on the left
 - a small ASCII character representation
@@ -173,13 +173,13 @@ PLAYER SLOTS                                      action
 Body      jacket         AP 20/20 absorb 50%     unequip (B)
 [c] Belt 1  molotov        fire throwable          swap (deferred)
 [d] Belt 2  medkit         heal 25, charges 5      consume
-[e] Belt 3  ---                                   -
+[r] Belt 3  ---                                   -
                  O
                 /|\
                 / \
 ```
 
-`a`–`e` work inside the overlay; `A`–`E` drop the corresponding item; `i` or
+`a`, `c`, `d`, `r` work inside the overlay; `A`–`D`, `R` drop the corresponding item; `e` or
 `Esc` closes it.
 
 ### Pickup and ground items
@@ -198,11 +198,11 @@ This keeps loot decisions immediate and avoids inventory Tetris.
 
 ### Smash
 
-Smash stays on **`v`** for now:
+Smash is contextual:
 
-- `v` smashes an adjacent door, wall or furniture
-- a weapon in Hands is not required, but an axe or chainsaw may improve it
-- may be revisited in a later plan
+- walking into a small obstacle such as a bramble, fence or piece of furniture attempts to smash it
+- a weapon in Hands is not required, but an axe, hatchet or saw improves the chance
+- there is no separate smash key
 
 ## 4. HP, AP, AV and DV
 
@@ -275,8 +275,8 @@ rows 48-49 clear
 Rules:
 
 - The latest message always occupies one line at the top.
-- `m` expands the message log to the last 8 lines. The expanded log overlays
-  the top of the map; `m` or `Esc` collapses it.
+- `~` expands the message log to the last 8 lines. The expanded log overlays
+  the top of the map; `~` or `Esc` collapses it.
 - There is no permanent multi-line message buffer.
 - HP is green/yellow/red depending on health.
 - AP is shown in a steel/blue tone; `AP 0/20` is a warning.
@@ -294,11 +294,11 @@ Rules:
 
 ### Player-slot overlay
 
-The HUD is the permanent inventory summary; `i` opens the detailed overlay
+The HUD is the permanent inventory summary; `e` opens the detailed overlay
 described in section 3. It never scrolls and always shows all five slots.
 ## 6. Menus without arrow scrolling
 
-Map movement keeps arrows and numpad. Menus should not need arrow scrolling:
+Map movement keeps arrows and `u i o / j k l / m , .`. Menus should not need arrow scrolling:
 
 - Help: one fixed page of active commands, grouped by slot/movement/UI.
 - Skills: six active skills, all visible on one page.
@@ -339,7 +339,7 @@ type PlayerSlots struct {
 
 1. **Data model** — player slots, belt unlock, AP fields, one-item-per-tile.
 2. **Combat** — HP/AP split, simplified AV/DV and chainsaw tuning; preserve molotov data for later.
-3. **Item actions** — `a`–`e` context actions and `A`–`E` drops.
+3. **Item actions** — `a`, `c`, `d`, `r` context actions and `A`–`D`, `R` drops.
 4. **HUD** — top message line, bottom HP/AP/slot display, message expansion.
 5. **Pickup/drop** — auto-placement and one-item ground rule.
 6. **Menus** — fixed help/skills/player screens and non-scrolling options.
@@ -353,7 +353,7 @@ type PlayerSlots struct {
 - [ ] No weight, burden, ammo, target or tactic UI remains.
 - [ ] No scrolling inventory.
 - [ ] Movement into an enemy attacks; `f` + direction attacks deliberately.
-- [ ] `a`–`e` perform item actions; `A`–`E` drop items.
+- [ ] `a`, `c`, `d`, `r` perform item actions; `A`–`D`, `R` drop items.
 - [ ] Dropping fails when the tile already has an item.
 - [ ] HP and AP are visible and AP absorbs damage.
 - [ ] Equipping armour immediately applies its AP and DV penalty.
@@ -361,8 +361,8 @@ type PlayerSlots struct {
 - [ ] Armour vials and health packs work from belt slots.
 - [ ] Chainsaw is a top-tier melee option; molotov data is preserved for the
       future throwing plan.
-- [ ] Latest message is one line; `m` shows up to eight messages.
-- [ ] `i` opens the non-scrolling player-slot overlay.
+- [ ] Latest message is one line; `~` shows up to eight messages.
+- [ ] `e` opens the non-scrolling equipment overlay.
 - [ ] Old saves migrate into the new slots without crashing.
 
 ## 10. Resolved decisions
@@ -374,7 +374,7 @@ type PlayerSlots struct {
 - Body accepts armour only; belt accepts non-body items.
 - Pickup auto-places into Hands → Body (if armour) → first free belt slot.
 - Belt throwables must be swapped into Hands before throwing.
-- Smash stays on `v` for now.
+- Smash is contextual: walk into small obstacles.
 - HP regenerates slowly as before; AP is restored by kits, tools and vials.
 - Acid bypasses AP completely for now.
 - Armour has no action key: equip applies AP immediately; `B` unequips/drops it.

@@ -32,17 +32,16 @@ The player-facing command set is intentionally melee-focused.
 
 | Key | Action |
 | --- | --- |
-| `8 9 7 6 5 4 3 2 1` | move in eight directions / wait |
-| arrows | move (or move the cursor in look mode) |
+| `u` `i` `o` / `j` `k` `l` / `m` `,` `.` | move in eight directions / wait on `k` |
+| arrows | move (or move the cursor in look/throw mode) |
 | `f` | choose a direction and attack the adjacent enemy |
 | `a` | use the Hands item / report the weapon ready |
-| `c` `d` `e` | use, swap or consume Belt 1–3 |
-| `A` `B` `C` `D` `E` | drop Hands, Body, Belt 1–3 |
-| `v` | smash an adjacent door, wall or piece of furniture |
-| `,` | fast pick up |
-| `i` | player-slot overlay |
-| `l` | look around |
-| `m` | expand/collapse latest messages |
+| `c` `d` `r` | use, swap or consume Belt 1–3 |
+| `A` `B` `C` `D` `R` | drop Hands, Body, Belt 1–3 |
+| `g` | get the item from the ground |
+| `e` | equipment overlay |
+| `v` | view / look around |
+| `~` | expand/collapse latest messages |
 | `@` | character information |
 | `x` | skill levels |
 | `O` | options |
@@ -52,6 +51,9 @@ The player-facing command set is intentionally melee-focused.
 | `]` or `F7` | jump directly to the next map |
 | `[` or `F8` | jump directly to the previous map |
 | `Q` | quit |
+
+Walking into a small obstacle such as a bramble, fence or piece of furniture
+attempts to smash it. There is no separate smash key.
 
 Screens generally close with `z`, `q`, or `Esc`.  The player is defenceless
 without a melee weapon; there is no unarmed attack.  Throwing is deferred for
@@ -97,7 +99,7 @@ and 6.
 * blood, corpses and limbs
 * five player slots: Hands, Body and three belt slots; two belt slots start unlocked
 * one-line HUD with HP/AP and the ready weapon; one-line message bar
-* `m` expands the latest eight messages; `i` opens a non-scrolling slot overlay
+* `~` expands the latest eight messages; `e` opens a non-scrolling equipment overlay
 * one item maximum per ground tile; dropping onto an occupied tile is refused
 * skills, skill checks, experience, levels and free skill points
 * auto-opening doors, portals, bashing, acid/fire/smoke, rain

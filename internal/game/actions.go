@@ -145,6 +145,10 @@ func (g *Game) MovePlayer(dx, dy int) {
 		return
 	}
 	if d.BlockMove {
+		if g.tryBashTile(nx, ny) {
+			g.EndPlayerTurn()
+			return
+		}
 		g.Msg("you cannot go there; "+d.Name+" blocks your way...", 8)
 		return
 	}
@@ -187,40 +191,51 @@ func (g *Game) PickUp() {
 	g.EndPlayerTurn()
 }
 
-func (g *Game) Bash() {
-	done := false
-	for _, d := range dirs8 {
-		x, y := g.Player.X+d[0], g.Player.Y+d[1]
-		td := g.Map.Def(x, y)
-		if td.Type == 3 || td.BlockMove {
-			chance := 20 + g.Player.STR*2
-			if w := g.Player.HandItem(); w != nil {
-				if d := w.Def(); d != nil {
-					name := strings.ToLower(d.Name)
-					switch {
-					case strings.Contains(name, "axe"), strings.Contains(name, "hatchet"):
-						chance += 25
-					case strings.Contains(name, "saw"):
-						chance += 15
-					}
-				}
+func isBashableTile(t uint8) bool {
+	switch t {
+	case tileWoodenDoor, tileBramble, tileFallenLog, tileDeadTree,
+		tileTable, tileChair, tileBed, tileCrate, tileBarrel, tileFireplace, tileShelf,
+		tileIronFence, tileGravestone, tileTent, tileCampfire, tileCage, tileDryingRack,
+		tileCart, tileMarketStall, tileHaystack, tileWoodpile:
+		return true
+	}
+	return false
+}
+
+func bashResultTile(t uint8) uint8 {
+	switch t {
+	case tileWoodenDoor, tileTable, tileChair, tileBed, tileCrate, tileBarrel, tileFireplace, tileShelf:
+		return tileWoodenFloor
+	default:
+		return 2 // grass
+	}
+}
+
+func (g *Game) tryBashTile(x, y int) bool {
+	t := g.Map.Tile(x, y)
+	if !isBashableTile(t) {
+		return false
+	}
+	d := g.Map.Def(x, y)
+	chance := 20 + g.Player.STR*2
+	if w := g.Player.HandItem(); w != nil {
+		if wd := w.Def(); wd != nil {
+			name := strings.ToLower(wd.Name)
+			switch {
+			case strings.Contains(name, "axe"), strings.Contains(name, "hatchet"):
+				chance += 25
+			case strings.Contains(name, "saw"):
+				chance += 15
 			}
-			if g.Chance(chance) {
-				g.Map.SetTile(x, y, floorTile(g.Theme))
-				g.Msg("you smash the "+td.Name+"!", 12)
-				done = true
-			} else {
-				g.Msg("you bash the "+td.Name+" but it holds.", 8)
-				done = true
-			}
-			break
 		}
 	}
-	if !done {
-		g.Msg("there is nothing to destroy here.", 8)
-		return
+	if g.Chance(chance) {
+		g.Map.SetTile(x, y, bashResultTile(t))
+		g.Msg("you smash the "+d.Name+"!", 12)
+	} else {
+		g.Msg("you bash the "+d.Name+" but it holds.", 8)
 	}
-	g.EndPlayerTurn()
+	return true
 }
 
 func (g *Game) UsePortal() {

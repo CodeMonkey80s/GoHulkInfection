@@ -51,7 +51,7 @@ The player starts with **two unlocked belt slots**:
 
 - Belt 1 (`c`) — available from the start.
 - Belt 2 (`d`) — available from the start.
-- Belt 3 (`e`) — unlock stays at level 6.
+- Belt 3 (`r`) — unlock stays at level 6.
 
 Starting kit placement:
 
@@ -168,7 +168,7 @@ Rules:
 - If Hands is empty or holds a non-weapon tool, show `none` or the tool name as
   appropriate.
 - Keep HP colour grading (good/wounded/critical) and an AP warning colour at 0.
-- The player-slot overlay (`i`) remains the place for full slot and armour
+- The equipment overlay (`e`) remains the place for full slot and armour
   details.
 - Row 47 holds the HUD; rows 48–49 stay clear.
 

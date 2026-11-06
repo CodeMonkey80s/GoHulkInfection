@@ -177,14 +177,14 @@ func TestCharCreateShowsFiveClassesAndKit(t *testing.T) {
 	}
 }
 
-func TestInventoryCommaPicksUpItem(t *testing.T) {
+func TestInventoryGetPicksUpItem(t *testing.T) {
 	g := NewGame(704)
 	g.SetupNewGame(0, "tester")
 	g.State = StateInventory
 	it := &Item{Proto: 48, X: g.Player.X, Y: g.Player.Y, Charges: 5}
 	g.Items = append(g.Items, it)
 	u := &UI{g: g}
-	u.handleInventory(tcell.NewEventKey(tcell.KeyRune, ',', tcell.ModNone))
+	u.handleInventory(tcell.NewEventKey(tcell.KeyRune, 'g', tcell.ModNone))
 	if g.ItemAt(g.Player.X, g.Player.Y) != nil {
 		t.Fatal("item was not removed from the ground")
 	}
