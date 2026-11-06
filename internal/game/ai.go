@@ -4,7 +4,7 @@ import "fmt"
 
 type point struct{ x, y int }
 
-var dirs8 = [][2]int{{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}}
+var dirs4 = [][2]int{{0, -1}, {1, 0}, {0, 1}, {-1, 0}}
 
 func (g *Game) UpdateMonsters() {
 	if !g.Options.Bool("optGameUseAI") {
@@ -240,7 +240,7 @@ func (g *Game) stepToward(c *Critter, tx, ty int) {
 func (g *Game) stepAway(c *Critter, fx, fy int) bool {
 	bestX, bestY := c.X, c.Y
 	bestD := chebyshev(c.X, c.Y, fx, fy)
-	for _, d := range dirs8 {
+	for _, d := range dirs4 {
 		nx, ny := c.X+d[0], c.Y+d[1]
 		if !g.Map.IsPassable(nx, ny) {
 			continue
@@ -262,7 +262,7 @@ func (g *Game) stepAway(c *Critter, fx, fy int) bool {
 
 func (g *Game) wander(c *Critter) {
 	for i := 0; i < 4; i++ {
-		d := dirs8[g.Roll(len(dirs8))]
+		d := dirs4[g.Roll(len(dirs4))]
 		nx, ny := c.X+d[0], c.Y+d[1]
 		if g.Map.IsPassable(nx, ny) && g.CritterAt(nx, ny) == nil {
 			c.X, c.Y = nx, ny
@@ -308,7 +308,7 @@ func (g *Game) findStep(c *Critter, tx, ty int) (int, int, bool) {
 			break
 		}
 		cx, cy := cur%w, cur/w
-		for _, d := range dirs8 {
+		for _, d := range dirs4 {
 			nx, ny := cx+d[0], cy+d[1]
 			if nx < 0 || ny < 0 || nx >= w || ny >= h {
 				continue

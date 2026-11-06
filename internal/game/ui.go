@@ -49,6 +49,7 @@ type UI struct {
 	msgExpanded   bool
 	attackPending bool
 	skillSel      int
+	slotSel       int
 }
 
 func Run() error {
@@ -599,7 +600,7 @@ func (u *UI) drawGame() {
 		u.fill(0, 45, screenW, 2, ' ', 8, 0)
 		u.fill(0, 45, screenW, 1, ' ', 15, 1)
 		u.putStr(1, 45, "attack: choose a direction", 15, 1)
-		u.putStr(1, 46, "uio/jkl/m,. or arrows attack, esc cancels", 8, 0)
+		u.putStr(1, 46, "h/j/k/l or arrows attack, esc cancels", 8, 0)
 	}
 }
 
@@ -797,6 +798,20 @@ func (u *UI) handleTitle(e *tcell.EventKey) {
 			u.titleSel = 0
 		}
 	default:
+		switch e.Rune() {
+		case 'k':
+			u.titleSel--
+			if u.titleSel < 0 {
+				u.titleSel = 2
+			}
+			return
+		case 'j':
+			u.titleSel++
+			if u.titleSel > 2 {
+				u.titleSel = 0
+			}
+			return
+		}
 		if e.Rune() == 'q' || e.Key() == tcell.KeyEscape {
 			u.g.Quit = true
 			return
@@ -830,6 +845,14 @@ func (u *UI) handleCharCreate(e *tcell.EventKey) {
 	case tcell.KeyEscape:
 		u.g.State = StateIntro
 	default:
+		switch e.Rune() {
+		case 'k':
+			u.classSel = (u.classSel + len(PlayerClasses) - 1) % len(PlayerClasses)
+			return
+		case 'j':
+			u.classSel = (u.classSel + 1) % len(PlayerClasses)
+			return
+		}
 		if e.Rune() == 'r' {
 			u.g.PlayerName = RandomNames[u.g.Roll(len(RandomNames))]
 		}
@@ -855,32 +878,16 @@ func directionFromEvent(e *tcell.EventKey) (int, int, bool) {
 		return -1, 0, true
 	case tcell.KeyRight:
 		return 1, 0, true
-	case tcell.KeyHome:
-		return -1, -1, true
-	case tcell.KeyEnd:
-		return 1, 1, true
-	case tcell.KeyPgUp:
-		return 1, -1, true
-	case tcell.KeyPgDn:
-		return -1, 1, true
 	}
 	switch e.Rune() {
-	case 'u':
-		return -1, -1, true
-	case 'i':
-		return 0, -1, true
-	case 'o':
-		return 1, -1, true
-	case 'j':
+	case 'h':
 		return -1, 0, true
+	case 'j':
+		return 0, 1, true
+	case 'k':
+		return 0, -1, true
 	case 'l':
 		return 1, 0, true
-	case 'm':
-		return -1, 1, true
-	case ',':
-		return 0, 1, true
-	case '.':
-		return 1, 1, true
 	}
 	return 0, 0, false
 }
@@ -955,7 +962,7 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 	}
 	r := e.Rune()
 	switch r {
-	case 'k':
+	case '.':
 		g.WaitTurn()
 	case 'a':
 		g.UseSlot(SlotHands)
@@ -988,6 +995,7 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 		g.State = StateHelp
 	case 'e':
 		g.State = StateInventory
+		u.slotSel = 0
 	case 'v':
 		g.State = StateLook
 		g.LookX, g.LookY = g.Player.X, g.Player.Y

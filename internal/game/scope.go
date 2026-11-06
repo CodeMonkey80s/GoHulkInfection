@@ -108,15 +108,11 @@ func init() {
 // ActiveKeyBindings is the reduced, player-facing help table.  The recovered
 // KeyBindings data remains available as historical reference.
 var ActiveKeyBindings = []KeyBind{
-	{Key: 'u', Name: "move to north-west", Desc: "move player north-west"},
-	{Key: 'i', Name: "move to north", Desc: "move player north"},
-	{Key: 'o', Name: "move to north-east", Desc: "move player north-east"},
-	{Key: 'j', Name: "move to west", Desc: "move player west"},
-	{Key: 'k', Name: "wait / rest", Desc: "wait, rest and recover health"},
+	{Key: 'h', Name: "move to west", Desc: "move player west"},
+	{Key: 'j', Name: "move to south", Desc: "move player south"},
+	{Key: 'k', Name: "move to north", Desc: "move player north"},
 	{Key: 'l', Name: "move to east", Desc: "move player east"},
-	{Key: 'm', Name: "move to south-west", Desc: "move player south-west"},
-	{Key: ',', Name: "move to south", Desc: "move player south"},
-	{Key: '.', Name: "move to south-east", Desc: "move player south-east"},
+	{Key: '.', Name: "wait / rest", Desc: "wait, rest and recover health"},
 	{Key: 'f', Name: "attack", Desc: "choose a direction and attack the adjacent enemy"},
 	{Key: 'a', Name: "hands action", Desc: "use the Hands item (tool) or report the weapon ready"},
 	{Key: 'c', Name: "belt 1 action", Desc: "use, swap or consume belt slot 1"},

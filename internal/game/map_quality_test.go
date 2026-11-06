@@ -27,7 +27,7 @@ func reachable(g *Game, sx, sy, tx, ty int) bool {
 		if cx == tx && cy == ty {
 			return true
 		}
-		for _, d := range dirs8 {
+		for _, d := range dirs4 {
 			nx, ny := cx+d[0], cy+d[1]
 			if !g.Map.InBounds(nx, ny) {
 				continue

@@ -23,6 +23,8 @@ func slotName(slot int) string {
 	return "?"
 }
 
+var inventorySlots = []int{SlotHands, SlotBody, SlotBelt1, SlotBelt2, SlotBelt3}
+
 func slotKey(slot int) string {
 	switch slot {
 	case SlotHands:
@@ -75,9 +77,9 @@ func (u *UI) drawInventory() {
 	u.putStr(centerText("[ e ] equipment", screenW), 0, "[ e ] equipment", 2, 0)
 	u.putStr(1, 1, "key  slot     item              stats                         action", 8, 0)
 
-	slots := []int{SlotHands, SlotBody, SlotBelt1, SlotBelt2, SlotBelt3}
+	slots := inventorySlots
 	y := 3
-	for _, slot := range slots {
+	for i, slot := range slots {
 		it := g.Player.SlotItem(slot)
 		key := slotKey(slot)
 		if key == "-" {
@@ -92,7 +94,11 @@ func (u *UI) drawInventory() {
 			locked = true
 		}
 		if locked {
-			u.putStr(1, y, fmt.Sprintf("[%s] %-7s %-16s %-28s %s", key, label, "locked", fmt.Sprintf("level %d", 3+3*(slot-SlotBelt2)), "-"), 8, 0)
+			fg, bg := uint8(8), uint8(0)
+			if i == u.slotSel {
+				fg, bg = 0, 7
+			}
+			u.putStr(1, y, fmt.Sprintf("[%s] %-7s %-16s %-28s %s", key, label, "locked", fmt.Sprintf("level %d", 3+3*(slot-SlotBelt2)), "-"), fg, bg)
 			y++
 			continue
 		}
@@ -103,7 +109,11 @@ func (u *UI) drawInventory() {
 			stats = slotStats(it)
 		}
 		action := slotAction(slot, it)
-		u.putStr(1, y, fmt.Sprintf("[%s] %-7s %-16s %-28s %s", key, label, name, stats, action), 11, 0)
+		fg, bg := uint8(11), uint8(0)
+		if i == u.slotSel {
+			fg, bg = 0, 7
+		}
+		u.putStr(1, y, fmt.Sprintf("[%s] %-7s %-16s %-28s %s", key, label, name, stats, action), fg, bg)
 		y++
 	}
 
@@ -113,7 +123,7 @@ func (u *UI) drawInventory() {
 	u.putStr(16, 10, "a/c/d/r  act / swap / consume", 8, 0)
 	u.putStr(16, 11, "A-D/R  drop", 8, 0)
 	u.putStr(16, 12, "B    unequip body", 8, 0)
-	u.putStr(16, 13, "e/z  close", 8, 0)
+	u.putStr(16, 13, "j/k select  enter use  e/z close", 8, 0)
 
 	ground := g.ItemAt(g.Player.X, g.Player.Y)
 	u.putStr(1, 16, "[ g ] item here: "+itemSummary(ground), 10, 0)
@@ -187,8 +197,15 @@ func (u *UI) handleInventory(e *tcell.EventKey) {
 	case tcell.KeyEscape:
 		g.State = StatePlaying
 		return
+	case tcell.KeyEnter:
+		g.UseSlot(inventorySlots[u.slotSel])
+		return
 	}
 	switch e.Rune() {
+	case 'j':
+		u.slotSel = (u.slotSel + 1) % len(inventorySlots)
+	case 'k':
+		u.slotSel = (u.slotSel + len(inventorySlots) - 1) % len(inventorySlots)
 	case 'a':
 		g.UseSlot(SlotHands)
 	case 'c':
@@ -463,9 +480,9 @@ func (u *UI) handleOptions(e *tcell.EventKey) {
 		switch e.Rune() {
 		case 'z', 'q', 'O':
 			g.State = StatePlaying
-		case '4':
+		case '4', 'h':
 			g.ChangeOption(opts[u.optSel].Name, -1)
-		case '6':
+		case '6', 'l':
 			g.ChangeOption(opts[u.optSel].Name, 1)
 		case 'k':
 			u.optSel--
@@ -634,6 +651,10 @@ func (u *UI) handleMessages(e *tcell.EventKey) {
 		u.g.State = StatePlaying
 	default:
 		switch e.Rune() {
+		case 'j':
+			u.msgScroll++
+		case 'k':
+			u.msgScroll--
 		case 'z', 'q', '~', '`':
 			u.g.State = StatePlaying
 		}

@@ -262,7 +262,7 @@ func (m *Map) Reachable(sx, sy int) []int {
 	for head := 0; head < len(q); head++ {
 		cur := q[head]
 		cx, cy := cur%m.W, cur/m.W
-		for _, d := range dirs8 {
+		for _, d := range dirs4 {
 			nx, ny := cx+d[0], cy+d[1]
 			if !m.InBounds(nx, ny) {
 				continue

@@ -75,7 +75,7 @@ Every slot has one context-sensitive action key and one drop key.
 
 ### Movement and directional attack
 
-- Arrows and `u i o / j k l / m , .` move the player in eight directions.
+- Arrows and `h j k l` move the player cardinally; `.` waits.
 - Moving into an enemy attacks it (bump attack).
 - `f` followed by a direction performs a deliberate directional melee attack
   without moving.
@@ -298,7 +298,7 @@ The HUD is the permanent inventory summary; `e` opens the detailed overlay
 described in section 3. It never scrolls and always shows all five slots.
 ## 6. Menus without arrow scrolling
 
-Map movement keeps arrows and `u i o / j k l / m , .`. Menus should not need arrow scrolling:
+Map movement keeps arrows and `h j k l`. Menus should not need arrow scrolling:
 
 - Help: one fixed page of active commands, grouped by slot/movement/UI.
 - Skills: six active skills, all visible on one page.

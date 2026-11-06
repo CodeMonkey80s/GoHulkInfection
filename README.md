@@ -32,7 +32,8 @@ The player-facing command set is intentionally melee-focused.
 
 | Key | Action |
 | --- | --- |
-| `u` `i` `o` / `j` `k` `l` / `m` `,` `.` | move in eight directions / wait on `k` |
+| `h` `j` `k` `l` | move west / south / north / east |
+| `.` | wait / rest |
 | arrows | move (or move the cursor in look/throw mode) |
 | `f` | choose a direction and attack the adjacent enemy |
 | `a` | use the Hands item / report the weapon ready |
