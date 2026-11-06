@@ -29,7 +29,7 @@ own revamp plans are written.
 |---|---|---|
 | Command and scope reduction — melee-only combat, no ranged/unarmed, FOV-limited throwing | Done | [systems/command-scope-reduction.md](systems/command-scope-reduction.md) |
 | Player redesign — five ADOM-style slots, HP/AP, minimal HUD | Done | [systems/player-redesign.md](systems/player-redesign.md) |
-| Player experience adjustments — classes, intro, one-line HUD, 80×46 viewport | Proposed | [systems/player-experience-adjustments.md](systems/player-experience-adjustments.md) |
+| Player experience adjustments — classes, intro, one-line HUD, 80×46 viewport | Planned | [systems/player-experience-adjustments.md](systems/player-experience-adjustments.md) |
 
 The woods plan intentionally includes the first pass of:
 
