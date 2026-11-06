@@ -260,16 +260,13 @@ func (g *Game) findWoodsRoad(m *Map, sx, sy, tx, ty int) [][2]int {
 		if cur.x == tx && cur.y == ty {
 			break
 		}
-		for _, d := range dirs8 {
+		for _, d := range dirs4 {
 			nx, ny := cur.x+d[0], cur.y+d[1]
 			if nx < 1 || ny < 1 || nx >= m.W-1 || ny >= m.H-1 {
 				continue
 			}
 			ni := m.idx(nx, ny)
 			step := woodsRoadCost(m.Tile(nx, ny))
-			if d[0] != 0 && d[1] != 0 {
-				step = step * 3 / 2
-			}
 			nd := cur.cost + step
 			if nd < dist[ni] {
 				dist[ni] = nd

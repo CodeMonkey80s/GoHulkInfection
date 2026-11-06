@@ -1,12 +1,15 @@
 # Cardinal Movement and Unified hjkl Controls
 
-Status: **proposed**
+Status: **done**
 Parent: [Feature plans](../README.md)
 Related: [Player redesign](player-redesign.md), [Player experience adjustments](player-experience-adjustments.md), [Monster AI and pathfinding](monster-ai-pathfinding.md)
 Scope: player and monster movement, look/throw cursors, menus, key bindings and map connectivity.
 
 This plan removes diagonal movement completely and makes `h j k l` the one
 movement/navigation language across gameplay, overlays and menus.
+
+Implementation status: complete. Cardinal movement, unified `h/j/k/l`
+navigation, `.` wait, four-way connectivity and generator paths are in place.
 
 ---
 
@@ -89,21 +92,21 @@ Specific screens:
 
 ## 6. Acceptance criteria
 
-- [ ] No player or monster can move diagonally.
-- [ ] Numpad and `u i o / j k l / m , .` movement are removed.
-- [ ] `h/j/k/l` work consistently in gameplay, look/throw and menus.
-- [ ] `.` waits/rests.
-- [ ] `f` + cardinal direction attacks.
-- [ ] All generated maps remain fully reachable under four-way movement.
-- [ ] Caves, temple and time-portal maps still generate and connect correctly.
-- [ ] Help/README list the new controls.
-- [ ] Tests cover movement keys, menu navigation, attack direction and map
+- [x] No player or monster can move diagonally.
+- [x] Numpad and `u i o / j k l / m , .` movement are removed.
+- [x] `h/j/k/l` work consistently in gameplay, look/throw and menus.
+- [x] `.` waits/rests.
+- [x] `f` + cardinal direction attacks.
+- [x] All generated maps remain fully reachable under four-way movement.
+- [x] Caves, temple and time-portal maps still generate and connect correctly.
+- [x] Help/README list the new controls.
+- [x] Tests cover movement keys, menu navigation, attack direction and map
       reachability.
 
-## 7. Open questions
+## 7. Resolved decisions
 
-- Keep arrow keys as hidden cardinal aliases, or remove them entirely?
-- Should `h/l` do anything in vertical-only menus, or be no-ops?
-- Should `.` also work as wait in menus, or only in gameplay?
-- Should the equipment overlay gain a `j/k` slot cursor, or keep direct slot
-  action keys only?
+- Arrow keys remain hidden cardinal aliases; help/README show `h/j/k/l`.
+- `h/l` are no-ops in vertical-only menus.
+- `.` waits/rests in gameplay.
+- The equipment overlay uses `j/k` to select a slot and `Enter` to use it,
+  while `a/c/d/r` remain direct slot actions.

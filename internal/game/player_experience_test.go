@@ -202,7 +202,7 @@ func TestMovingOntoItemAnnouncesIt(t *testing.T) {
 	g.State = StatePlaying
 	var dx, dy int
 	found := false
-	for _, d := range dirs8 {
+	for _, d := range dirs4 {
 		nx, ny := g.Player.X+d[0], g.Player.Y+d[1]
 		if g.Map.IsPassable(nx, ny) && g.CritterAt(nx, ny) == nil && g.ItemAt(nx, ny) == nil {
 			dx, dy, found = d[0], d[1], true
