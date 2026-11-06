@@ -53,7 +53,11 @@ func itemSummary(it *Item) string {
 		}
 		return out
 	case KindArmor:
-		return fmt.Sprintf("%s  protection melee %d%% acid %d%%", d.Name, d.ArmorMelee, d.ArmorAcid)
+		ensureArmorAP(it)
+		if stats, ok := ArmorStatsFor(d); ok {
+			return fmt.Sprintf("%s  AP %d/%d  absorb %d%%  dv %d", d.Name, it.AP, stats.MaxAP, stats.Absorb, stats.DV)
+		}
+		return d.Name
 	case KindMedical:
 		return fmt.Sprintf("%s  heal %d  charges %d", d.Name, d.Heal, it.Charges)
 	default:
@@ -132,6 +136,15 @@ func (u *UI) handleInventory(e *tcell.EventKey) {
 	}
 }
 
+func playerArmorLine(p *Critter) string {
+	arm := p.BodyItem()
+	if arm == nil {
+		return "armour AP: 0/0"
+	}
+	cur, max := armorAP(arm)
+	return fmt.Sprintf("armour AP: %d/%d", cur, max)
+}
+
 func (u *UI) drawPlayerScreen() {
 	g := u.g
 	p := g.Player
@@ -149,6 +162,7 @@ func (u *UI) drawPlayerScreen() {
 		fmt.Sprintf("agility: %d", p.AGI),
 		fmt.Sprintf("intelligence: %d", p.INT),
 		fmt.Sprintf("health: %d/%d", p.HP, p.MaxHP),
+		playerArmorLine(p),
 		fmt.Sprintf("gold: %d", p.Gold),
 	}
 	for i, s := range attrs {

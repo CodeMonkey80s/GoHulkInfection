@@ -5,9 +5,8 @@ Parent: [Feature plans](../README.md)
 Related: [Command and scope reduction](command-scope-reduction.md), [Woods level revamp](../woods/level-revamp.md)  
 Scope: player equipment, HP/AP, AV/DV, HUD, message log, item actions and key bindings. Throwing is deferred to a later plan.
 
-Implementation status: first slice in progress on branch
-`feature/player-slots` (slots, belt unlocks, ground-item rule and save
-migration).
+Implementation status: the slots slice is merged.  HP/AP and armour absorption
+are in progress on branch `feature/player-hpap`.
 
 This plan redesigns the player around a small, tactical set of ADOM-style
 equipment slots. It assumes the melee-only command scope from the current

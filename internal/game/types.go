@@ -92,6 +92,8 @@ type ClassDef struct {
 type Item struct {
 	Proto   int
 	Charges int
+	AP      int
+	APInit  bool
 	Active  bool
 	X, Y    int // -1,-1 when carried
 }

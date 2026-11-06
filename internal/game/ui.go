@@ -464,7 +464,12 @@ func (u *UI) drawStatus(y int) {
 	if w := p.HandItem(); w != nil {
 		wep = w.Name()
 	}
-	line2 := fmt.Sprintf("hands: %-18s body: %-18s", wep, wear)
+	body := wear
+	if arm := p.BodyItem(); arm != nil {
+		cur, max := armorAP(arm)
+		body += fmt.Sprintf(" AP %d/%d", cur, max)
+	}
+	line2 := fmt.Sprintf("hands: %-18s body: %-22s", wep, body)
 	u.putStr(0, y+1, line2, 7, 0)
 	line3 := fmt.Sprintf("belt: c:%s d:%s e:%s", slotBrief(p.SlotItem(SlotBelt1)), slotBrief(p.SlotItem(SlotBelt2)), slotBrief(p.SlotItem(SlotBelt3)))
 	if g.Options.Bool("optPlayerShowAVDV") {
