@@ -278,6 +278,63 @@ func TestUIWorldColorFallbackAndShading(t *testing.T) {
 	}
 }
 
+func TestScreenBackgroundColour(t *testing.T) {
+	if got := screenBackgroundColor(ColorMode16); got != DOSColor(0) {
+		t.Fatalf("16-colour screen background = %v, want DOS black", got)
+	}
+	if got := screenBackgroundColor(ColorModeTrueColor); !got.IsRGB() || got.Hex() != 0x0B0D0A {
+		t.Fatalf("true-colour screen background = %v, want #0B0D0A", got)
+	}
+	want256 := tcell.PaletteColor(Nearest256(RGB{0x0B, 0x0D, 0x0A}))
+	if got := screenBackgroundColor(ColorMode256); got != want256 {
+		t.Fatalf("256-colour screen background = %v, want %v", got, want256)
+	}
+}
+
+func TestDrawGameUsesTrueColourBackground(t *testing.T) {
+	g := NewGame(8)
+	g.SetupNewGame(0, "tester")
+	g.UpdateFOV()
+
+	s := tcell.NewSimulationScreen("UTF-8")
+	if err := s.Init(); err != nil {
+		t.Fatal(err)
+	}
+	s.SetSize(screenW, screenH)
+	u := &UI{screen: s, g: g, colorMode: ColorModeTrueColor}
+	u.drawGame()
+	s.Show()
+
+	cells, w, h := s.GetContents()
+	foundPlayer := false
+	for y := 0; y < h && !foundPlayer; y++ {
+		for x := 0; x < w; x++ {
+			cell := cells[y*w+x]
+			if len(cell.Runes) == 0 || cell.Runes[0] != '@' {
+				continue
+			}
+			foundPlayer = true
+			_, bg, _ := cell.Style.Decompose()
+			if !bg.IsRGB() {
+				t.Fatalf("true-colour map background is not RGB: %v", bg)
+			}
+			r, g, b := bg.RGB()
+			if r > 16 || g > 16 || b > 16 {
+				t.Fatalf("map background is not near-black: %v", bg)
+			}
+			break
+		}
+	}
+	s.Fini()
+	if !foundPlayer {
+		t.Fatal("player glyph not found")
+	}
+	_, topBG, _ := cells[0].Style.Decompose()
+	if !topBG.IsRGB() || topBG.Hex() != 0x0B0D0A {
+		t.Fatalf("message/status background = %v, want #0B0D0A", topBG)
+	}
+}
+
 func TestDrawGameUsesPalette(t *testing.T) {
 	g := NewGame(7)
 	g.SetupNewGame(0, "tester")

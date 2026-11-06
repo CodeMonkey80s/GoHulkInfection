@@ -60,13 +60,14 @@ func Run() error {
 		return err
 	}
 	defer s.Fini()
-	s.SetStyle(tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite))
+	mode := DetectColorMode(s.Colors())
+	s.SetStyle(tcell.StyleDefault.Background(screenBackgroundColor(mode)).Foreground(tcell.ColorWhite))
 	s.Clear()
 
 	u := &UI{
 		screen:    s,
 		g:         NewGame(time.Now().UnixNano()),
-		colorMode: DetectColorMode(s.Colors()),
+		colorMode: mode,
 	}
 	if len(os.Args) > 1 {
 		u.g.PlayerName = os.Args[1]
@@ -99,7 +100,11 @@ func Run() error {
 }
 
 func (u *UI) put(x, y int, r rune, fg, bg uint8) {
-	u.putTcell(x, y, r, pal(fg), pal(bg))
+	bgColor := pal(bg)
+	if bg == 0 {
+		bgColor = screenBackgroundColor(u.colorMode)
+	}
+	u.putTcell(x, y, r, pal(fg), bgColor)
 }
 
 func (u *UI) putTcell(x, y int, r rune, fg, bg tcell.Color) {
@@ -370,12 +375,13 @@ func (u *UI) drawGame() {
 				fgVisible = true
 			}
 			bg := uint8(0)
-			bgRole, bgRoleOK := ColorRole(""), false
+			bgRole, bgRoleOK := RoleMapBackground, true
 			blooded := g.Map.Blood[i] > 0 && d.Type == 1
 			if blooded {
 				bg = 4 // DOS red background
 				if !vis {
 					bg = 0
+					bgRole, bgRoleOK = RoleMapBackground, true
 				} else {
 					bgRole, bgRoleOK = RoleDarkBlood, true
 				}

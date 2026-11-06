@@ -395,6 +395,22 @@ func DOSColor(i uint8) tcell.Color {
 
 func pal(i uint8) tcell.Color { return DOSColor(i) }
 
+// screenBackgroundColor returns the true background used by the UI and by
+// cells that have no explicit background. Named tcell colours such as
+// ColorBlack are terminal-palette entries, so a terminal theme can render them
+// as grey or blue; true-colour and 256-colour modes use the palette RGB value
+// instead.
+func screenBackgroundColor(mode ColorMode) tcell.Color {
+	if mode == ColorMode16 {
+		return pal(0)
+	}
+	pc, ok := WoodsPalette.Lookup(RoleUIBackground)
+	if !ok {
+		return pal(0)
+	}
+	return ResolveRGB(pc.RGB, pc.Fallback, mode)
+}
+
 // DOS/CP437 colour indices in the original data are not ANSI indices.
 // Map them explicitly to the tcell 16-colour palette.
 var dosPalette = [16]tcell.Color{
