@@ -32,7 +32,7 @@ Use five player slots:
 | Slot | Hotkey | Accepts | Notes |
 |---|---|---|---|
 | Hands | `a` | weapon, tool, throwable | The active item. One hand slot only. Throwable actions are deferred. |
-| Body | `b` | armour | Worn armour; provides AP and DV penalty. |
+| Body | `B` (unequip/drop) | armour | Worn automatically; AP is applied immediately. No action key. |
 | Belt 1 | `c` | any non-body item | Available from the start. |
 | Belt 2 | `d` | any non-body item | Unlocked at level 3. |
 | Belt 3 | `e` | any non-body item | Unlocked at level 6. |
@@ -90,17 +90,19 @@ Throwing is **deferred** to a later plan.
 | Key | Slot | Action |
 |---|---|---|
 | `a` | Hands | Use a tool; a weapon reports that it is ready; throwables are deferred |
-| `b` | Body | Open the player-slot overlay focused on Body |
 | `c` | Belt 1 | Use, swap, or consume the item |
 | `d` | Belt 2 | Use, swap, or consume the item |
 | `e` | Belt 3 | Use, swap, or consume the item |
+
+Body armour has no action key. Equipping it immediately applies its AP and DV
+penalty; `B` unequips and drops it.
 
 ### Uppercase = drop
 
 | Key | Slot |
 |---|---|
 | `A` | Drop Hands item |
-| `B` | Drop Body armour |
+| `B` | Unequip and drop Body armour |
 | `C` | Drop Belt 1 item |
 | `D` | Drop Belt 2 item |
 | `E` | Drop Belt 3 item |
@@ -130,13 +132,20 @@ Dropping succeeds only if the current tile has no item on it.
 
 Belt slots are quick access, not a second inventory.
 
-### Body actions
+### Body equipment
 
-`b` opens the player-slot overlay focused on Body. Armour is worn
-automatically when placed in Body; it is not “used” like a consumable.
+Armour is purely passive:
 
-The overlay shows armour AP, absorption and DV penalty. There is no separate
-armour activation command in this scope.
+- picking up armour with an empty Body slot equips it automatically
+- equipping immediately adds its AP to the player’s current/max AP and applies
+  its DV penalty
+- there is no armour activation, inspection or use action
+- `B` removes the armour from Body and drops it on the ground (if the tile is
+  empty)
+- the overlay only displays armour stats and the `unequip/drop` action
+
+With a full Body slot, a second armour item cannot be picked up until the
+current armour is removed.
 
 ### Player-slot overlay (`i`)
 
@@ -153,7 +162,7 @@ Suggested shape:
 ```text
 PLAYER SLOTS                                      action
 [a] Hands   chainsaw       dmg 7-44 av 5 dv -12    attack: f + dir
-[b] Body    jacket         AP 20/20 absorb 50%     inspect
+Body      jacket         AP 20/20 absorb 50%     unequip (B)
 [c] Belt 1  molotov        fire throwable          swap (deferred)
 [d] Belt 2  medkit         heal 25, charges 5      consume
 [e] Belt 3  ---                                   -
@@ -252,7 +261,7 @@ Target 80×50 layout — as little as possible:
 row 0      latest message only
 row 1..46  map view
 row 47     Name   HP 39/39   AP 20/20   Lvl 3
-row 48     [a] chainsaw  [b] jacket 20/20  [c] molotov  [d] medkit  [e] ---
+row 48     [a] chainsaw  [c] molotov  [d] medkit  [e] ---   body: jacket 20/20
 ```
 
 Rules:
@@ -263,8 +272,8 @@ Rules:
 - There is no permanent multi-line message buffer.
 - HP is green/yellow/red depending on health.
 - AP is shown in a steel/blue tone; `AP 0/20` is a warning.
-- The second HUD line shows the five slots with their hotkeys and item names.
-- Body armour shows its current/max AP in the overlay, not in the permanent HUD.
+- The second HUD line shows the Hands and belt hotkeys plus the compact Body armour indicator.
+- Body armour is shown as a compact `body: jacket 20/20` indicator; its full stats are in the overlay.
 - No weight, burden, ammo, target, tactic, or XP bar in the main HUD.
 - There is no permanent help line; `?` opens the help screen.
 
@@ -339,6 +348,8 @@ type PlayerSlots struct {
 - [ ] `a`–`e` perform item actions; `A`–`E` drop items.
 - [ ] Dropping fails when the tile already has an item.
 - [ ] HP and AP are visible and AP absorbs damage.
+- [ ] Equipping armour immediately applies its AP and DV penalty.
+- [ ] Armour has no action key; `B` unequips/drops it.
 - [ ] Armour vials and health packs work from belt slots.
 - [ ] Chainsaw is a top-tier melee option; molotov data is preserved for the
       future throwing plan.
@@ -358,7 +369,7 @@ type PlayerSlots struct {
 - Smash stays on `v` for now.
 - HP regenerates slowly as before; AP is restored by kits, tools and vials.
 - Acid bypasses AP completely for now.
-- Body action opens the player-slot overlay; no armour activation command yet.
+- Armour has no action key: equip applies AP immediately; `B` unequips/drops it.
 - Enemy AP is out of scope; monsters will be redesigned separately.
 - Chainsaw is noisy and has no fuel requirement.
 - Molotovs are loot-only.
