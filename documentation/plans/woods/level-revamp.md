@@ -1,8 +1,9 @@
-# Level Revamp Plan
+# Woods Level Revamp — Levels 0–8
 
-Status: **planning**  
-Scope of this revision: **woods levels 0–8 only**  
-Other level themes are listed as placeholders and are intentionally not designed yet.
+Status: **planned**  
+Parent: [Woods plans](README.md)  
+Related: [Woods colour palette](color-palette.md)  
+Scope: **woods levels 0–8 only**
 
 This document describes the next major map-content pass for the Go port. The
 goal is to stop treating every level as a reused room-section grid and give

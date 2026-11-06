@@ -100,11 +100,17 @@ Screens generally close with `z`, `q`, or `Esc`.
 
 The data tables and most texts are recovered directly from `hi030.exe`; the
 combat/AI/XP formulas are a playable reconstruction based on the recovered
-options and disassembly.  See `REVERSE_ENGINEERING.md` for addresses, struct
-layouts and what was exact vs. approximated.
+options and disassembly.  See [the reverse-engineering notes](documentation/reference/reverse-engineering.md)
+for addresses, struct layouts and what was exact vs. approximated.
 
 The original game is copyright © 2006, 2007 by Michał Przybyłowicz.  This port
 is a preservation/reimplementation effort and keeps the original notices.
+
+## Documentation
+
+- [Documentation index](documentation/README.md)
+- [Feature plans and roadmap](documentation/plans/README.md)
+- [Reverse-engineering notes](documentation/reference/reverse-engineering.md)
 
 ## License
 
