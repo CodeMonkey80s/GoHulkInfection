@@ -599,7 +599,7 @@ func (u *UI) drawGame() {
 		u.fill(0, 45, screenW, 2, ' ', 8, 0)
 		u.fill(0, 45, screenW, 1, ' ', 15, 1)
 		u.putStr(1, 45, "attack: choose a direction", 15, 1)
-		u.putStr(1, 46, "arrows / numpad attack, esc cancels", 8, 0)
+		u.putStr(1, 46, "uio/jkl/m,. or arrows attack, esc cancels", 8, 0)
 	}
 }
 
@@ -865,22 +865,22 @@ func directionFromEvent(e *tcell.EventKey) (int, int, bool) {
 		return -1, 1, true
 	}
 	switch e.Rune() {
-	case '8':
-		return 0, -1, true
-	case '9':
-		return 1, -1, true
-	case '7':
+	case 'u':
 		return -1, -1, true
-	case '6':
-		return 1, 0, true
-	case '4':
+	case 'i':
+		return 0, -1, true
+	case 'o':
+		return 1, -1, true
+	case 'j':
 		return -1, 0, true
-	case '3':
-		return 1, 1, true
-	case '2':
-		return 0, 1, true
-	case '1':
+	case 'l':
+		return 1, 0, true
+	case 'm':
 		return -1, 1, true
+	case ',':
+		return 0, 1, true
+	case '.':
+		return 1, 1, true
 	}
 	return 0, 0, false
 }
@@ -929,7 +929,7 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 		return
 	}
 	if u.msgExpanded {
-		if e.Key() == tcell.KeyEscape || e.Rune() == 'm' {
+		if e.Key() == tcell.KeyEscape || e.Rune() == '~' {
 			u.msgExpanded = false
 		}
 		return
@@ -949,42 +949,21 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 		g.Msg("attack cancelled.", 8)
 		return
 	}
-	// movement
-	moves := map[tcell.Key][2]int{
-		tcell.KeyUp: {0, -1}, tcell.KeyDown: {0, 1}, tcell.KeyLeft: {-1, 0}, tcell.KeyRight: {1, 0},
-		tcell.KeyHome: {-1, -1}, tcell.KeyEnd: {1, 1}, tcell.KeyPgUp: {1, -1}, tcell.KeyPgDn: {-1, 1},
-	}
-	if d, ok := moves[e.Key()]; ok {
-		g.MovePlayer(d[0], d[1])
+	if dx, dy, ok := directionFromEvent(e); ok {
+		g.MovePlayer(dx, dy)
 		return
 	}
 	r := e.Rune()
 	switch r {
-	case '8':
-		g.MovePlayer(0, -1)
-	case '9':
-		g.MovePlayer(1, -1)
-	case '7':
-		g.MovePlayer(-1, -1)
-	case '6':
-		g.MovePlayer(1, 0)
-	case '5':
+	case 'k':
 		g.WaitTurn()
-	case '4':
-		g.MovePlayer(-1, 0)
-	case '3':
-		g.MovePlayer(1, 1)
-	case '2':
-		g.MovePlayer(0, 1)
-	case '1':
-		g.MovePlayer(-1, 1)
 	case 'a':
 		g.UseSlot(SlotHands)
 	case 'c':
 		g.UseSlot(SlotBelt1)
 	case 'd':
 		g.UseSlot(SlotBelt2)
-	case 'e':
+	case 'r':
 		g.UseSlot(SlotBelt3)
 	case 'A':
 		g.DropSlot(SlotHands)
@@ -994,11 +973,9 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 		g.DropSlot(SlotBelt1)
 	case 'D':
 		g.DropSlot(SlotBelt2)
-	case 'E':
+	case 'R':
 		g.DropSlot(SlotBelt3)
-	case 'v':
-		g.Bash()
-	case ',':
+	case 'g':
 		g.PickUp()
 	case 'f':
 		if g.Player.HandItem() == nil {
@@ -1009,12 +986,12 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 		g.Msg("attack in which direction? (esc cancels)", 8)
 	case '?':
 		g.State = StateHelp
-	case 'i':
+	case 'e':
 		g.State = StateInventory
-	case 'l':
+	case 'v':
 		g.State = StateLook
 		g.LookX, g.LookY = g.Player.X, g.Player.Y
-	case 'm':
+	case '~':
 		u.msgExpanded = true
 	case 'O':
 		g.State = StateOptions
@@ -1133,35 +1110,18 @@ func (u *UI) drawLookOverlay() {
 		desc = lines[0]
 	}
 	u.putStrTcell(1, 45, desc, fg, bg)
-	u.putStrTcell(1, 46, fmt.Sprintf("look: [%d:%d] arrows move  enter/esc quit", g.LookX, g.LookY), dim, bg)
+	u.putStrTcell(1, 46, fmt.Sprintf("look: [%d:%d] move keys move  enter/esc quit", g.LookX, g.LookY), dim, bg)
 }
 
 func (u *UI) handleLook(e *tcell.EventKey) {
 	g := u.g
-	switch e.Key() {
-	case tcell.KeyUp:
-		g.LookY--
-	case tcell.KeyDown:
-		g.LookY++
-	case tcell.KeyLeft:
-		g.LookX--
-	case tcell.KeyRight:
-		g.LookX++
-	default:
-		switch e.Rune() {
-		case '8':
-			g.LookY--
-		case '2':
-			g.LookY++
-		case '4':
-			g.LookX--
-		case '6':
-			g.LookX++
-		default:
-			if isEnter(e) || e.Key() == tcell.KeyEscape || e.Rune() == 'z' || e.Rune() == 'l' {
-				g.State = StatePlaying
-			}
-		}
+	if dx, dy, ok := directionFromEvent(e); ok {
+		g.LookX += dx
+		g.LookY += dy
+		return
+	}
+	if isEnter(e) || e.Key() == tcell.KeyEscape || e.Rune() == 'z' || e.Rune() == 'v' {
+		g.State = StatePlaying
 	}
 }
 
@@ -1172,7 +1132,7 @@ func (u *UI) drawThrowOverlay() {
 	dim := u.uiColor(RoleDimText, 8)
 	u.fillTcell(0, 45, screenW, 2, ' ', fg, bg)
 	u.putStrTcell(1, 45, fmt.Sprintf("throw: target [%d:%d]  range %d  enter throw  esc cancel", g.LookX, g.LookY, g.FOVRadius()), fg, bg)
-	u.putStrTcell(1, 46, "arrows move cursor", dim, bg)
+	u.putStrTcell(1, 46, "move keys move cursor", dim, bg)
 }
 
 func (g *Game) moveThrowCursor(dx, dy int) {
@@ -1190,31 +1150,18 @@ func (g *Game) moveThrowCursor(dx, dy int) {
 
 func (u *UI) handleThrow(e *tcell.EventKey) {
 	g := u.g
+	if dx, dy, ok := directionFromEvent(e); ok {
+		g.moveThrowCursor(dx, dy)
+		return
+	}
 	switch e.Key() {
-	case tcell.KeyUp:
-		g.moveThrowCursor(0, -1)
-	case tcell.KeyDown:
-		g.moveThrowCursor(0, 1)
-	case tcell.KeyLeft:
-		g.moveThrowCursor(-1, 0)
-	case tcell.KeyRight:
-		g.moveThrowCursor(1, 0)
 	case tcell.KeyEscape:
 		g.State = StatePlaying
 	case tcell.KeyEnter:
 		g.State = StatePlaying
 		g.ThrowGrenade(g.LookX, g.LookY)
 	default:
-		switch e.Rune() {
-		case '8':
-			g.moveThrowCursor(0, -1)
-		case '2':
-			g.moveThrowCursor(0, 1)
-		case '4':
-			g.moveThrowCursor(-1, 0)
-		case '6':
-			g.moveThrowCursor(1, 0)
-		case 'z':
+		if e.Rune() == 'z' {
 			g.State = StatePlaying
 		}
 	}
