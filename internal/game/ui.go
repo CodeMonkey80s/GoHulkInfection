@@ -33,38 +33,11 @@ func cp437Rune(b byte) rune {
 	return cp437[b-128]
 }
 
-// DOS/CP437 colour indices in the original data are not ANSI indices.
-// Map them explicitly to the tcell 16-colour palette.
-var dosPalette = [16]tcell.Color{
-	tcell.ColorBlack,
-	tcell.ColorNavy,    // 1 blue
-	tcell.ColorGreen,   // 2 green
-	tcell.ColorTeal,    // 3 cyan
-	tcell.ColorMaroon,  // 4 red
-	tcell.ColorPurple,  // 5 magenta
-	tcell.ColorOlive,   // 6 brown
-	tcell.ColorSilver,  // 7 light gray
-	tcell.ColorGray,    // 8 dark gray
-	tcell.ColorBlue,    // 9 light blue
-	tcell.ColorLime,    // 10 light green
-	tcell.ColorAqua,    // 11 light cyan
-	tcell.ColorRed,     // 12 light red
-	tcell.ColorFuchsia, // 13 light magenta
-	tcell.ColorYellow,  // 14 yellow
-	tcell.ColorWhite,   // 15 white
-}
-
-func pal(i uint8) tcell.Color {
-	if int(i) < 16 {
-		return dosPalette[i]
-	}
-	return tcell.ColorWhite
-}
-
 type UI struct {
-	screen tcell.Screen
-	g      *Game
-	ox, oy int
+	screen    tcell.Screen
+	g         *Game
+	ox, oy    int
+	colorMode ColorMode
 
 	titleSel      int
 	classSel      int
@@ -90,7 +63,11 @@ func Run() error {
 	s.SetStyle(tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite))
 	s.Clear()
 
-	u := &UI{screen: s, g: NewGame(time.Now().UnixNano())}
+	u := &UI{
+		screen:    s,
+		g:         NewGame(time.Now().UnixNano()),
+		colorMode: DetectColorMode(s.Colors()),
+	}
 	if len(os.Args) > 1 {
 		u.g.PlayerName = os.Args[1]
 	}
@@ -122,10 +99,14 @@ func Run() error {
 }
 
 func (u *UI) put(x, y int, r rune, fg, bg uint8) {
+	u.putTcell(x, y, r, pal(fg), pal(bg))
+}
+
+func (u *UI) putTcell(x, y int, r rune, fg, bg tcell.Color) {
 	if x < 0 || y < 0 || x >= screenW || y >= screenH {
 		return
 	}
-	st := tcell.StyleDefault.Foreground(pal(fg)).Background(pal(bg))
+	st := tcell.StyleDefault.Foreground(fg).Background(bg)
 	u.screen.SetContent(u.ox+x, u.oy+y, r, nil, st)
 }
 
@@ -145,6 +126,58 @@ func (u *UI) fill(x, y, w, h int, r rune, fg, bg uint8) {
 
 func (u *UI) clear(bg uint8) {
 	u.fill(0, 0, screenW, screenH, ' ', 7, bg)
+}
+
+func (u *UI) woodsColorsActive() bool {
+	return u.g != nil && u.g.Theme == 0
+}
+
+func (u *UI) paletteFallback() bool {
+	return u.colorMode == ColorMode16 || !u.woodsColorsActive()
+}
+
+// worldColor resolves a foreground colour. Remembered tiles are dimmed and
+// slightly desaturated instead of being replaced by a flat grey.
+func (u *UI) worldColor(role ColorRole, ok bool, fallback uint8, x, y int, visible bool) tcell.Color {
+	if !ok || !u.woodsColorsActive() {
+		if !visible {
+			return pal(8)
+		}
+		return pal(fallback)
+	}
+	pc, found := WoodsPalette.Lookup(role)
+	if !found {
+		if !visible {
+			return pal(8)
+		}
+		return pal(fallback)
+	}
+	if !visible {
+		if u.colorMode == ColorMode16 {
+			return pal(8)
+		}
+		return ResolveRGB(ShadeRGB(pc.RGB, 0.40, 0.15), fallback, u.colorMode)
+	}
+	return ResolveRGB(VaryRGB(pc.RGB, u.g.Level, x, y), fallback, u.colorMode)
+}
+
+// worldBackgroundColor resolves a background colour. It keeps the supplied
+// fallback index instead of the remembered-tile grey used for glyphs.
+func (u *UI) worldBackgroundColor(role ColorRole, ok bool, fallback uint8, x, y int, visible bool) tcell.Color {
+	if !ok || !u.woodsColorsActive() {
+		return pal(fallback)
+	}
+	pc, found := WoodsPalette.Lookup(role)
+	if !found {
+		return pal(fallback)
+	}
+	if !visible {
+		if u.colorMode == ColorMode16 {
+			return pal(fallback)
+		}
+		return ResolveRGB(ShadeRGB(pc.RGB, 0.40, 0.15), fallback, u.colorMode)
+	}
+	return ResolveRGB(VaryRGB(pc.RGB, u.g.Level, x, y), fallback, u.colorMode)
 }
 
 func centerText(s string, width int) int {
@@ -311,49 +344,66 @@ func (u *UI) drawGame() {
 	for sy := 0; sy < mapViewH; sy++ {
 		for sx := 0; sx < screenW; sx++ {
 			mx, my := left+sx, top+sy
+			mapBG := u.worldColor(RoleMapBackground, true, 0, mx, my, true)
 			if !g.Map.InBounds(mx, my) {
-				u.put(sx, sy+1, ' ', 0, 0)
+				u.putTcell(sx, sy+1, ' ', mapBG, mapBG)
 				continue
 			}
 			i := g.Map.idx(mx, my)
 			if !g.Map.Seen[i] {
-				u.put(sx, sy+1, ' ', 0, 0)
+				u.putTcell(sx, sy+1, ' ', mapBG, mapBG)
 				continue
 			}
 			d := g.Map.Def(mx, my)
 			vis := g.Map.Visible[i] || g.Options.Bool("optMapDrawHiddenTiles")
+			tileRole, tileRoleOK := TileColorRole(int(g.Map.Tile(mx, my)))
 			fg := d.Color
+			fgRole, fgRoleOK := tileRole, tileRoleOK
+			fgVisible := vis
 			if !vis {
 				fg = 8
 			}
 			r := cp437Rune(d.Glyph)
 			if g.Options.Bool("optMapDrawPortals") && (d.Name == "time portal" || d.Name == "stone stairs" || d.Name == "elevator") {
 				fg = 14
+				fgRole, fgRoleOK = RoleGoldRelic, true
+				fgVisible = true
 			}
 			bg := uint8(0)
-			if g.Map.Blood[i] > 0 && d.Type == 1 {
+			bgRole, bgRoleOK := ColorRole(""), false
+			blooded := g.Map.Blood[i] > 0 && d.Type == 1
+			if blooded {
 				bg = 4 // DOS red background
 				if !vis {
 					bg = 0
+				} else {
+					bgRole, bgRoleOK = RoleDarkBlood, true
 				}
 			}
 			if g.Map.Fire[i] > 0 {
 				r = '^'
 				fg = 12
+				fgRole, fgRoleOK = RoleFlame, true
+				fgVisible = true
 			} else if g.Map.Acid[i] > 0 {
 				r = '~'
 				fg = 10
+				fgRole, fgRoleOK = RoleAcid, true
+				fgVisible = true
 			} else if g.Map.Smoke[i] > 0 && vis {
 				r = '%'
 				fg = 8
+				fgRole, fgRoleOK = RoleSmoke, true
 			}
 			if vis {
 				if it := g.ItemAt(mx, my); it != nil {
 					if d2 := it.Def(); d2 != nil {
 						r = cp437Rune(d2.Glyph)
 						fg = d2.Color
-						if bg == 4 {
+						fgRole, fgRoleOK = ItemColorRole(it.Proto)
+						if blooded && u.paletteFallback() {
 							fg = 15 // keep corpses/items visible on blood
+							fgRoleOK = false
 						}
 					}
 				}
@@ -361,10 +411,13 @@ func (u *UI) drawGame() {
 					if g.Map.Visible[i] || g.Options.Bool("optDrawDebugAI") {
 						r = cp437Rune(c.Glyph)
 						fg = c.Color
+						fgRole, fgRoleOK = CritterColorRole(c.Proto)
 						if c.Blood > 0 {
 							fg = 12
-							if bg == 4 {
+							fgRole, fgRoleOK = RoleFreshBlood, true
+							if blooded && u.paletteFallback() {
 								fg = 15
+								fgRoleOK = false
 							}
 						}
 					}
@@ -373,8 +426,12 @@ func (u *UI) drawGame() {
 			if mx == g.Player.X && my == g.Player.Y {
 				r = '@'
 				fg = 15
+				fgRole, fgRoleOK = RolePlayer, true
+				fgVisible = true
 			}
-			u.put(sx, sy+1, r, fg, bg)
+			fgColor := u.worldColor(fgRole, fgRoleOK, fg, mx, my, fgVisible)
+			bgColor := u.worldBackgroundColor(bgRole, bgRoleOK, bg, mx, my, vis)
+			u.putTcell(sx, sy+1, r, fgColor, bgColor)
 		}
 	}
 	// Highlight the cursor tile in look and throw modes.
