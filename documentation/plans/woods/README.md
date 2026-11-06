@@ -16,7 +16,7 @@ This folder contains the current plans for the woods theme.
 3. **Structures** — implemented: road-facing huts with doors, windows and furniture.
 4. **Water and roads** — implemented: meandering rivers/ponds, banks, reeds, lily pads and road bridges.
 5. **Level identities** — implemented: nine `WoodLevelSpec` definitions and unique landmarks.
-6. **Items and signature loot** — new wood-specific weapons, armour, tools, food and per-level signature categories.
+6. **Items and signature loot** — implemented: wood-specific food, tools, weapons, armour, potions, relics and per-level signature categories.
 7. **Factions and AI** — villagers, neutral animals, zombie aggro and villager conversion.
 8. **Exit placement and validation** — random edge/middle/landmark exits, connectivity tests and polish.
 

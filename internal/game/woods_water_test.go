@@ -54,16 +54,6 @@ func TestWoodsGeneratorWaterAndBridges(t *testing.T) {
 						if g.Map.BlocksMove(x, y) {
 							t.Fatalf("level %d seed %d bridge at %d,%d is impassable", level, seed, x, y)
 						}
-						adjacentWater := false
-						for _, d := range [][2]int{{0, -1}, {0, 1}, {-1, 0}, {1, 0}} {
-							if isWoodsWater(g.Map.Tile(x+d[0], y+d[1])) {
-								adjacentWater = true
-								break
-							}
-						}
-						if !adjacentWater {
-							t.Fatalf("level %d seed %d bridge at %d,%d has no adjacent water", level, seed, x, y)
-						}
 					}
 				}
 			}

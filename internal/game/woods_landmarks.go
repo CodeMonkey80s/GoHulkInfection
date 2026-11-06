@@ -108,6 +108,7 @@ func (g *Game) reserveLandmarkArea(m *Map, path [][2]int, w, h int) (int, int, [
 				}
 				if !hasWater {
 					clearWoodsArea(m, cx, cy, w/2+1, 0)
+					m.LandmarkX, m.LandmarkY = cx, cy
 					return cx, cy, side, true
 				}
 				if !fallbackOK {
@@ -118,6 +119,7 @@ func (g *Game) reserveLandmarkArea(m *Map, path [][2]int, w, h int) (int, int, [
 	}
 	if fallbackOK {
 		clearWoodsArea(m, fallbackX, fallbackY, w/2+1, 0)
+		m.LandmarkX, m.LandmarkY = fallbackX, fallbackY
 		return fallbackX, fallbackY, fallbackSide, true
 	}
 
@@ -130,6 +132,7 @@ func (g *Game) reserveLandmarkArea(m *Map, path [][2]int, w, h int) (int, int, [
 			}
 			cx, cy := x0+w/2, y0+h/2
 			clearWoodsArea(m, cx, cy, w/2+1, 0)
+			m.LandmarkX, m.LandmarkY = cx, cy
 			return cx, cy, [2]int{0, 1}, true
 		}
 	}
@@ -367,6 +370,7 @@ func (g *Game) buildCharcoalLandmark(m *Map, path [][2]int) {
 }
 
 func (g *Game) buildRuinedChapelAtExit(m *Map, path [][2]int, exitX, exitY int) {
+	m.LandmarkX, m.LandmarkY = exitX, exitY
 	w, h := 11, 9
 	x0, x1 := exitX-w/2, exitX-w/2+w-1
 	y0, y1 := exitY-h/2, exitY-h/2+h-1
@@ -400,7 +404,7 @@ func (g *Game) buildRuinedChapelAtExit(m *Map, path [][2]int, exitX, exitY int) 
 	}
 	for y := y0; y <= y1; y++ {
 		for x := x0; x <= x1; x++ {
-			if m.Tile(x, y) == tileDirtRoad || m.Tile(x, y) == portalTile(0) {
+			if m.Tile(x, y) == tileDirtRoad || m.Tile(x, y) == tileWoodenBridge || m.Tile(x, y) == portalTile(0) {
 				continue
 			}
 			wall := x == x0 || x == x1 || y == y0 || y == y1
@@ -420,6 +424,32 @@ func (g *Game) buildRuinedChapelAtExit(m *Map, path [][2]int, exitX, exitY int) 
 		}
 	}
 	m.SetTile(exitX, exitY, portalTile(0))
+	switch openSide {
+	case [2]int{0, -1}:
+		for y := y0 - 1; y <= exitY; y++ {
+			if m.Tile(exitX, y) != portalTile(0) {
+				g.setWoodsRoadTile(m, exitX, y)
+			}
+		}
+	case [2]int{0, 1}:
+		for y := exitY; y <= y1+1; y++ {
+			if m.Tile(exitX, y) != portalTile(0) {
+				g.setWoodsRoadTile(m, exitX, y)
+			}
+		}
+	case [2]int{-1, 0}:
+		for x := x0 - 1; x <= exitX; x++ {
+			if m.Tile(x, exitY) != portalTile(0) {
+				g.setWoodsRoadTile(m, x, exitY)
+			}
+		}
+	default:
+		for x := exitX; x <= x1+1; x++ {
+			if m.Tile(x, exitY) != portalTile(0) {
+				g.setWoodsRoadTile(m, x, exitY)
+			}
+		}
+	}
 	altarX, altarY := exitX, exitY
 	switch {
 	case openSide[1] == -1:
@@ -438,5 +468,16 @@ func (g *Game) buildRuinedChapelAtExit(m *Map, path [][2]int, exitX, exitY int) 
 		if m.Tile(x, y) == 2 {
 			m.SetTile(x, y, tileGravestone)
 		}
+	}
+	for _, p := range [][2]int{{x0 - 1, y0 - 1}, {x1 + 1, y0 - 1}, {x0 - 1, y1 + 1}, {x1 + 1, y1 + 1}, {x0 - 2, y0}, {x1 + 2, y0}} {
+		if !m.InBounds(p[0], p[1]) {
+			continue
+		}
+		t := m.Tile(p[0], p[1])
+		if t == tileDirtRoad || t == portalTile(0) || t == tileRiverBank || isWoodsWater(t) {
+			continue
+		}
+		m.SetTile(p[0], p[1], tileGravestone)
+		break
 	}
 }

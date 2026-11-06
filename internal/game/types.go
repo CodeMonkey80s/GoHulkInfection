@@ -14,6 +14,9 @@ const (
 	KindAmmo
 	KindGrenade
 	KindMedical
+	KindFood
+	KindTool
+	KindRelic
 )
 
 const (
@@ -329,6 +332,7 @@ type Game struct {
 	Quit         bool
 	Score        int
 	StartTime    int64
+	WoodLoot     [9]int
 	// temporary screen data
 	ScrollMsg    int
 	PendingThrow int
@@ -351,6 +355,7 @@ func NewGame(seed int64) *Game {
 		Y:      -1,
 		Gold:   0,
 	}
+	g.WoodLoot = newWoodLootAssignment(g.RNG)
 	return g
 }
 

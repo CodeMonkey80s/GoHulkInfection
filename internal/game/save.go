@@ -97,6 +97,7 @@ type saveGame struct {
 	HintsShown  int            `json:"hints"`
 	FreePoints  int            `json:"free_points"`
 	Score       int            `json:"score"`
+	WoodLoot    []int          `json:"wood_loot,omitempty"`
 }
 
 func itemToSave(it *Item) saveItem {
@@ -303,6 +304,7 @@ func (g *Game) SaveGame(path string) error {
 		HintsShown:  g.HintsShown,
 		FreePoints:  g.FreePoints,
 		Score:       g.Score,
+		WoodLoot:    append([]int(nil), g.WoodLoot[:]...),
 	}
 	s.Map = saveMap{
 		W: g.Map.W, H: g.Map.H, Tiles: g.Map.Tiles, Seen: g.Map.Seen, Visible: g.Map.Visible,
@@ -353,6 +355,11 @@ func (g *Game) LoadGame(path string) error {
 	g.HintsShown = s.HintsShown
 	g.FreePoints = s.FreePoints
 	g.Score = s.Score
+	if validWoodLootAssignment(s.WoodLoot) {
+		copy(g.WoodLoot[:], s.WoodLoot)
+	} else {
+		g.WoodLoot = newWoodLootAssignment(g.RNG)
+	}
 	g.Map = &Map{
 		W: s.Map.W, H: s.Map.H, Tiles: s.Map.Tiles, Seen: s.Map.Seen, Visible: s.Map.Visible,
 		Blood: s.Map.Blood, Fire: s.Map.Fire, Acid: s.Map.Acid, Smoke: s.Map.Smoke,

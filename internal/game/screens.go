@@ -60,6 +60,10 @@ func itemSummary(it *Item) string {
 		return d.Name
 	case KindMedical:
 		return fmt.Sprintf("%s  heal %d  charges %d", d.Name, d.Heal, it.Charges)
+	case KindFood:
+		return fmt.Sprintf("%s  heal %d  charges %d", d.Name, d.Heal, it.Charges)
+	case KindTool, KindRelic:
+		return d.Desc
 	default:
 		return d.Name
 	}
@@ -142,6 +146,12 @@ func slotStats(it *Item) string {
 			return fmt.Sprintf("AP +10  charges %d", it.Charges)
 		}
 		return fmt.Sprintf("heal %d  charges %d", d.Heal, it.Charges)
+	case KindFood:
+		return fmt.Sprintf("heal %d  charges %d", d.Heal, it.Charges)
+	case KindTool:
+		return d.Desc
+	case KindRelic:
+		return "relic"
 	}
 	return d.Name
 }
@@ -161,10 +171,12 @@ func slotAction(slot int, it *Item) string {
 		return "-"
 	}
 	switch d.Kind {
-	case KindMelee, KindGrenade:
+	case KindMelee, KindGrenade, KindTool:
 		return "swap " + slotKey(slot)
-	case KindMedical:
+	case KindMedical, KindFood:
 		return "consume " + slotKey(slot)
+	case KindRelic:
+		return "inspect"
 	}
 	return "-"
 }
