@@ -597,12 +597,12 @@ func (g *Game) SpawnPopulation() {
 		if d := it.Def(); d != nil && d.Kind == KindMedical {
 			it.Charges = d.Charges
 		}
-		g.Items = append(g.Items, it)
+		g.PlaceGroundItemNear(it, x, y)
 	}
 	// Guaranteed supplies near start.
 	for i, proto := range []int{46, 48, 48} {
 		x, y := g.Map.FirstFreeNear(g.Player.X+2+i, g.Player.Y+1)
-		g.Items = append(g.Items, &Item{Proto: proto, X: x, Y: y, Charges: ItemDefs[proto].Charges})
+		g.PlaceGroundItemNear(&Item{Proto: proto, X: -1, Y: -1, Charges: ItemDefs[proto].Charges}, x, y)
 	}
 }
 
@@ -733,32 +733,16 @@ func (g *Game) SetupNewGame(class int, name string) {
 	g.Player.Gold = 0
 	g.Player.Blood = 0
 	g.Player.Poison = 0
-	g.Player.Inventory = nil
-	g.Player.Equip = [NumEquipSlots]*Item{}
-	g.Player.Equip[EquipArmor] = &Item{Proto: 5, X: -1, Y: -1}
+	g.Player.Slots = PlayerSlots{BeltUnlocked: 1}
+	g.Player.Slots.Body = &Item{Proto: 5, X: -1, Y: -1}
+	g.Player.Slots.Belt[0] = &Item{Proto: 48, X: -1, Y: -1, Charges: 5}
 	switch class {
 	case 0: // murderer
-		g.Player.Equip[EquipMelee] = &Item{Proto: 16, X: -1, Y: -1, Active: true}
-		for i := 0; i < 3; i++ {
-			g.Player.AddItem(&Item{Proto: 47, X: -1, Y: -1, Charges: 1})
-		}
-		g.Player.AddItem(&Item{Proto: 48, X: -1, Y: -1, Charges: 5})
-		g.Player.AddItem(&Item{Proto: 41, X: -1, Y: -1})
+		g.Player.Slots.Hands = &Item{Proto: 16, X: -1, Y: -1, Active: true}
 	case 1: // marine
-		g.Player.Equip[EquipMelee] = &Item{Proto: 10, X: -1, Y: -1, Active: true}
-		for i := 0; i < 3; i++ {
-			g.Player.AddItem(&Item{Proto: 47, X: -1, Y: -1, Charges: 1})
-		}
-		g.Player.AddItem(&Item{Proto: 48, X: -1, Y: -1, Charges: 5})
-		g.Player.AddItem(&Item{Proto: 41, X: -1, Y: -1})
+		g.Player.Slots.Hands = &Item{Proto: 10, X: -1, Y: -1, Active: true}
 	case 2: // warpcrafter
-		g.Player.Equip[EquipMelee] = &Item{Proto: 15, X: -1, Y: -1, Active: true}
-		for i := 0; i < 3; i++ {
-			g.Player.AddItem(&Item{Proto: 47, X: -1, Y: -1, Charges: 1})
-		}
-		g.Player.AddItem(&Item{Proto: 48, X: -1, Y: -1, Charges: 5})
-		g.Player.AddItem(&Item{Proto: 41, X: -1, Y: -1})
-		g.Player.AddItem(&Item{Proto: 41, X: -1, Y: -1})
+		g.Player.Slots.Hands = &Item{Proto: 15, X: -1, Y: -1, Active: true}
 	}
 	g.Level = 0
 	g.Turn = 0

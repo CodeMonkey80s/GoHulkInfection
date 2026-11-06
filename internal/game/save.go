@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-const saveVersion = 2
+const saveVersion = 3
 
 type saveItem struct {
 	Proto   int  `json:"p"`
@@ -14,6 +14,13 @@ type saveItem struct {
 	Active  bool `json:"a,omitempty"`
 	X       int  `json:"x,omitempty"`
 	Y       int  `json:"y,omitempty"`
+}
+
+type saveSlots struct {
+	Hands        saveItem   `json:"hands"`
+	Body         saveItem   `json:"body"`
+	Belt         []saveItem `json:"belt,omitempty"`
+	BeltUnlocked int        `json:"belt_unlocked"`
 }
 
 type saveCritter struct {
@@ -41,6 +48,7 @@ type saveCritter struct {
 	Gold      int            `json:"gold"`
 	Inv       []saveItem     `json:"inv"`
 	Equip     []saveItem     `json:"eq"`
+	Slots     *saveSlots     `json:"slots,omitempty"`
 	Blood     int            `json:"bl"`
 	Poison    int            `json:"po"`
 	LastSeenX int            `json:"lsx"`
@@ -112,11 +120,23 @@ func critterToSave(c *Critter) saveCritter {
 		Poison: c.Poison, LastSeenX: c.LastSeenX, LastSeenY: c.LastSeenY,
 		Alert: c.Alert, Dead: c.Dead,
 	}
-	for _, it := range c.Inventory {
-		s.Inv = append(s.Inv, itemToSave(it))
-	}
-	for _, it := range c.Equip {
-		s.Equip = append(s.Equip, itemToSave(it))
+	if c.Player {
+		ss := &saveSlots{
+			Hands:        itemToSave(c.Slots.Hands),
+			Body:         itemToSave(c.Slots.Body),
+			BeltUnlocked: c.Slots.BeltUnlocked,
+		}
+		for _, it := range c.Slots.Belt {
+			ss.Belt = append(ss.Belt, itemToSave(it))
+		}
+		s.Slots = ss
+	} else {
+		for _, it := range c.Inventory {
+			s.Inv = append(s.Inv, itemToSave(it))
+		}
+		for _, it := range c.Equip {
+			s.Equip = append(s.Equip, itemToSave(it))
+		}
 	}
 	return s
 }
@@ -130,6 +150,91 @@ func critterFromSave(s saveCritter, version int) (*Critter, int) {
 		Player: s.Player, Energy: s.Energy, Level: s.Level, XP: s.XP, Gold: s.Gold, Blood: s.Blood,
 		Poison: s.Poison, LastSeenX: s.LastSeenX, LastSeenY: s.LastSeenY,
 		Alert: s.Alert, Dead: s.Dead,
+	}
+	if s.Player {
+		c.Slots = PlayerSlots{BeltUnlocked: 1}
+		if version >= 3 && s.Slots != nil {
+			if it := itemFromSave(s.Slots.Hands); it != nil {
+				if ItemAvailable(it.Proto) {
+					c.Slots.Hands = it
+				} else {
+					removed++
+				}
+			}
+			if it := itemFromSave(s.Slots.Body); it != nil {
+				if ItemAvailable(it.Proto) {
+					c.Slots.Body = it
+				} else {
+					removed++
+				}
+			}
+			for i := 0; i < 3 && i < len(s.Slots.Belt); i++ {
+				it := itemFromSave(s.Slots.Belt[i])
+				if it == nil {
+					continue
+				}
+				if !ItemAvailable(it.Proto) {
+					removed++
+					continue
+				}
+				c.Slots.Belt[i] = it
+			}
+			c.Slots.BeltUnlocked = s.Slots.BeltUnlocked
+		} else {
+			// Migrate the old inventory/equipment layout into player slots.
+			oldHand := -1
+			oldBody := -1
+			oldThrow := -1
+			oldTool := -1
+			if version < 2 {
+				oldHand, oldBody, oldThrow, oldTool = 0, 2, 3, 4
+			} else {
+				oldHand, oldBody, oldThrow, oldTool = 0, 1, 2, 3
+			}
+			if oldHand >= 0 && oldHand < len(s.Equip) {
+				if it := itemFromSave(s.Equip[oldHand]); it != nil && ItemAvailable(it.Proto) {
+					c.Slots.Hands = it
+				}
+			}
+			if oldBody >= 0 && oldBody < len(s.Equip) {
+				if it := itemFromSave(s.Equip[oldBody]); it != nil && ItemAvailable(it.Proto) {
+					c.Slots.Body = it
+				}
+			}
+			c.Slots.BeltUnlocked = 3
+			var candidates []saveItem
+			for _, idx := range []int{oldThrow, oldTool} {
+				if idx >= 0 && idx < len(s.Equip) {
+					candidates = append(candidates, s.Equip[idx])
+				}
+			}
+			candidates = append(candidates, s.Inv...)
+			bi := 0
+			for _, si := range candidates {
+				if si.Proto < 0 {
+					continue
+				}
+				if !ItemAvailable(si.Proto) {
+					removed++
+					continue
+				}
+				if bi >= 3 {
+					removed++
+					continue
+				}
+				if it := itemFromSave(si); it != nil {
+					c.Slots.Belt[bi] = it
+					bi++
+				}
+			}
+		}
+		if c.Slots.BeltUnlocked < 1 {
+			c.Slots.BeltUnlocked = 1
+		}
+		if c.Slots.BeltUnlocked > 3 {
+			c.Slots.BeltUnlocked = 3
+		}
+		return c, removed
 	}
 	for _, si := range s.Inv {
 		if si.Proto < 0 {
@@ -254,14 +359,23 @@ func (g *Game) LoadGame(path string) error {
 		g.Critters = append(g.Critters, c)
 	}
 	g.Items = nil
+	occupied := map[int]bool{}
 	for _, si := range s.Items {
 		if !ItemAvailable(si.Proto) {
 			removed++
 			continue
 		}
-		if it := itemFromSave(si); it != nil {
-			g.Items = append(g.Items, it)
+		it := itemFromSave(si)
+		if it == nil {
+			continue
 		}
+		i := g.Map.idx(it.X, it.Y)
+		if occupied[i] {
+			removed++
+			continue
+		}
+		occupied[i] = true
+		g.Items = append(g.Items, it)
 	}
 	g.Messages = nil
 	for _, m := range s.Messages {

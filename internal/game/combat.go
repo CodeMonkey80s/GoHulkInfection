@@ -16,10 +16,7 @@ func isAdjacent(a, b *Critter) bool {
 }
 
 func (c *Critter) CurrentWeapon() *Item {
-	if w := c.Equip[EquipMelee]; w != nil {
-		return w
-	}
-	return nil
+	return c.HandItem()
 }
 
 func (g *Game) attackSkill(c *Critter, mode int) int {
@@ -41,13 +38,13 @@ func (g *Game) AttackValue(c *Critter, mode int) int {
 	av := g.attackSkill(c, mode) + c.AGI
 	switch mode {
 	case 1:
-		if w := c.Equip[EquipMelee]; w != nil {
+		if w := c.HandItem(); w != nil {
 			if wd := w.Def().Weapon(); wd != nil {
 				av += wd.AV * 2
 			}
 		}
 	case 3:
-		if w := c.Equip[EquipThrowable]; w != nil {
+		if w := c.ThrowableItem(); w != nil {
 			if wd := w.Def().Weapon(); wd != nil {
 				av += wd.AV * 2
 			}
@@ -71,23 +68,10 @@ func (g *Game) AttackValue(c *Critter, mode int) int {
 // DefenseValue computes the defender's DV.
 func (g *Game) DefenseValue(c *Critter) int {
 	dv := c.Skill(SkillDodging) + c.AGI/5
-	if w := c.Equip[EquipMelee]; w != nil {
+	if w := c.HandItem(); w != nil {
 		if wd := w.Def().Weapon(); wd != nil {
 			dv += wd.DV
 		}
-	}
-	if arm := c.Equip[EquipArmor]; arm != nil {
-		if d := arm.Def(); d != nil {
-			dv -= d.Weight / 4000
-		}
-	}
-	switch c.Burden() {
-	case "light":
-		dv = dv * 90 / 100
-	case "heavy":
-		dv = dv * 70 / 100
-	case "overloaded":
-		dv = dv * 50 / 100
 	}
 	if dv < 1 {
 		dv = 1
@@ -127,7 +111,7 @@ func (g *Game) PlayerMeleeAttack() {
 	if p == nil || !p.IsAlive() {
 		return
 	}
-	if p.Equip[EquipMelee] == nil {
+	if p.HandItem() == nil {
 		g.Msg("you are defenceless without a weapon.", 12)
 		return
 	}
@@ -152,7 +136,7 @@ func (g *Game) PlayerMeleeAttack() {
 
 func (g *Game) PlayerMelee(target *Critter) {
 	p := g.Player
-	weapon := p.Equip[EquipMelee]
+	weapon := p.HandItem()
 	if weapon == nil {
 		g.Msg("you are defenceless without a weapon.", 12)
 		return
@@ -198,7 +182,7 @@ func (g *Game) MonsterAttack(c, target *Critter) {
 		return
 	}
 	mode := 1
-	if c.Equip[EquipMelee] == nil {
+	if c.HandItem() == nil {
 		mode = 0
 	}
 	chance := g.HitChance(c, target, mode)
@@ -209,7 +193,7 @@ func (g *Game) MonsterAttack(c, target *Critter) {
 		return
 	}
 	dmg := c.STR/2 + c.Skill(SkillUnarmed)/8 + g.Roll(4)
-	if w := c.Equip[EquipMelee]; w != nil {
+	if w := c.HandItem(); w != nil {
 		if wd := w.Def().Weapon(); wd != nil {
 			dmg += g.RollRange(wd.DmgMin, wd.DmgMax) / 2
 		}
@@ -234,7 +218,7 @@ func (g *Game) DamageCritter(target *Critter, dmg int, source *Critter, dtype in
 		g.Msg("your god mode absorbs the damage.", 8)
 		return
 	}
-	if arm := target.Equip[EquipArmor]; arm != nil {
+	if arm := target.BodyItem(); arm != nil {
 		if d := arm.Def(); d != nil {
 			factor := d.ArmorMelee
 			switch dtype {
@@ -253,7 +237,11 @@ func (g *Game) DamageCritter(target *Critter, dmg int, source *Critter, dtype in
 			if g.Options.Bool("optGameSendDamageToItems") && g.Chance(5) {
 				arm.Charges--
 				if arm.Charges < 0 {
-					target.Equip[EquipArmor] = nil
+					if target.Player {
+						target.Slots.Body = nil
+					} else {
+						target.Equip[EquipArmor] = nil
+					}
 					g.Msg("your "+d.Name+" is shattered!", 12)
 				}
 			}
@@ -310,30 +298,28 @@ func (g *Game) CreateRemains(c *Critter) {
 		}
 	}
 	if g.Options.Bool("optMapCreateCorpses") {
-		g.Items = append(g.Items, &Item{Proto: 0, X: c.X, Y: c.Y})
+		g.PlaceGroundItemNear(&Item{Proto: 0, X: -1, Y: -1}, c.X, c.Y)
 	}
 	if g.Options.Bool("optMapCreateLimbs") && g.Chance(45) {
 		proto := 1 + g.Roll(4)
-		g.Items = append(g.Items, &Item{Proto: proto, X: c.X, Y: c.Y})
+		g.PlaceGroundItemNear(&Item{Proto: proto, X: -1, Y: -1}, c.X, c.Y)
 	}
 	if g.Chance(15) {
 		proto := 41 // HE grenade
 		if g.Roll(2) == 0 {
 			proto = 42 // molotov cocktail
 		}
-		g.Items = append(g.Items, &Item{Proto: proto, X: c.X, Y: c.Y})
+		g.PlaceGroundItemNear(&Item{Proto: proto, X: -1, Y: -1}, c.X, c.Y)
 	}
 	for _, it := range c.Inventory {
 		if !ItemAvailable(it.Proto) {
 			continue
 		}
-		it.X, it.Y = c.X, c.Y
-		g.Items = append(g.Items, it)
+		g.PlaceGroundItemNear(it, c.X, c.Y)
 	}
 	for _, it := range c.Equip {
 		if it != nil && ItemAvailable(it.Proto) {
-			it.X, it.Y = c.X, c.Y
-			g.Items = append(g.Items, it)
+			g.PlaceGroundItemNear(it, c.X, c.Y)
 		}
 	}
 }
@@ -356,6 +342,14 @@ func (g *Game) CheckLevelUp() {
 		g.FreePoints += pts
 		g.Msg(fmt.Sprintf("you are on %d level !", p.Level), 14)
 		g.Msg(fmt.Sprintf("you have gained: %d skill points, go to player screen and increase your skills.", pts), 10)
+		if p.Slots.BeltUnlocked < 2 && p.Level >= 3 {
+			p.Slots.BeltUnlocked = 2
+			g.Msg("you can now use belt slot 2 [d].", 10)
+		}
+		if p.Slots.BeltUnlocked < 3 && p.Level >= 6 {
+			p.Slots.BeltUnlocked = 3
+			g.Msg("you can now use belt slot 3 [e].", 10)
+		}
 	}
 }
 
@@ -400,13 +394,8 @@ func (g *Game) Explode(x, y, radius, damage, kind int) {
 }
 
 func (g *Game) hasThrowable() bool {
-	if it := g.Player.Equip[EquipThrowable]; it != nil && ItemIsThrowable(it.Proto) {
+	if it := g.Player.ThrowableItem(); it != nil && ItemIsThrowable(it.Proto) {
 		return true
-	}
-	for _, it := range g.Player.Inventory {
-		if ItemIsThrowable(it.Proto) {
-			return true
-		}
 	}
 	return false
 }
@@ -414,15 +403,9 @@ func (g *Game) hasThrowable() bool {
 // ThrowGrenade throws the selected HE grenade or molotov at a visible tile
 // within the player's current FOV radius.
 func (g *Game) ThrowGrenade(x, y int) {
-	it := g.Player.Equip[EquipThrowable]
+	it := g.Player.ThrowableItem()
 	if it == nil || !ItemIsThrowable(it.Proto) {
 		it = nil
-		for _, cand := range g.Player.Inventory {
-			if ItemIsThrowable(cand.Proto) {
-				it = cand
-				break
-			}
-		}
 	}
 	if it == nil {
 		g.Msg("you do not have any throwable items ready.", 12)
@@ -441,16 +424,7 @@ func (g *Game) ThrowGrenade(x, y int) {
 		g.Msg("that is beyond your throwing range.", 8)
 		return
 	}
-	if it == g.Player.Equip[EquipThrowable] {
-		g.Player.Equip[EquipThrowable] = nil
-	} else {
-		for i, cand := range g.Player.Inventory {
-			if cand == it {
-				g.Player.RemoveItemAt(i)
-				break
-			}
-		}
-	}
+	g.Player.Slots.Hands = nil
 	g.Msg("you throw your "+d.Name+".", 7)
 	// The projectile stops at the first blocking tile before the target.
 	lx, ly := g.Player.X, g.Player.Y

@@ -50,6 +50,24 @@ const (
 	NumEquipSlots
 )
 
+const (
+	SlotHands = iota
+	SlotBody
+	SlotBelt1
+	SlotBelt2
+	SlotBelt3
+	NumPlayerSlots
+)
+
+// PlayerSlots is the complete player inventory. Monsters keep using the
+// legacy Inventory/Equip fields.
+type PlayerSlots struct {
+	Hands        *Item
+	Body         *Item
+	Belt         [3]*Item
+	BeltUnlocked int
+}
+
 type KeyBind struct {
 	Key    int
 	Mod    int
@@ -126,6 +144,7 @@ type Critter struct {
 	Gold      int
 	Inventory []*Item
 	Equip     [NumEquipSlots]*Item
+	Slots     PlayerSlots
 	Blood     int
 	Poison    int
 	LastSeenX int
@@ -163,15 +182,15 @@ func (c *Critter) Skill(s int) int {
 }
 
 func (c *Critter) Weapon() *Item {
-	return c.Equip[EquipMelee]
+	return c.HandItem()
 }
 
 func (c *Critter) Throwable() *Item {
-	return c.Equip[EquipThrowable]
+	return c.ThrowableItem()
 }
 
 func (c *Critter) Armor() *Item {
-	return c.Equip[EquipArmor]
+	return c.BodyItem()
 }
 
 func (c *Critter) IsAlive() bool {
@@ -201,63 +220,6 @@ func (c *Critter) HealthState() string {
 	default:
 		return "healthy"
 	}
-}
-
-func (c *Critter) Weight() int {
-	total := 0
-	for _, it := range c.Inventory {
-		if d := it.Def(); d != nil {
-			total += d.Weight
-		}
-	}
-	for _, it := range c.Equip {
-		if it != nil {
-			if d := it.Def(); d != nil {
-				total += d.Weight
-			}
-		}
-	}
-	return total
-}
-
-func (c *Critter) MaxWeight() int {
-	return c.STR * 5500
-}
-
-func (c *Critter) Burden() string {
-	mw := c.MaxWeight()
-	if mw <= 0 {
-		return "none"
-	}
-	r := float64(c.Weight()) / float64(mw)
-	switch {
-	case r > 1.0:
-		return "overloaded"
-	case r > 0.75:
-		return "heavy"
-	case r > 0.5:
-		return "light"
-	default:
-		return "none"
-	}
-}
-
-func (c *Critter) AddItem(it *Item) bool {
-	if it == nil {
-		return false
-	}
-	it.X, it.Y = -1, -1
-	c.Inventory = append(c.Inventory, it)
-	return true
-}
-
-func (c *Critter) RemoveItemAt(i int) *Item {
-	if i < 0 || i >= len(c.Inventory) {
-		return nil
-	}
-	it := c.Inventory[i]
-	c.Inventory = append(c.Inventory[:i], c.Inventory[i+1:]...)
-	return it
 }
 
 type Message struct {
