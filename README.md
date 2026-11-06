@@ -41,9 +41,9 @@ The player-facing command set is intentionally melee-focused.
 | `v` | smash an adjacent door, wall or piece of furniture |
 | `t` | throw an HE grenade or molotov within sight range |
 | `,` | fast pick up |
-| `i` | equipment |
+| `i` | player-slot overlay |
 | `l` | look around |
-| `m` | message buffer |
+| `m` | expand/collapse latest messages |
 | `@` | character information |
 | `x` | skill levels |
 | `O` | options |
@@ -88,6 +88,8 @@ and 6.
 * armour vials restore AP from belt slots; acid bypasses AP
 * blood, corpses and limbs
 * five player slots: Hands, Body and three belt slots
+* two-line HUD with HP/AP and slot hotkeys; one-line message bar
+* `m` expands the latest eight messages; `i` opens a non-scrolling slot overlay
 * one item maximum per ground tile; dropping onto an occupied tile is refused
 * skills, skill checks, experience, levels and free skill points
 * auto-opening doors, portals, bashing, acid/fire/smoke, rain
