@@ -251,9 +251,13 @@ func (u *UI) worldColor(role ColorRole, ok bool, fallback uint8, x, y int, visib
 		if u.colorMode == ColorMode16 {
 			return pal(8)
 		}
-		return ResolveRGB(ShadeRGB(pc.RGB, 0.40, 0.15), fallback, u.colorMode)
+		c := u.applyWoodsAccent(pc.RGB, role, x, y)
+		return ResolveRGB(ShadeRGB(c, 0.40, 0.15), fallback, u.colorMode)
 	}
-	return ResolveRGB(VaryRGB(pc.RGB, u.g.Level, x, y), fallback, u.colorMode)
+	c := VaryRGB(pc.RGB, u.g.Level, x, y)
+	c = u.applyWoodsAccent(c, role, x, y)
+	c = u.applyWarmLight(c, x, y)
+	return ResolveRGB(c, fallback, u.colorMode)
 }
 
 // worldBackgroundColor resolves a background colour. It keeps the supplied
@@ -270,9 +274,29 @@ func (u *UI) worldBackgroundColor(role ColorRole, ok bool, fallback uint8, x, y 
 		if u.colorMode == ColorMode16 {
 			return pal(fallback)
 		}
-		return ResolveRGB(ShadeRGB(pc.RGB, 0.40, 0.15), fallback, u.colorMode)
+		c := u.applyWoodsAccent(pc.RGB, role, x, y)
+		return ResolveRGB(ShadeRGB(c, 0.40, 0.15), fallback, u.colorMode)
 	}
-	return ResolveRGB(VaryRGB(pc.RGB, u.g.Level, x, y), fallback, u.colorMode)
+	c := VaryRGB(pc.RGB, u.g.Level, x, y)
+	c = u.applyWoodsAccent(c, role, x, y)
+	c = u.applyWarmLight(c, x, y)
+	return ResolveRGB(c, fallback, u.colorMode)
+}
+
+func (u *UI) bloodColor(tileRole ColorRole, tileOK bool, fallback uint8, x, y int) tcell.Color {
+	if !u.woodsColorsActive() || u.colorMode == ColorMode16 {
+		return pal(4)
+	}
+	base := WoodsPalette[RoleGrassBase].RGB
+	if tileOK {
+		if pc, ok := WoodsPalette.Lookup(tileRole); ok {
+			base = pc.RGB
+		}
+	}
+	base = VaryRGB(base, u.g.Level, x, y)
+	base = u.applyWoodsAccent(base, tileRole, x, y)
+	blood := WoodsPalette[RoleDarkBlood].RGB
+	return ResolveRGB(BlendRGB(base, blood, 0.55), fallback, u.colorMode)
 }
 
 func centerText(s string, width int) int {
@@ -547,7 +571,12 @@ func (u *UI) drawGame() {
 				fgVisible = true
 			}
 			fgColor := u.worldColor(fgRole, fgRoleOK, fg, mx, my, fgVisible)
-			bgColor := u.worldBackgroundColor(bgRole, bgRoleOK, bg, mx, my, vis)
+			var bgColor tcell.Color
+			if blooded && vis {
+				bgColor = u.bloodColor(tileRole, tileRoleOK, 4, mx, my)
+			} else {
+				bgColor = u.worldBackgroundColor(bgRole, bgRoleOK, bg, mx, my, vis)
+			}
 			u.putTcell(sx, sy+1, r, fgColor, bgColor)
 		}
 	}

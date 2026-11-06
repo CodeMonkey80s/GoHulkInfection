@@ -85,8 +85,8 @@ and 6.
   a dirt road, lantern posts, road-facing huts, rivers/ponds, bridges, one
   unique landmark per level, wood-specific signature loot, villagers, animals,
   zombie conversion and edge/centre/landmark exits
-* 24-bit woods palette with deterministic tile variation, true-colour UI
-  panels and 16-colour DOS fallback
+* 24-bit woods palette with per-level accents, warm light, deterministic tile
+  variation, true-colour UI panels and 16-colour DOS fallback
 * turn/energy based critters with zombie, observer and animal AI
 * melee combat with recovered weapon AV/DV and damage values
 * throwing is deferred; HE grenade and molotov data are retained for a future pass

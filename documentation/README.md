@@ -12,18 +12,18 @@ build file lives here.
 
 ## Current focus
 
-**Woods levels 0–8.** The level revamp is done. Remaining palette work is
-per-level accents, lighting and effect blending.
+**Woods levels 0–8 are complete.** The level revamp and true-colour palette
+work are done.
 
 - [Woods level revamp](plans/woods/level-revamp.md) — generator, landmarks, huts, roads, loot, factions and AI
-- [Woods colour palette](plans/woods/color-palette.md) — true-colour proposal for the woods theme
+- [Woods colour palette](plans/woods/color-palette.md) — true-colour palette, accents, lighting and UI
 
 ## Plan status
 
 | Area | Status | Plan |
 |---|---|---|
 | Woods levels 0–8 | Done | [woods/level-revamp.md](plans/woods/level-revamp.md) |
-| Woods true-colour palette | In progress | [woods/color-palette.md](plans/woods/color-palette.md) |
+| Woods true-colour palette | Done | [woods/color-palette.md](plans/woods/color-palette.md) |
 | Command and scope reduction (melee-only, limited throwing) | Done | [systems/command-scope-reduction.md](plans/systems/command-scope-reduction.md) |
 | Player redesign (five slots, HP/AP, minimal HUD) | Done | [systems/player-redesign.md](plans/systems/player-redesign.md) |
 | Player experience adjustments (classes, intro, HUD, viewport) | Done | [systems/player-experience-adjustments.md](plans/systems/player-experience-adjustments.md) |
