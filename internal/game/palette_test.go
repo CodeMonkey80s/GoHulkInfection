@@ -335,6 +335,52 @@ func TestDrawGameUsesTrueColourBackground(t *testing.T) {
 	}
 }
 
+func TestUIDOSColourMapping(t *testing.T) {
+	u := &UI{colorMode: ColorModeTrueColor}
+	foreground := []struct {
+		index uint8
+		role  ColorRole
+	}{
+		{0, RoleSelectionText},
+		{2, RoleAccentGreen},
+		{7, RolePrimaryText},
+		{8, RoleDimText},
+		{11, RoleHintCyan},
+		{12, RoleDanger},
+		{14, RoleAccentGold},
+		{15, RoleSelectionText},
+	}
+	for _, tc := range foreground {
+		want, _ := WoodsPalette.Lookup(tc.role)
+		if got := u.uiDOSColor(tc.index, false); got != want.Resolve(ColorModeTrueColor) {
+			t.Fatalf("foreground %d = %v, want %s", tc.index, got, tc.role)
+		}
+	}
+	background := []struct {
+		index uint8
+		role  ColorRole
+	}{
+		{0, RoleUIBackground},
+		{1, RolePanelBackground},
+		{4, RoleDarkBlood},
+		{7, RoleSelectionBackground},
+	}
+	for _, tc := range background {
+		want, _ := WoodsPalette.Lookup(tc.role)
+		if got := u.uiDOSColor(tc.index, true); got != want.Resolve(ColorModeTrueColor) {
+			t.Fatalf("background %d = %v, want %s", tc.index, got, tc.role)
+		}
+	}
+
+	u.colorMode = ColorMode16
+	if got := u.uiDOSColor(2, false); got != DOSColor(2) {
+		t.Fatalf("16-colour foreground = %v, want DOS green", got)
+	}
+	if got := u.uiDOSColor(7, true); got != DOSColor(7) {
+		t.Fatalf("16-colour background = %v, want DOS silver", got)
+	}
+}
+
 func TestDrawGameUsesPalette(t *testing.T) {
 	g := NewGame(7)
 	g.SetupNewGame(0, "tester")

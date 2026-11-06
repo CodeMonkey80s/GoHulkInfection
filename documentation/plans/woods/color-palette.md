@@ -247,7 +247,7 @@ should affect 5–15% of the map, not the whole screen.
 - [ ] Blend blood and effects with tile colours instead of drawing solid background blocks.
 - [ ] Add warm light radii for lanterns, candles and fires.
 - [ ] Define the per-level accent sets.
-- [ ] Apply the new UI palette.
+- [x] Apply the new UI palette.
 - [ ] Add screenshot-based visual checks for all nine woods levels.
 
 ## 7. Acceptance criteria
@@ -257,7 +257,7 @@ should affect 5–15% of the map, not the whole screen.
 - [ ] Blood, corpses, items, zombies and villagers remain easy to see on every terrain type.
 - [ ] The nine woods levels are recognisable from their accent colour and landmark.
 - [ ] The UI remains legible and does not compete with the map.
-- [ ] Performance remains acceptable on an 80×80 map.
+- [ ] Performance remains acceptable on an 80×46 map.
 
 ## 8. Open questions
 

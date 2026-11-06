@@ -17,7 +17,8 @@ loot identity and inhabitants.
 The current Go port has:
 
 - four level themes: `woods`, `caves`, `temple of underminer`, `time portal`
-- 80×80 maps assembled from four recovered 10×40 cube-section templates
+- 80×46 maps assembled from the recovered 10×40 cube-section templates and
+  sized to fit the viewport
 - 64 recovered tile prototypes
 - 49 recovered item prototypes and a 20-entry weapon table
 - 17 recovered critter prototypes
@@ -399,7 +400,7 @@ Possible future topics:
   (doors count as openable, bridges count as passable).
 - Avoid void tiles in all generators.
 - Unique landmarks should be visible or strongly hinted at from the road.
-- Keep performance acceptable: 80×80 maps, A*/BFS pathfinding and a small
+- Keep performance acceptable: 80×46 maps, A*/BFS pathfinding and a small
   number of static light sources are fine.
 - Preserve the original game’s tone, text style and ASCII presentation.
 

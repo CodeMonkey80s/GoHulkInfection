@@ -73,29 +73,33 @@ and 6.
 
 ## Game systems
 
-* 80×80 maps assembled from the four recovered 10×40 cube-section templates
+* 80×46 maps assembled from the recovered 10×40 cube-section templates and
+  sized to fit the viewport without scrolling
 * theme terrain fills the unused section space (woods/caves/temple/plasteel), so
   explored maps no longer contain void holes
 * portals are placed on reachable tiles and the starting room is connected to
   the main corridor grid
 * recursive shadow-casting FOV (the algorithm credited in `contributors.txt`)
 * four level themes: woods, caves, temple of the underminer, time portal
-* 24-bit woods palette with deterministic tile variation and 16-colour DOS fallback
+* 24-bit woods palette with deterministic tile variation, true-colour UI
+  panels and 16-colour DOS fallback
 * turn/energy based critters with zombie, observer and animal AI
 * melee combat with recovered weapon AV/DV and damage values
 * throwing is deferred; HE grenade and molotov data are retained for a future pass
 * recovered weapon table (attack/defense value and damage range per subtype)
+* five survivor classes with distinct attributes, skills and starting kits
 * HP and AP: body armour provides a depletable armour-point pool
 * armour vials restore AP from belt slots; acid bypasses AP
 * blood, corpses and limbs
-* five player slots: Hands, Body and three belt slots
-* two-line HUD with HP/AP and slot hotkeys; one-line message bar
+* five player slots: Hands, Body and three belt slots; two belt slots start unlocked
+* one-line HUD with HP/AP and the ready weapon; one-line message bar
 * `m` expands the latest eight messages; `i` opens a non-scrolling slot overlay
 * one item maximum per ground tile; dropping onto an occupied tile is refused
 * skills, skill checks, experience, levels and free skill points
 * auto-opening doors, portals, bashing, acid/fire/smoke, rain
 * options screen wired to the gameplay (AI, doors, god/ghost mode, …)
-* JSON save/load
+* JSON save/load for the current development format; older saves may break
+  between iterations
 
 ## Fidelity notes
 

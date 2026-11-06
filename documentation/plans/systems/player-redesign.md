@@ -9,6 +9,11 @@ Implementation status: complete.  Slots, HP/AP, the minimal HUD, the
 player-slot overlay and directional melee are implemented.  Throwing is
 deferred to a separate future plan.
 
+The belt-start and HUD details below are superseded by
+[Player experience adjustments](player-experience-adjustments.md): the player
+will start with two belt slots and the permanent HUD becomes one line showing
+only HP, AP and the weapon name.
+
 This plan redesigns the player around a small, tactical set of ADOM-style
 equipment slots. It assumes the melee-only command scope from the current
 feature branch: no ranged weapons, no ammo, no unarmed attack, no tactics.
@@ -38,7 +43,7 @@ Use five player slots:
 | Hands | `a` | weapon, tool, throwable | The active item. One hand slot only. Throwable actions are deferred. |
 | Body | `B` (unequip/drop) | armour | Worn automatically; AP is applied immediately. No action key. |
 | Belt 1 | `c` | any non-body item | Available from the start. |
-| Belt 2 | `d` | any non-body item | Unlocked at level 3. |
+| Belt 2 | `d` | any non-body item | Available from the start. |
 | Belt 3 | `e` | any non-body item | Unlocked at level 6. |
 
 There is **no backpack and no general inventory**. Five slots total.
@@ -58,8 +63,7 @@ This is the core of the redesign.
 
 Proposal:
 
-- level 1: Belt 1 (`c`)
-- level 3: Belt 2 (`d`)
+- level 1: Belt 1 (`c`) and Belt 2 (`d`)
 - level 6: Belt 3 (`e`)
 
 Unlock messages appear in the message line. Locked slots are shown in the HUD
@@ -264,8 +268,8 @@ Target 80×50 layout — as little as possible:
 ```text
 row 0      latest message only
 row 1..46  map view
-row 47     Name   HP 39/39   AP 20/20   Lvl 3
-row 48     [a] chainsaw  [c] molotov  [d] medkit  [e] ---   body: jacket 20/20
+row 47     HP 39/39   AP 20/20   chainsaw
+rows 48-49 clear
 ```
 
 Rules:
@@ -276,8 +280,8 @@ Rules:
 - There is no permanent multi-line message buffer.
 - HP is green/yellow/red depending on health.
 - AP is shown in a steel/blue tone; `AP 0/20` is a warning.
-- The second HUD line shows the Hands and belt hotkeys plus the compact Body armour indicator.
-- Body armour is shown as a compact `body: jacket 20/20` indicator; its full stats are in the overlay.
+- The HUD shows only HP, AP and the ready weapon name. Slot hotkeys and body
+  armour details live in the player-slot overlay.
 - No weight, burden, ammo, target, tactic, or XP bar in the main HUD.
 - There is no permanent help line; `?` opens the help screen.
 
@@ -345,7 +349,7 @@ type PlayerSlots struct {
 ## 9. Acceptance criteria
 
 - [ ] Player has exactly five slots: Hands, Body, Belt 1–3.
-- [ ] Belt 2 and 3 unlock through experience.
+- [ ] Belt 1 and 2 start available; Belt 3 unlocks at level 6.
 - [ ] No weight, burden, ammo, target or tactic UI remains.
 - [ ] No scrolling inventory.
 - [ ] Movement into an enemy attacks; `f` + direction attacks deliberately.
@@ -366,7 +370,7 @@ type PlayerSlots struct {
 - One Hands slot.
 - Attack is directional: bump attack or `f` + direction.
 - Throwing is deferred; `t` reserved.
-- Belt 2 at level 3, Belt 3 at level 6.
+- Belt 2 available from the start, Belt 3 at level 6.
 - Body accepts armour only; belt accepts non-body items.
 - Pickup auto-places into Hands → Body (if armour) → first free belt slot.
 - Belt throwables must be swapped into Hands before throwing.

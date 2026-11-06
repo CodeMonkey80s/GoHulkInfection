@@ -9,7 +9,7 @@ import (
 func TestSetupAndFOV(t *testing.T) {
 	g := NewGame(1)
 	g.SetupNewGame(0, "tester")
-	if g.Map == nil || g.Map.W != 80 || g.Map.H != 80 {
+	if g.Map == nil || g.Map.W != mapWidth || g.Map.H != mapHeight {
 		t.Fatalf("bad map size")
 	}
 	if !g.Map.IsPassable(g.Player.X, g.Player.Y) {
@@ -231,17 +231,23 @@ func TestPlayerSlotsStartAndBeltUnlock(t *testing.T) {
 	if g.Player.Slots.Hands == nil || g.Player.Slots.Body == nil {
 		t.Fatal("starting hands/body missing")
 	}
-	if g.Player.Slots.BeltUnlocked != 1 {
-		t.Fatalf("starting belt unlock = %d, want 1", g.Player.Slots.BeltUnlocked)
+	if g.Player.Slots.BeltUnlocked != 2 {
+		t.Fatalf("starting belt unlock = %d, want 2", g.Player.Slots.BeltUnlocked)
 	}
 	if g.Player.Slots.Belt[0] == nil {
 		t.Fatal("starting belt item missing")
+	}
+	if g.Player.Slots.Belt[1] != nil {
+		t.Fatal("second belt slot should start empty for loot")
+	}
+	if g.Player.Slots.Belt[2] != nil {
+		t.Fatal("third belt slot should start empty and locked")
 	}
 	g.Player.Level = 2
 	g.Player.XP = 400
 	g.CheckLevelUp()
 	if g.Player.Slots.BeltUnlocked != 2 {
-		t.Fatalf("belt unlock after level 3 = %d", g.Player.Slots.BeltUnlocked)
+		t.Fatalf("belt unlock before level 6 = %d, want 2", g.Player.Slots.BeltUnlocked)
 	}
 	g.Player.Level = 5
 	g.Player.XP = 1000

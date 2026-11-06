@@ -2,6 +2,12 @@ package game
 
 import (
 	"fmt"
+	"unicode"
+)
+
+const (
+	mapWidth  = 80
+	mapHeight = 46
 )
 
 type Map struct {
@@ -293,9 +299,11 @@ func (m *Map) Bresenham(x0, y0, x1, y1 int) [][2]int {
 	return m.Line(x0, y0, x1, y1)
 }
 
-// GenerateLevel builds a 80x80 map from the four recovered 10x40 section templates.
+// GenerateLevel builds a map exactly the size of the map viewport from the
+// recovered 10x40 section templates. The last section row is clipped when the
+// viewport height is not a multiple of ten.
 func (g *Game) GenerateLevel(level int) {
-	m := NewMap(80, 80)
+	m := NewMap(mapWidth, mapHeight)
 	theme := levelTheme(level)
 	m.Theme = theme
 	m.Name = LevelThemes[theme]
@@ -310,8 +318,10 @@ func (g *Game) GenerateLevel(level int) {
 		m.Tiles[i] = base
 	}
 	sectioned := make([]bool, m.W*m.H)
-	// Place 2 columns x 8 rows of 40x10 sections.
-	for row := 0; row < 8; row++ {
+	sectionRows := (m.H + 9) / 10
+	// Place 2 columns of 40x10 sections, clipping the final row to the map.
+	for row := 0; row < sectionRows; row++ {
+		rowsHere := min(10, m.H-row*10)
 		for col := 0; col < 2; col++ {
 			sec := g.Roll(len(MapSections))
 			txt := MapSections[sec]
@@ -321,7 +331,7 @@ func (g *Game) GenerateLevel(level int) {
 			if g.Roll(3) == 0 {
 				txt = flipV(txt)
 			}
-			for y := 0; y < 10; y++ {
+			for y := 0; y < rowsHere; y++ {
 				for x := 0; x < 40; x++ {
 					ch := txt[y*40+x]
 					mx, my := col*40+x, row*10+y
@@ -334,12 +344,13 @@ func (g *Game) GenerateLevel(level int) {
 		}
 	}
 	// Ensure connections between section centers: carve simple corridors.
-	for row := 0; row < 8; row++ {
-		cy := row*10 + 5
-		carveH(m, 0, 79, cy, floorTile(theme))
-		if row < 7 {
-			cx := 40
-			carveV(m, cx, row*10+5, (row+1)*10+5, floorTile(theme))
+	for row := 0; row < sectionRows; row++ {
+		cy := min(row*10+5, m.H-2)
+		carveH(m, 0, m.W-1, cy, floorTile(theme))
+		if row < sectionRows-1 {
+			nextCy := min((row+1)*10+5, m.H-2)
+			cx := m.W / 2
+			carveV(m, cx, cy, nextCy, floorTile(theme))
 		}
 	}
 	// Border walls.
@@ -706,6 +717,9 @@ func (g *Game) SpawnCritter(proto, x, y int) *Critter {
 }
 
 func (g *Game) SetupNewGame(class int, name string) {
+	if class < 0 || class >= len(PlayerClasses) {
+		class = 0
+	}
 	g.PlayerClass = class
 	g.PlayerName = name
 	g.Player = &Critter{
@@ -719,7 +733,7 @@ func (g *Game) SetupNewGame(class int, name string) {
 		Glyph:  '@',
 		Dead:   false,
 	}
-	c := &ClassDefs[class]
+	c := &PlayerClasses[class]
 	g.Player.STR = c.STR
 	g.Player.TGH = c.TGH
 	g.Player.AGI = c.AGI
@@ -733,17 +747,19 @@ func (g *Game) SetupNewGame(class int, name string) {
 	g.Player.Gold = 0
 	g.Player.Blood = 0
 	g.Player.Poison = 0
-	g.Player.Slots = PlayerSlots{BeltUnlocked: 1}
-	g.Player.Slots.Body = &Item{Proto: 5, X: -1, Y: -1}
+	g.Player.Slots = PlayerSlots{BeltUnlocked: 2}
+	kit := ClassStartingKit(class)
+	g.Player.Slots.Hands = startingItem(kit.Hands)
+	if g.Player.Slots.Hands != nil {
+		g.Player.Slots.Hands.Active = true
+	}
+	g.Player.Slots.Body = startingItem(kit.Body)
 	ensureArmorAP(g.Player.Slots.Body)
-	g.Player.Slots.Belt[0] = &Item{Proto: 48, X: -1, Y: -1, Charges: 5}
-	switch class {
-	case 0: // murderer
-		g.Player.Slots.Hands = &Item{Proto: 16, X: -1, Y: -1, Active: true}
-	case 1: // marine
-		g.Player.Slots.Hands = &Item{Proto: 10, X: -1, Y: -1, Active: true}
-	case 2: // warpcrafter
-		g.Player.Slots.Hands = &Item{Proto: 15, X: -1, Y: -1, Active: true}
+	for i, proto := range kit.Belt {
+		if i >= 2 {
+			break
+		}
+		g.Player.Slots.Belt[i] = startingItem(proto)
 	}
 	g.Level = 0
 	g.Turn = 0
@@ -782,11 +798,20 @@ func (g *Game) TileDescription(x, y int) string {
 	if d.Type == 3 {
 		desc += " (door)"
 	}
-	if len(g.ItemsAt(x, y)) > 0 {
-		desc += "; item lying here"
+	if items := g.ItemsAt(x, y); len(items) > 0 {
+		desc += "; " + capitalizeFirst(items[0].Name()) + " is lying here."
 	}
 	if c := g.CritterAt(x, y); c != nil && g.Map.Visible[g.Map.idx(x, y)] {
 		desc += "; the " + c.NameOrUnknown() + " is standing here"
 	}
 	return desc
+}
+
+func capitalizeFirst(s string) string {
+	if s == "" {
+		return s
+	}
+	r := []rune(s)
+	r[0] = unicode.ToUpper(r[0])
+	return string(r)
 }
