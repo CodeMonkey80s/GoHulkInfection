@@ -2,7 +2,7 @@
 
 Status: **proposed**
 Parent: [Feature plans](../README.md)
-Related: [Player redesign](player-redesign.md), [Player experience adjustments](player-experience-adjustments.md), [Woods minimalist snake redesign](../woods/minimalist-snake-redesign.md)
+Related: [Player redesign](player-redesign.md), [Player experience adjustments](player-experience-adjustments.md), [Woods minimalist snake redesign](../woods/minimalist-snake-redesign.md), [Player and monster states](player-monster-states.md)
 Scope: player identity, weighted random perks, intro, robe/head/slot equipment, priest-themed items and zombie/villager variants.
 
 This plan replaces the current class-selection screen and stat-based survivor
@@ -62,6 +62,10 @@ plan:
 - The current Meteor Field remains the final woods map for this revamp. The
   stone circle, demons and final victory are deferred to a separate end-game
   plan.
+- There is no baseline automatic healing. HP regeneration is only available
+  through an obtainable perk and restores a small, capped amount.
+- Player and monster states such as bleeding are deferred to a separate plan
+  and are not part of this revamp.
 
 ## 3. Player model
 
@@ -105,9 +109,14 @@ Example perk themes:
 | **Poacher’s Son** | better throwing; starts with a flask | “You learned to throw before you learned to pray.” |
 | **Plague Orphan** | poison resistance; extra food | “The fever took your family, not you.” |
 | **Pilgrim** | better searching; starts with a walking staff | “You have walked farther than most maps admit.” |
+| **Convalescence** | slow, capped out-of-combat regeneration | “Your wounds close slowly when you are left alone.” |
 
 The exact perk pool, rarity weights and number of starting perks remain open.
 The current candidate is three starting perks, with more gained during play.
+
+There is no baseline automatic healing. The recommended shape for
+**Convalescence** is a small out-of-combat regeneration effect, capped per map.
+Exact timing and cap values remain open for tuning.
 
 ### 4.2 Rites and spells
 
@@ -324,7 +333,26 @@ A separate end-game plan will cover:
 Until that plan is written, the current Meteor Field remains in place so this
 revamp does not destabilise the completed woods run.
 
-## 10. Other thematic proposals
+## 10. Player and monster states — separate plan
+
+Status effects such as **bleeding** are **not part of this revamp**.
+
+A separate [player and monster states](player-monster-states.md) plan will cover
+conditions for the priest, villagers, animals, undead and demons. It will be
+filled in and decided later.
+
+The state plan is expected to cover at least:
+
+- bleeding
+- burning
+- poison
+- infection/corruption
+- fear
+- immobilize/stun
+- holy or cursed ground effects
+- how states stack, expire, are cured and interact with HP/AP
+
+## 11. Other thematic proposals
 
 These are ideas, not locked decisions:
 
@@ -339,7 +367,7 @@ These are ideas, not locked decisions:
   relic or hint.
 - **Cursed relics** — powerful chapel items with a drawback.
 
-## 11. Implementation phases
+## 12. Implementation phases
 
 These phases should be updated again once the perk/rite and progression
 questions are resolved.
@@ -360,7 +388,7 @@ questions are resolved.
 9. **Tests and tuning** — weighted generation, perk invariants, starting kits,
    slot limits, shard breakage, intro text and balance.
 
-## 12. Acceptance criteria
+## 13. Acceptance criteria
 
 - [ ] There is no class-selection screen.
 - [ ] The player is always a priest with a randomly generated name.
@@ -368,6 +396,8 @@ questions are resolved.
 - [ ] Powerful perks are rarer than common perks.
 - [ ] The intro is generated from the assigned perks and starting kit.
 - [ ] STR/TGH/AGI/INT are removed from player-facing play.
+- [ ] There is no baseline automatic healing.
+- [ ] Only the Convalescence perk restores a small, capped amount of HP.
 - [ ] Equipment is limited to Hands, Head and the permanently worn Robe.
 - [ ] The robe starts with three slots and can gain more during the adventure.
 - [ ] Each robe slot holds exactly one vial, flask, shard or small item.
@@ -383,8 +413,9 @@ questions are resolved.
 - [ ] The game remains readable at 80×25.
 - [ ] The Meteor Field remains the final woods map until the separate demon
       end-game plan is implemented.
+- [ ] Bleeding and other player/monster states are deferred to their separate plan.
 
-## 13. Open questions
+## 14. Open questions
 
 - Should the priest start with three or five perks?
 - What is the total perk pool, and what rarity weights should it use?
@@ -395,6 +426,7 @@ questions are resolved.
   equipped?
 - How are new robe slots earned during the adventure?
 - What are the shard types and their maximum AP values?
+- What are the exact trigger, amount and per-map cap for Convalescence?
 - How much HP should each vial restore?
 - What flask types exist, and what gates throwing them?
 - Which head items exist, and what is each one’s single effect?
