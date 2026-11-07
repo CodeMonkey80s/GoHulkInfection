@@ -46,20 +46,36 @@ func ActiveOptionDefs() []OptionDef {
 }
 
 // ItemAvailable reports whether an item prototype may appear in normal play.
-// Removed ranged/ammo items and unused grenade variants remain in the data for
-// save compatibility but are not spawned, equipped or used.
+// Removed ranged/ammo items, guns, old body armour and other out-of-theme
+// prototypes remain in the raw data for reference but are not spawned or used.
 func ItemAvailable(proto int) bool {
 	if proto < 0 || proto >= len(ItemDefs) {
 		return false
 	}
 	d := &ItemDefs[proto]
 	switch d.Kind {
-	case KindRanged, KindAmmo:
+	case KindRanged, KindAmmo, KindArmor:
 		return false
 	case KindGrenade:
-		return d.Name == "he grenade" || d.Name == "molotov cocktail"
+		switch d.Name {
+		case "holy water flask", "holy fire flask", "alchemical acid flask", "incense flask", "radiant flask":
+			return true
+		}
+		return false
 	}
 	return true
+}
+
+// CritterItemAvailable keeps armour available to monsters even though the
+// player now uses robe shards instead of body armour.
+func CritterItemAvailable(proto int) bool {
+	if proto < 0 || proto >= len(ItemDefs) {
+		return false
+	}
+	if ItemDefs[proto].Kind == KindArmor {
+		return true
+	}
+	return ItemAvailable(proto)
 }
 
 func ItemIsThrowable(proto int) bool {
@@ -93,17 +109,6 @@ func init() {
 		Glyph:   '!',
 		Color:   9,
 	})
-
-	// Repurpose the recovered incendiary grenade as a molotov cocktail.  Its
-	// weapon subtype still gives the fire damage range, while ThrowGrenade
-	// applies the burning ground effect.
-	for i := range ItemDefs {
-		if ItemDefs[i].Name == "incendiary grenade" {
-			ItemDefs[i].Name = "molotov cocktail"
-			ItemDefs[i].Desc = "a bottle filled with fuel and a burning rag, it spreads fire on impact."
-			ItemDefs[i].Color = 12
-		}
-	}
 }
 
 // ActiveKeyBindings is the reduced, player-facing help table.  The recovered
@@ -148,6 +153,6 @@ var ActiveHints = []string{
 	Hints[6], // inventory takes time
 	Hints[7], // acid ignores armor
 	"you are defenceless without a weapon; keep a melee weapon equipped.",
-	"grenades and molotovs can only be thrown at tiles within your sight range.",
+	"holy flasks can only be thrown at tiles within your sight range.",
 	"bash small obstacles with x and a direction; barrels and crates may hide supplies.",
 }

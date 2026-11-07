@@ -347,23 +347,16 @@ func TestPlayerSlotSaveRoundtrip(t *testing.T) {
 	}
 }
 
-func TestPlayerSlotMigration(t *testing.T) {
+func TestPlayerSlotMigrationDropsOldBodyArmour(t *testing.T) {
 	sc := saveCritter{Player: true, Equip: []saveItem{
 		{Proto: 16}, {Proto: 5}, {Proto: 41}, {Proto: 46},
 	}, Inv: []saveItem{{Proto: 47, Charges: 1}}}
-	c, removed := critterFromSave(sc, 2)
-	if removed != 0 {
-		t.Fatalf("unexpected removals: %d", removed)
-	}
+	c, _ := critterFromSave(sc, 2)
 	if c.Slots.Hands == nil || c.Slots.Hands.Proto != 16 {
 		t.Fatal("hands migration failed")
 	}
-	if c.Slots.Body == nil || c.Slots.Body.Proto != 5 {
-		t.Fatal("body migration failed")
-	}
-	ensureArmorAP(c.Slots.Body)
-	if c.Slots.Body.AP != 20 {
-		t.Fatalf("migrated body AP = %d, want 20", c.Slots.Body.AP)
+	if c.Slots.Body != nil {
+		t.Fatal("old body armour should not be migrated")
 	}
 	want := []int{41, 46, 47}
 	for i, proto := range want {

@@ -122,15 +122,15 @@ func ItemColorRole(proto int) (ColorRole, bool) {
 		return RoleFireEmber, true
 	case 39: // acid canister
 		return RoleAcid, true
-	case 41, 42: // HE and incendiary grenades
+	case 41, 42: // holy water and holy fire flasks
 		return RoleFireEmber, true
-	case 43: // acid grenade
+	case 43: // alchemical acid flask
 		return RoleAcid, true
-	case 44: // smoke grenade
+	case 44: // incense flask
 		return RoleSmoke, true
-	case 45: // flashbang
+	case 45: // radiant flask
 		return RoleFlameCore, true
-	case 46, 48: // first aid kit, medkit
+	case 46, 48: // healer's kit, surgeon's kit
 		return RoleHealthGood, true
 	case 47: // bandage
 		return RoleCloth, true

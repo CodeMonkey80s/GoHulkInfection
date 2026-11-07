@@ -14,7 +14,7 @@ var signatureCategoryItems = [][]string{
 	{"hunting knife", "boar spear", "spear", "snare", "hatchet", "rope"},
 	{"healing herb", "red potion", "green potion", "blue potion", "antidote", "holy water"},
 	{"club", "spear", "sickle", "scythe", "pitchfork", "hatchet", "wood axe"},
-	{"torch", "lantern", "flint", "oil flask", "molotov cocktail"},
+	{"torch", "lantern", "flint", "oil flask", "holy fire flask", "incense flask"},
 	{"silver chalice", "old tome", "bone charm", "gold cross", "holy water"},
 }
 

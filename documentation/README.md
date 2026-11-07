@@ -9,6 +9,7 @@ build file lives here.
 - [Project README](../README.md) — build, controls and current gameplay features
 - [Feature plans](plans/README.md) — roadmap and links to all planned work
 - [Reverse-engineering reference](reference/reverse-engineering.md) — how the original binary was analysed and what was recovered
+- [Item theme review](reference/item-review.md) — which recovered items are kept, renamed or removed from normal play
 
 ## Current focus
 

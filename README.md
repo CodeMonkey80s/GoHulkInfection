@@ -106,7 +106,7 @@ grants a second Rite is not implemented yet.
 * turn/energy based critters with faction-aware cardinal A* pathfinding,
   zombie, observer and animal AI
 * melee combat with recovered weapon AV/DV and damage values
-* throwing is deferred; HE grenade and molotov data are retained for a future pass
+* throwing is deferred; thematic holy, fire, incense and alchemical flask data is retained for a future pass
 * recovered weapon table (attack/defense value and damage range per subtype)
 * one priest character with a randomly generated name and starting Rite
 * HP and AP: equipped robe shards provide a depletable armour-point pool
