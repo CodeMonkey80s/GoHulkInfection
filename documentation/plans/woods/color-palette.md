@@ -2,12 +2,17 @@
 
 Status: **done**
 Parent: [Woods plans](README.md)  
-Related: [Woods level revamp](level-revamp.md)  
-Scope: woods levels 0–8, rendering and UI palette only
+Related: [Woods level revamp](level-revamp.md), [Minimalist snake redesign](minimalist-snake-redesign.md)  
+Scope: woods rendering and UI palette only
 
 This document proposes a 24-bit colour palette for the woods theme. The core
-palette, true-colour/16-colour fallback, per-level accents, warm lighting,
+palette, true-colour/16-colour fallback, per-theme accents, warm lighting,
 blood blending and true-colour UI are implemented.
+
+The palette was originally tuned for the nine-level woods. The completed
+[Minimalist snake redesign](minimalist-snake-redesign.md) now applies one accent
+pair to each of the five themed 80×23 maps; the rendering rules and palette
+roles are unchanged.
 
 ---
 
@@ -204,22 +209,18 @@ This gives a grim woodland atmosphere while keeping combat readable.
 | Health critical | `#B23A2E` |
 | Hint / cyan | `#6A9A9A` |
 
-## 4. Per-level accent palettes (woods 0–8)
+## 4. Per-theme accent palettes (five-map run)
 
-Keep the core woods palette, then tint a small portion of the level. Accents
+Keep the core woods palette, then tint a small portion of the map. Accents
 should affect 5–15% of the map, not the whole screen.
 
-| Level | Accent palette |
+| Theme | Accent palette |
 |---|---|
-| 0 — Woodcutter’s Clearing | amber `#C9A227`, pale morning `#D8D0B0`, moss `#4E5F3A` |
-| 1 — Old Orchard | apple red `#A83A32`, honey `#D9A441`, blossom `#D8C0C8` |
-| 2 — Forgotten Cemetery | bone `#D6CBB0`, fog `#8A9A92`, iron `#3E4648` |
-| 3 — River Mill | river teal `#2F5A66`, foam `#A6C4BC`, wheat `#C9A85A` |
-| 4 — Poacher’s Camp | ember `#E06A2A`, leather `#7A4E2E`, steel `#B8C0C0` |
-| 5 — Druid’s Grove | deep moss `#3E5734`, stone `#7A7C72`, faint bioluminescence `#6AA89A` or `#8A7AB0` |
-| 6 — Abandoned Village | plaster `#B8A88A`, faded blue `#5A6A7A`, thatch `#A88A52` |
-| 7 — Charcoal Clearing | charcoal `#222222`, ember `#E06A2A`, ash `#7A7A72`, sickly green `#5A6A3A` |
-| 8 — Ruined Chapel | cold stone `#7A7A70`, candle `#F2C46A`, stained glass `#7A4A8A` / `#3A6A8A`, relic gold `#C9A227` |
+| Church | relic gold `#C9A227`, stained-glass blue `#3A6A8A` |
+| Peasant Houses | thatch `#C9A85A`, timber `#8A5A3A` |
+| Mill and Pond | river teal `#2F5A66`, mill gold `#C9A85A` |
+| Forgotten Cemetery | bone `#D6CBB0`, grave fog `#8A9A92` |
+| Meteor Field | meteor glow `#8AF2B0`, ember `#E06A2A` |
 
 ## 5. Rendering rules
 
@@ -245,18 +246,18 @@ should affect 5–15% of the map, not the whole screen.
 - [x] Replace flat visibility shading with brightness/desaturation grading.
 - [x] Blend blood and effects with tile colours instead of drawing solid background blocks.
 - [x] Add warm light radii for lanterns, candles and fires.
-- [x] Define the per-level accent sets.
+- [x] Define the per-theme accent sets.
 - [x] Apply the new UI palette.
-- [x] Add automated render smoke checks for all nine woods levels.
+- [x] Add automated render smoke checks for all five woods maps in true colour and 16-colour modes.
 
 ## 7. Acceptance criteria
 
 - [x] All woods levels remain readable in 16-colour fallback mode.
 - [x] Grass, trees, bushes, roads and wooden structures are visually distinct.
 - [x] Blood, corpses, items, zombies and villagers remain easy to see on every terrain type.
-- [x] The nine woods levels are recognisable from their accent colour and landmark.
+- [x] All five woods maps are recognisable from their accent colour and landmark.
 - [x] The UI remains legible and does not compete with the map.
-- [x] Performance remains acceptable on an 80×46 map.
+- [x] Performance remains acceptable on the compact 80×23 woods maps.
 
 ## 8. Open questions
 

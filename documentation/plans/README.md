@@ -2,13 +2,13 @@
 
 Status legend: `Not planned yet` · `Proposed` · `Planned` · `In progress` · `Done`
 
-## Active focus: woods levels 0–8
+## Woods redesign: complete
 
 | Feature | Status | Document |
 |---|---|---|
 | Woods level revamp — outdoor generator, landmarks, huts, roads, loot, factions | Done | [woods/level-revamp.md](woods/level-revamp.md) |
-| Woods true-colour palette and per-level accents | Done | [woods/color-palette.md](woods/color-palette.md) |
-| Woods minimalist snake redesign — five 80×23 themed maps | Planned | [woods/minimalist-snake-redesign.md](woods/minimalist-snake-redesign.md) |
+| Woods true-colour palette and per-theme accents | Done | [woods/color-palette.md](woods/color-palette.md) |
+| Woods minimalist snake redesign — five 80×23 themed maps | Done | [woods/minimalist-snake-redesign.md](woods/minimalist-snake-redesign.md) |
 
 The woods folder has a short overview and implementation order here:
 [woods/README.md](woods/README.md).
@@ -21,8 +21,8 @@ The woods folder has a short overview and implementation order here:
 | Temple of the Underminer | 18–26 | Not planned yet | [temple.md](temple.md) |
 | Time portal / lab | 27 | Not planned yet | [time-portal.md](time-portal.md) |
 
-Caves, temple and time portal are postponed while the woods/village redesign is
-implemented. The current section-based generator remains in use until their own
+The woods redesign is implemented. Caves, temple and time portal remain
+postponed; the current section-based generator stays in use until their own
 revamp plans are written.
 
 ## Cross-cutting systems

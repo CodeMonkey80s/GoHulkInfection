@@ -12,11 +12,11 @@ build file lives here.
 
 ## Current focus
 
-**Woods minimalist snake redesign.** The current nine-map woods and true-colour
-palette are complete. The planned five-map 80×23 snake run is the next woods
-pass.
+**Woods minimalist snake redesign complete.** The woods run is now five themed
+80×23 maps with a random snake route, unlimited in-map FOV and compact content
+budgets. Caves, temple and time-portal work remains postponed.
 
-- [Woods level revamp](plans/woods/level-revamp.md) — generator, landmarks, huts, roads, loot, factions and AI
+- [Woods level revamp](plans/woods/level-revamp.md) — generator, landmarks, huts, roads, loot, factions and AI (reused by the five-map run)
 - [Woods colour palette](plans/woods/color-palette.md) — true-colour palette, accents, lighting and UI
 - [Minimalist snake redesign](plans/woods/minimalist-snake-redesign.md) — five themed 80×23 maps with a random snake route
 
@@ -24,9 +24,9 @@ pass.
 
 | Area | Status | Plan |
 |---|---|---|
-| Woods levels 0–8 | Done | [woods/level-revamp.md](plans/woods/level-revamp.md) |
+| Woods level revamp (terrain, landmarks, loot, factions) | Done | [woods/level-revamp.md](plans/woods/level-revamp.md) |
 | Woods true-colour palette | Done | [woods/color-palette.md](plans/woods/color-palette.md) |
-| Woods minimalist snake redesign (five 80×23 maps) | Planned | [woods/minimalist-snake-redesign.md](plans/woods/minimalist-snake-redesign.md) |
+| Woods minimalist snake redesign (five 80×23 maps) | Done | [woods/minimalist-snake-redesign.md](plans/woods/minimalist-snake-redesign.md) |
 | Command and scope reduction (melee-only, limited throwing) | Done | [systems/command-scope-reduction.md](plans/systems/command-scope-reduction.md) |
 | Player redesign (five slots, HP/AP, minimal HUD) | Done | [systems/player-redesign.md](plans/systems/player-redesign.md) |
 | Player experience adjustments (classes, intro, HUD, viewport) | Done | [systems/player-experience-adjustments.md](plans/systems/player-experience-adjustments.md) |

@@ -1,6 +1,6 @@
 # Woods Minimalist Snake Redesign — Five Maps at 80×23
 
-Status: **planned**
+Status: **done**
 Parent: [Woods plans](README.md)
 Related: [Woods level revamp](level-revamp.md), [Woods colour palette](color-palette.md), [Cardinal movement](../systems/cardinal-movement.md)
 Scope: woods run structure, map size, map themes and content density. Reuses the existing terrain, landmark, loot, faction and palette systems. Caves, temple and time-portal levels are postponed until the woods/village redesign is complete.
@@ -9,6 +9,11 @@ This plan replaces the current nine 80×46 woods maps with a compact five-map
 snake run. Each map is a single themed place rather than a miniature world.
 The five-map run replaces the current woods entirely; caves, temple and
 time-portal work is postponed.
+
+Implementation status: the five-map 80×23 run, themed generators, snake
+directions, unlimited woods FOV, compact population/loot budgets, save data and
+render/connectivity tests are implemented. The caves, temple and time-portal
+section generator remains unchanged.
 
 ---
 
@@ -134,7 +139,7 @@ The first map and the anchor of the woods.
 - a shed or two at the edge
 - mostly quiet; a few zombies around the graves
 
-The road enters from the south and leaves through the generated exit direction.
+The road enters from the west and leaves through the generated exit direction.
 
 ### 5.2 Peasant Houses
 
@@ -210,32 +215,32 @@ Replace:
 
 ## 7. Implementation phases
 
-1. **Run data** — `WoodsRun` with theme order and direction sequence; save/load.
-2. **Screen reflow** — 80×25 layouts for all screens.
-3. **Map skeleton** — 80×23 border, entry/exit, road, lamps.
-4. **Church map** — first complete themed map.
-5. **Middle themes** — Peasant Houses, Mill and Pond, Cemetery.
-6. **Meteor Field** — final map and caves transition.
-7. **Density pass** — spawn counts, loot and props.
-8. **Tests** — snake sequence, connectivity, dimensions, themes and save/load.
+- [x] **Run data** — `WoodsRun` with theme order and direction sequence; save/load.
+- [x] **Screen reflow** — 80×25 layouts for all screens.
+- [x] **Map skeleton** — 80×23 border, entry/exit, road, lamps.
+- [x] **Church map** — first complete themed map.
+- [x] **Middle themes** — Peasant Houses, Mill and Pond, Cemetery.
+- [x] **Meteor Field** — final map and caves transition.
+- [x] **Density pass** — spawn counts, loot and props.
+- [x] **Tests** — snake sequence, connectivity, dimensions, themes and save/load.
 
 ## 8. Acceptance criteria
 
-- [ ] The woods run contains exactly five maps.
-- [ ] The whole game fits an 80×25 terminal.
-- [ ] Woods maps are 80×23 and never scroll.
-- [ ] Each map has exactly one entry edge and one exit edge.
-- [ ] FOV covers the whole map; map edges are the only visibility limit.
-- [ ] All other edges are blocked by dense trees.
-- [ ] The snake direction sequence is generated once and saved.
-- [ ] No map immediately reverses direction.
-- [ ] Entry, central landmark and exit are connected by road.
-- [ ] The Church is always first, with entry west and exit east.
-- [ ] The Meteor Field is always last, enters west and exits east to the caves.
-- [ ] The three middle themes are shuffled.
-- [ ] Each map has its themed landmark and appropriate population.
-- [ ] No void tiles and all exits are reachable under cardinal movement.
-- [ ] Caves, temple and time-portal maps are unaffected.
+- [x] The woods run contains exactly five maps.
+- [x] The whole game fits an 80×25 terminal.
+- [x] Woods maps are 80×23 and never scroll.
+- [x] Each map has exactly one entry edge and one exit edge.
+- [x] FOV covers the whole map; map edges are the only visibility limit.
+- [x] All other edges are blocked by dense trees.
+- [x] The snake direction sequence is generated once and saved.
+- [x] No map immediately reverses direction.
+- [x] Entry, central landmark and exit are connected by road.
+- [x] The Church is always first, with entry west and exit east.
+- [x] The Meteor Field is always last, enters west and exits east to the caves.
+- [x] The three middle themes are shuffled.
+- [x] Each map has its themed landmark and appropriate population.
+- [x] No void tiles and all exits are reachable under cardinal movement.
+- [x] Caves, temple and time-portal maps are unaffected.
 
 ## 9. Resolved decisions
 

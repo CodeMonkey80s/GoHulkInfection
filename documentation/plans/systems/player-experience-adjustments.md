@@ -3,9 +3,12 @@
 Status: **done**
 
 Implementation status: complete. Classes, starting kits, intro, title screen,
-one-line HUD, look-description colours and the 80×46 viewport are implemented.
+one-line HUD, look-description colours and the viewport are implemented. The
+80×46 viewport described below is superseded by the completed
+[Minimalist snake redesign](../woods/minimalist-snake-redesign.md): the whole UI
+now fits 80×25, woods maps are 80×23, and 80×46 remains only for section maps.
 Parent: [Feature plans](../README.md)
-Related: [Player redesign](player-redesign.md), [Woods level revamp](../woods/level-revamp.md), [Woods colour palette](../woods/color-palette.md)
+Related: [Player redesign](player-redesign.md), [Woods level revamp](../woods/level-revamp.md), [Woods colour palette](../woods/color-palette.md), [Minimalist snake redesign](../woods/minimalist-snake-redesign.md)
 Scope: onboarding, class roster, intro text, HUD, look mode, starting belt slots and map viewport. Combat scope and the woods generator are unchanged.
 
 This plan collects the small player-facing adjustments agreed after the

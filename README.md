@@ -21,7 +21,7 @@ go build -o hulk-infection .
 Requirements:
 
 * Go 1.24+
-* a terminal of at least 80×50 cells with UTF-8 support
+* a terminal of at least 80×25 cells with UTF-8 support
 * the `tcell` dependency is fetched by `go mod tidy` / `go build`
 
 The game writes `hi_save.json` in the current directory when you save.
@@ -69,7 +69,7 @@ and 6.
 ## Screens
 
 * title, intro story, class selection
-* scrolling map window with FOV and remembered terrain
+* compact 80×23 woods map view with unlimited in-map FOV and remembered terrain
 * message log and message-buffer screen
 * inventory, equipment and ground-item screen with item data
 * character sheet, skill-level screen, options screen, key-binding screen
@@ -78,19 +78,25 @@ and 6.
 
 ## Game systems
 
-* 80×46 maps assembled from the recovered 10×40 cube-section templates and
-  sized to fit the viewport without scrolling
-* theme terrain fills the unused section space (woods/caves/temple/plasteel), so
+* five themed 80×23 woods maps, plus 80×46 section maps for the caves, temple
+  and time portal
+* the woods run is fixed at five maps: Church first, Meteor Field last, with the
+  three middle themes shuffled once per run and a saved snake direction sequence
+* each woods map has a dense tree border with one entry and one exit gap, a road
+  from entry through the central landmark to the exit, lanterns, and optional
+  themed water with bridges
+* theme terrain fills the unused section space (caves/temple/plasteel), so
   explored maps no longer contain void holes
 * portals are placed on reachable tiles and the starting room is connected to
   the main corridor grid
-* recursive shadow-casting FOV (the algorithm credited in `contributors.txt`)
+* unlimited woods FOV (the 80×23 map edge is the only limit), with local warm
+  light pools around lanterns, fires and meteor rocks; section maps keep
+  recursive shadow-casting FOV (the algorithm credited in `contributors.txt`)
 * four level themes: woods, caves, temple of the underminer, time portal
-* woods levels 0–8 use an outdoor terrain pass with forest clusters, clearings,
-  a dirt road, lantern posts, road-facing huts, rivers/ponds, bridges, one
-  unique landmark per level, wood-specific signature loot, villagers, animals,
-  zombie conversion and edge/centre/landmark exits
-* 24-bit woods palette with per-level accents, warm light, deterministic tile
+* woods maps use outdoor terrain with compact props, a central themed landmark,
+  road-facing huts, ponds/rivers, bridges, signature loot, villagers, animals
+  and zombie conversion within a small content budget
+* 24-bit woods palette with per-theme accents, warm light, deterministic tile
   variation, true-colour UI panels and 16-colour DOS fallback
 * turn/energy based critters with faction-aware cardinal A* pathfinding,
   zombie, observer and animal AI

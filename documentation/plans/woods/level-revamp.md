@@ -6,22 +6,17 @@ Related: [Woods colour palette](color-palette.md)
 Scope: **woods levels 0–8 only**
 
 Superseded in part by [Woods Minimalist Snake Redesign](minimalist-snake-redesign.md):
-the planned five-map 80×23 run replaces the map count, size, progression and
-per-level theme structure described here. The terrain, loot, faction and
-rendering systems remain reusable.
+the five-map 80×23 run replaces the map count, size, progression and per-level
+theme structure described here. The terrain, huts, water, loot, faction and
+rendering systems remain reusable and are used by the compact themed maps.
 
-Implementation status: the first outdoor terrain pass is implemented for woods
-levels 0–8: grass, forest clusters, clearings, bushes, brambles, a dirt road,
-lantern posts and scattered props. The first hut pass is also implemented:
-road-facing huts with doors, windows and furniture. Rivers/ponds, reeds, lily
-pads and road bridges are implemented as the first water pass. Each wood level
-now has its named identity and a unique landmark. Wood-specific food, tools,
-weapons, armour, potions and relics are appended, with a shuffled signature
-loot category assigned to each level and guaranteed near its landmark. Villagers,
-neutral animals, zombie target selection and villager-to-zombie conversion are
-implemented. Exit placement now uses edge, centre and landmark candidates;
-connectivity, hut-door/road, bridge, landmark, loot, faction and rendering
-checks are covered by generator tests. Caves, temple and time-portal levels
+Implementation status: the outdoor terrain, hut, water, landmark, loot, faction
+and AI systems from this plan are implemented and reused by the completed
+five-map woods run. Grass, forest clusters, clearings, bushes, brambles, dirt
+roads, lantern posts, road-facing huts with furniture, ponds/rivers, reeds,
+bridges, themed landmarks, signature loot, villagers, animals and zombie
+conversion are all in the code. The old nine-level exit selection is superseded
+by the run-wide snake direction sequence. Caves, temple and time-portal levels
 still use the section generator.
 
 This document describes the next major map-content pass for the Go port. The
@@ -64,7 +59,7 @@ their own revamp plans are written.
 
 | Theme | Levels | Status | Notes |
 |---|---:|---|---|
-| Woods | 0–8 | **Planned in this document** | Full outdoor generator, landmarks, new props, loot and factions |
+| Woods | 0–4 | **Done** | Nine-level design superseded by the five-map snake run; terrain, loot and faction systems reused |
 | Caves | 9–17 | Not planned yet | Keep current section generator |
 | Temple of the Underminer | 18–26 | Not planned yet | Keep current section generator |
 | Time portal / lab | 27 | Not planned yet | Keep current generator |
