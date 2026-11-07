@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-const saveVersion = 4
+const saveVersion = 5
 
 type saveItem struct {
 	Proto   int  `json:"p"`
@@ -20,9 +20,12 @@ type saveItem struct {
 
 type saveSlots struct {
 	Hands        saveItem   `json:"hands"`
-	Body         saveItem   `json:"body"`
+	Body         saveItem   `json:"body,omitempty"`
 	Belt         []saveItem `json:"belt,omitempty"`
-	BeltUnlocked int        `json:"belt_unlocked"`
+	BeltUnlocked int        `json:"belt_unlocked,omitempty"`
+	Head         saveItem   `json:"head,omitempty"`
+	Robe         []saveItem `json:"robe,omitempty"`
+	RobeSlots    int        `json:"robe_slots,omitempty"`
 }
 
 type saveCritter struct {
@@ -56,6 +59,8 @@ type saveCritter struct {
 	LastSeenX int            `json:"lsx"`
 	LastSeenY int            `json:"lsy"`
 	Alert     int            `json:"alert"`
+	Flee      int            `json:"flee,omitempty"`
+	Immobile  int            `json:"immobile,omitempty"`
 	Dead      bool           `json:"dead"`
 }
 
@@ -99,6 +104,9 @@ type saveGame struct {
 	Score        int            `json:"score"`
 	WoodLoot     []int          `json:"wood_loot,omitempty"`
 	WoodsRun     *WoodsRun      `json:"woods_run,omitempty"`
+	PlayerRites  []int          `json:"player_rites,omitempty"`
+	RiteCharges  []int          `json:"rite_charges,omitempty"`
+	PeaceTurns   int            `json:"peace_turns,omitempty"`
 	PendingRises []PendingRise  `json:"pending_rises,omitempty"`
 }
 
@@ -123,16 +131,21 @@ func critterToSave(c *Critter) saveCritter {
 		Align: c.Align, Class: c.Class, AI: c.AI, Color: c.Color, Glyph: c.Glyph,
 		Player: c.Player, Energy: c.Energy, Level: c.Level, XP: c.XP, Gold: c.Gold, Blood: c.Blood,
 		Poison: c.Poison, LastSeenX: c.LastSeenX, LastSeenY: c.LastSeenY,
-		Alert: c.Alert, Dead: c.Dead,
+		Alert: c.Alert, Flee: c.Flee, Immobile: c.Immobile, Dead: c.Dead,
 	}
 	if c.Player {
 		ss := &saveSlots{
 			Hands:        itemToSave(c.Slots.Hands),
 			Body:         itemToSave(c.Slots.Body),
 			BeltUnlocked: c.Slots.BeltUnlocked,
+			Head:         itemToSave(c.Slots.Head),
+			RobeSlots:    c.Slots.RobeSlots,
 		}
 		for _, it := range c.Slots.Belt {
 			ss.Belt = append(ss.Belt, itemToSave(it))
+		}
+		for i := 0; i < c.Slots.RobeSlots && i < MaxRobeSlots; i++ {
+			ss.Robe = append(ss.Robe, itemToSave(c.Slots.Robe[i]))
 		}
 		s.Slots = ss
 	} else {
@@ -154,7 +167,7 @@ func critterFromSave(s saveCritter, version int) (*Critter, int) {
 		Align: s.Align, Class: s.Class, AI: s.AI, Color: s.Color, Glyph: s.Glyph,
 		Player: s.Player, Energy: s.Energy, Level: s.Level, XP: s.XP, Gold: s.Gold, Blood: s.Blood,
 		Poison: s.Poison, LastSeenX: s.LastSeenX, LastSeenY: s.LastSeenY,
-		Alert: s.Alert, Dead: s.Dead,
+		Alert: s.Alert, Flee: s.Flee, Immobile: s.Immobile, Dead: s.Dead,
 	}
 	if s.Player {
 		c.Slots = PlayerSlots{BeltUnlocked: 2}
@@ -185,6 +198,36 @@ func critterFromSave(s saveCritter, version int) (*Critter, int) {
 				c.Slots.Belt[i] = it
 			}
 			c.Slots.BeltUnlocked = s.Slots.BeltUnlocked
+			if version >= 5 {
+				if it := itemFromSave(s.Slots.Head); it != nil {
+					if ItemAvailable(it.Proto) {
+						c.Slots.Head = it
+					} else {
+						removed++
+					}
+				}
+				c.Slots.RobeSlots = s.Slots.RobeSlots
+				if c.Slots.RobeSlots < 0 {
+					c.Slots.RobeSlots = 0
+				}
+				if c.Slots.RobeSlots > MaxRobeSlots {
+					c.Slots.RobeSlots = MaxRobeSlots
+				}
+				for i := 0; i < c.Slots.RobeSlots && i < len(s.Slots.Robe); i++ {
+					it := itemFromSave(s.Slots.Robe[i])
+					if it == nil {
+						continue
+					}
+					if !ItemAvailable(it.Proto) {
+						removed++
+						continue
+					}
+					if it.Def() != nil && it.Def().Kind == KindShard {
+						ensureShardAP(it)
+					}
+					c.Slots.Robe[i] = it
+				}
+			}
 		} else {
 			// Migrate the old inventory/equipment layout into player slots.
 			oldHand := -1
@@ -308,6 +351,9 @@ func (g *Game) SaveGame(path string) error {
 		Score:        g.Score,
 		WoodLoot:     append([]int(nil), g.WoodLoot[:]...),
 		WoodsRun:     &g.WoodsRun,
+		PlayerRites:  append([]int(nil), g.PlayerRites[:]...),
+		RiteCharges:  append([]int(nil), g.RiteCharges[:]...),
+		PeaceTurns:   g.PeaceTurns,
 		PendingRises: append([]PendingRise(nil), g.PendingRises...),
 	}
 	s.Map = saveMap{
@@ -370,6 +416,18 @@ func (g *Game) LoadGame(path string) error {
 	} else {
 		g.WoodsRun = newWoodsRun(g.RNG)
 	}
+	g.PlayerRites = [MaxRites]int{RiteNone, RiteNone}
+	for i := 0; i < MaxRites && i < len(s.PlayerRites); i++ {
+		g.PlayerRites[i] = s.PlayerRites[i]
+	}
+	for i := 0; i < MaxRites && i < len(s.RiteCharges); i++ {
+		g.RiteCharges[i] = s.RiteCharges[i]
+	}
+	if g.PlayerRites[0] < 0 || g.PlayerRites[0] >= len(RiteDefs) {
+		g.PlayerRites[0] = g.Roll(len(RiteDefs))
+		g.RiteCharges[0] = 1
+	}
+	g.PeaceTurns = s.PeaceTurns
 	g.Map = &Map{
 		W: s.Map.W, H: s.Map.H, Tiles: s.Map.Tiles, Seen: s.Map.Seen, Visible: s.Map.Visible,
 		Blood: s.Map.Blood, Fire: s.Map.Fire, Acid: s.Map.Acid, Smoke: s.Map.Smoke,

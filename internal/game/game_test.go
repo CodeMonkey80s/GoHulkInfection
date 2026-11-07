@@ -234,35 +234,32 @@ func TestActiveScope(t *testing.T) {
 	}
 }
 
-func TestPlayerSlotsStartAndBeltUnlock(t *testing.T) {
+func TestPriestStartsWithRobeShardVialAndRite(t *testing.T) {
 	g := NewGame(31)
 	g.SetupNewGame(0, "tester")
-	if g.Player.Slots.Hands == nil || g.Player.Slots.Body == nil {
-		t.Fatal("starting hands/body missing")
+	if g.Player.Slots.Hands == nil || g.Player.Slots.Hands.Name() != "sickle" {
+		t.Fatal("starting weapon missing")
 	}
-	if g.Player.Slots.BeltUnlocked != 2 {
-		t.Fatalf("starting belt unlock = %d, want 2", g.Player.Slots.BeltUnlocked)
+	if g.Player.Slots.RobeSlots != 3 {
+		t.Fatalf("robe slots = %d, want 3", g.Player.Slots.RobeSlots)
 	}
-	if g.Player.Slots.Belt[0] == nil {
-		t.Fatal("starting belt item missing")
+	if g.Player.Slots.Robe[0] == nil || g.Player.Slots.Robe[0].Def().Kind != KindShard {
+		t.Fatal("starting shard missing")
 	}
-	if g.Player.Slots.Belt[1] != nil {
-		t.Fatal("second belt slot should start empty for loot")
+	if g.Player.Slots.Robe[1] == nil || g.Player.Slots.Robe[1].Def().Kind != KindMedical {
+		t.Fatal("starting vial missing")
 	}
-	if g.Player.Slots.Belt[2] != nil {
-		t.Fatal("third belt slot should start empty and locked")
+	if g.Player.Slots.Robe[2] != nil {
+		t.Fatal("third robe slot should start empty")
 	}
-	g.Player.Level = 2
-	g.Player.XP = 400
-	g.CheckLevelUp()
-	if g.Player.Slots.BeltUnlocked != 2 {
-		t.Fatalf("belt unlock before level 6 = %d, want 2", g.Player.Slots.BeltUnlocked)
+	if len(g.KnownRites()) != 1 {
+		t.Fatalf("known rites = %d, want 1", len(g.KnownRites()))
 	}
-	g.Player.Level = 5
-	g.Player.XP = 1000
-	g.CheckLevelUp()
-	if g.Player.Slots.BeltUnlocked != 3 {
-		t.Fatalf("belt unlock after level 6 = %d", g.Player.Slots.BeltUnlocked)
+	if g.RiteCharges[0] != 1 {
+		t.Fatalf("starting rite charge = %d, want 1", g.RiteCharges[0])
+	}
+	if g.Player.Level != 1 {
+		t.Fatalf("player level = %d, want 1", g.Player.Level)
 	}
 }
 
@@ -271,9 +268,7 @@ func TestPickupAutoPlaceAndOneItemPerTile(t *testing.T) {
 	g.SetupNewGame(0, "tester")
 	g.State = StatePlaying
 	g.Player.Slots.Hands = nil
-	g.Player.Slots.Body = nil
-	g.Player.Slots.Belt = [3]*Item{}
-	g.Player.Slots.BeltUnlocked = 1
+	g.Player.Slots.Robe = [MaxRobeSlots]*Item{}
 
 	it := &Item{Proto: 8, X: g.Player.X, Y: g.Player.Y}
 	g.Items = append(g.Items, it)
@@ -287,11 +282,11 @@ func TestPickupAutoPlaceAndOneItemPerTile(t *testing.T) {
 
 	// One item per tile: refusing to drop when occupied.
 	dropped := &Item{Proto: 47, X: -1, Y: -1, Charges: 1}
-	g.Player.Slots.Belt[0] = dropped
+	g.Player.Slots.Robe[0] = dropped
 	occupied := &Item{Proto: 48, X: g.Player.X, Y: g.Player.Y, Charges: 5}
 	g.Items = append(g.Items, occupied)
-	g.DropSlot(SlotBelt1)
-	if g.Player.Slots.Belt[0] != dropped {
+	g.DropSlot(SlotRobe1)
+	if g.Player.Slots.Robe[0] != dropped {
 		t.Fatal("drop should have been refused on an occupied tile")
 	}
 }
@@ -299,11 +294,14 @@ func TestPickupAutoPlaceAndOneItemPerTile(t *testing.T) {
 func TestPlayerSlotSaveRoundtrip(t *testing.T) {
 	g := NewGame(33)
 	g.SetupNewGame(1, "tester")
-	g.Player.Slots.BeltUnlocked = 3
-	g.Player.Slots.Belt[1] = &Item{Proto: 41, X: -1, Y: -1}
-	g.Player.Slots.Belt[2] = &Item{Proto: 47, X: -1, Y: -1, Charges: 1}
-	ensureArmorAP(g.Player.Slots.Body)
-	g.Player.Slots.Body.AP = 7
+	g.Player.Slots.Head = &Item{Proto: itemProtoByName("plain hat"), X: -1, Y: -1}
+	g.Player.Slots.Robe[0] = &Item{Proto: itemProtoByName("chain shard"), X: -1, Y: -1}
+	ensureShardAP(g.Player.Slots.Robe[0])
+	g.Player.Slots.Robe[1] = &Item{Proto: itemProtoByName("healing vial"), X: -1, Y: -1, Charges: 1}
+	g.Player.Slots.Robe[2] = &Item{Proto: 47, X: -1, Y: -1, Charges: 1}
+	g.Player.Slots.RobeSlots = 3
+	g.PlayerRites[1] = RiteSmite
+	g.RiteCharges[1] = 1
 	path := filepath.Join(t.TempDir(), "slots.json")
 	if err := g.SaveGame(path); err != nil {
 		t.Fatal(err)
@@ -312,17 +310,23 @@ func TestPlayerSlotSaveRoundtrip(t *testing.T) {
 	if err := g2.LoadGame(path); err != nil {
 		t.Fatal(err)
 	}
-	if g2.Player.Slots.Hands == nil || g2.Player.Slots.Body == nil {
+	if g2.Player.Slots.Hands == nil || g2.Player.Slots.Head == nil {
 		t.Fatal("slots not restored")
 	}
-	if g2.Player.Slots.BeltUnlocked != 3 {
-		t.Fatalf("belt unlock lost: %d", g2.Player.Slots.BeltUnlocked)
+	if g2.Player.Slots.RobeSlots != 3 {
+		t.Fatalf("robe slots lost: %d", g2.Player.Slots.RobeSlots)
 	}
-	if g2.Player.Slots.Belt[1] == nil || g2.Player.Slots.Belt[1].Proto != 41 {
-		t.Fatal("belt 2 item lost")
+	if g2.Player.Slots.Robe[0] == nil || g2.Player.Slots.Robe[0].Name() != "chain shard" {
+		t.Fatal("shard not restored")
 	}
-	if g2.Player.Slots.Body == nil || g2.Player.Slots.Body.AP != 7 {
-		t.Fatal("armour AP not restored")
+	if g2.Player.Slots.Robe[0].AP != 5 {
+		t.Fatalf("shard AP not restored: %d", g2.Player.Slots.Robe[0].AP)
+	}
+	if g2.Player.Slots.Head.Name() != "plain hat" {
+		t.Fatal("head item not restored")
+	}
+	if g2.PlayerRites[1] != RiteSmite || g2.RiteCharges[1] != 1 {
+		t.Fatal("second rite not restored")
 	}
 }
 
@@ -352,52 +356,46 @@ func TestPlayerSlotMigration(t *testing.T) {
 	}
 }
 
-func TestArmorAPAbsorption(t *testing.T) {
+func TestShardsDrainSequentiallyAndBreak(t *testing.T) {
 	g := NewGame(41)
 	g.SetupNewGame(0, "tester")
-	arm := g.Player.Slots.Body
-	if arm == nil {
-		t.Fatal("starting armour missing")
-	}
-	ensureArmorAP(arm)
-	if arm.AP != 20 {
-		t.Fatalf("starting AP = %d, want 20", arm.AP)
-	}
+	g.Player.Slots.Robe[0] = &Item{Proto: itemProtoByName("leather shard"), X: -1, Y: -1}
+	g.Player.Slots.Robe[1] = &Item{Proto: itemProtoByName("chain shard"), X: -1, Y: -1}
+	ensureShardAP(g.Player.Slots.Robe[0])
+	ensureShardAP(g.Player.Slots.Robe[1])
 	hp := g.Player.HP
-	g.DamageCritter(g.Player, 20, nil, 0)
-	if arm.AP != 10 {
-		t.Fatalf("AP after 20 damage = %d, want 10", arm.AP)
+
+	g.DamageCritter(g.Player, 6, nil, 0)
+	if g.Player.Slots.Robe[0] != nil {
+		t.Fatal("first shard should have broken")
 	}
-	if g.Player.HP != hp-10 {
-		t.Fatalf("HP after absorbed damage = %d, want %d", g.Player.HP, hp-10)
+	if g.Player.Slots.Robe[1] == nil || g.Player.Slots.Robe[1].AP != 2 {
+		t.Fatal("second shard did not absorb the remaining damage")
+	}
+	if g.Player.HP != hp {
+		t.Fatalf("HP changed while shards remained: %d -> %d", hp, g.Player.HP)
 	}
 
-	// Acid bypasses AP completely.
-	apBefore := arm.AP
-	hp = g.Player.HP
-	g.DamageCritter(g.Player, 10, nil, 2)
-	if arm.AP != apBefore {
-		t.Fatalf("acid changed AP: %d -> %d", apBefore, arm.AP)
+	g.DamageCritter(g.Player, 3, nil, 0)
+	if g.Player.Slots.Robe[1] != nil {
+		t.Fatal("second shard should have broken")
 	}
-	if g.Player.HP != hp-10 {
-		t.Fatalf("acid HP damage = %d, want 10", hp-g.Player.HP)
+	if g.Player.HP != hp-1 {
+		t.Fatalf("excess damage did not reach HP: %d -> %d", hp, g.Player.HP)
 	}
 }
 
-func TestArmorVialRestoresAP(t *testing.T) {
+func TestHealingVialRestoresHP(t *testing.T) {
 	g := NewGame(42)
 	g.SetupNewGame(0, "tester")
-	g.Player.Slots.BeltUnlocked = 1
-	g.Player.Slots.Belt[0] = &Item{Proto: ArmourVialProto, X: -1, Y: -1, Charges: 1}
-	ensureArmorAP(g.Player.Slots.Body)
-	g.Player.Slots.Body.AP = 5
-	g.UseSlot(SlotBelt1)
-	cur, _ := armorAP(g.Player.Slots.Body)
-	if cur != 15 {
-		t.Fatalf("AP after vial = %d, want 15", cur)
+	g.Player.HP = 10
+	vial := g.Player.Slots.Robe[1]
+	g.UseSlot(SlotRobe2)
+	if g.Player.HP != 15 {
+		t.Fatalf("vial healed to %d, want 15", g.Player.HP)
 	}
-	if g.Player.Slots.Belt[0] != nil {
-		t.Fatal("empty vial remained in belt")
+	if g.Player.Slots.Robe[1] != nil || vial == nil {
+		t.Fatal("empty vial was not removed from the robe")
 	}
 }
 

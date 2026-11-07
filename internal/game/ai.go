@@ -59,6 +59,26 @@ func (g *Game) MonsterTurn(c *Critter) {
 		c.Path = nil
 		c.Stuck = 0
 	}
+	if c.Align == AlignEnemy {
+		if c.Immobile > 0 {
+			c.Immobile--
+			return
+		}
+		if c.Flee > 0 {
+			c.Flee--
+			if g.Player != nil && g.Player.IsAlive() {
+				g.stepAway(c, g.Player.X, g.Player.Y)
+			}
+			return
+		}
+		if g.PeaceTurns > 0 {
+			if g.Roll(100) < 80 {
+				return
+			}
+			g.wander(c)
+			return
+		}
+	}
 	switch c.AI {
 	case AIObserver:
 		p := g.Player

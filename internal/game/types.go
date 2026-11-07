@@ -17,7 +17,12 @@ const (
 	KindFood
 	KindTool
 	KindRelic
+	KindHead
+	KindShard
 )
+
+const MaxRobeSlots = 5
+const MaxRites = 2
 
 const (
 	SkillPerception = iota
@@ -61,16 +66,25 @@ const (
 	SlotBelt1
 	SlotBelt2
 	SlotBelt3
+	SlotHead
+	SlotRobe1
+	SlotRobe2
+	SlotRobe3
+	SlotRobe4
+	SlotRobe5
 	NumPlayerSlots
 )
 
-// PlayerSlots is the complete player inventory. Monsters keep using the
-// legacy Inventory/Equip fields.
+// PlayerSlots is the complete player inventory. The Body/Belt fields are
+// retained only for old save compatibility; new games use Head and Robe slots.
 type PlayerSlots struct {
 	Hands        *Item
 	Body         *Item
 	Belt         [3]*Item
 	BeltUnlocked int
+	Head         *Item
+	Robe         [MaxRobeSlots]*Item
+	RobeSlots    int
 }
 
 type KeyBind struct {
@@ -157,6 +171,8 @@ type Critter struct {
 	LastSeenX int
 	LastSeenY int
 	Alert     int
+	Flee      int
+	Immobile  int
 	Dead      bool
 	IsAnimal  bool
 
@@ -350,6 +366,9 @@ type Game struct {
 	StartTime    int64
 	WoodLoot     [9]int
 	WoodsRun     WoodsRun
+	PlayerRites  [MaxRites]int
+	RiteCharges  [MaxRites]int
+	PeaceTurns   int
 	PendingRises []PendingRise
 	// temporary screen data
 	ScrollMsg    int
@@ -375,6 +394,7 @@ func NewGame(seed int64) *Game {
 	}
 	g.WoodLoot = newWoodLootAssignment(g.RNG)
 	g.WoodsRun = newWoodsRun(g.RNG)
+	g.RollPriestProfile()
 	return g
 }
 

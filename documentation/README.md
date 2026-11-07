@@ -34,7 +34,7 @@ postponed.
 | Player experience adjustments (classes, intro, HUD, viewport) | Done | [systems/player-experience-adjustments.md](plans/systems/player-experience-adjustments.md) |
 | Cardinal movement (remove diagonals, unified hjkl controls) | Done | [systems/cardinal-movement.md](plans/systems/cardinal-movement.md) |
 | Monster AI and cardinal pathfinding | Done | [systems/monster-ai-pathfinding.md](plans/systems/monster-ai-pathfinding.md) |
-| Priest player revamp (random rites, robe slots, holy gear; demon end-game deferred) | Proposed | [systems/priest-player-revamp.md](plans/systems/priest-player-revamp.md) |
+| Priest player revamp (random rites, robe slots, holy gear; demon end-game deferred) | In progress | [systems/priest-player-revamp.md](plans/systems/priest-player-revamp.md) |
 | Player and monster states (bleeding, burning, poison, fear, etc.) | Not planned yet | [systems/player-monster-states.md](plans/systems/player-monster-states.md) |
 | Caves levels 9–17 | Not planned yet | [plans/caves.md](plans/caves.md) |
 | Temple of the Underminer levels 18–26 | Not planned yet | [plans/temple.md](plans/temple.md) |

@@ -216,7 +216,7 @@ func (g *Game) DamageCritter(target *Critter, dmg int, source *Critter, dtype in
 		return
 	}
 	if target.Player {
-		// AP absorbs a percentage of non-acid damage.  Acid bypasses armour.
+		// Legacy body armour is kept only for old saves. New games use shards.
 		if dtype != 2 {
 			if arm := target.Slots.Body; arm != nil {
 				if stats, ok := ArmorStatsFor(arm.Def()); ok {
@@ -233,6 +233,8 @@ func (g *Game) DamageCritter(target *Critter, dmg int, source *Critter, dtype in
 						}
 					}
 				}
+			} else {
+				dmg = g.damagePlayerShards(dmg)
 			}
 		}
 	} else if arm := target.Equip[EquipArmor]; arm != nil {
@@ -293,7 +295,6 @@ func (g *Game) KillCritter(target, killer *Critter) {
 		xp := target.XP
 		g.Player.XP += xp
 		g.Msg(fmt.Sprintf("you gain %d experience points.", xp), 10)
-		g.CheckLevelUp()
 	}
 	if target.Align == AlignVillager && killer != nil && killer.Align == AlignEnemy && killer.Class == 1 {
 		g.PendingRises = append(g.PendingRises, PendingRise{X: target.X, Y: target.Y, Turns: 1 + g.Roll(3)})

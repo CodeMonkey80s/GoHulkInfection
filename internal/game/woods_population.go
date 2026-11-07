@@ -120,15 +120,15 @@ func woodsLootPool(theme int) []int {
 	var names []string
 	switch theme {
 	case WoodsChurch:
-		names = []string{"holy water", "gold cross", "old tome", "bandage", "bread"}
+		names = []string{"holy water", "gold cross", "old tome", "bandage", "healing vial", "leather shard"}
 	case WoodsPeasantHouses:
-		names = []string{"apple", "bread", "cheese", "dried meat", "hatchet", "rope", "leather jacket"}
+		names = []string{"apple", "bread", "cheese", "dried meat", "hatchet", "rope", "leather shard"}
 	case WoodsMillPond:
-		names = []string{"raw fish", "cooked fish", "fishing rod", "rope", "whetstone", "apple"}
+		names = []string{"raw fish", "cooked fish", "fishing rod", "rope", "whetstone", "apple", "leather shard", "chain shard"}
 	case WoodsCemetery:
-		names = []string{"leather jacket", "chain shirt", "bone charm", "old tome", "shovel", "red potion"}
+		names = []string{"chain shard", "iron shard", "bone charm", "old tome", "shovel", "red potion"}
 	case WoodsMeteorField:
-		names = []string{"blue potion", "green potion", "bone charm", "silver chalice", "hatchet", "dried meat"}
+		names = []string{"blue potion", "green potion", "bone charm", "silver chalice", "hatchet", "dried meat", "iron shard", "silver shard"}
 	}
 	ids := make([]int, 0, len(names))
 	for _, name := range names {

@@ -144,6 +144,10 @@ func ItemColorRole(proto int) (ColorRole, bool) {
 		return RoleFireEmber, true
 	case KindMedical, KindFood:
 		return RoleHealthGood, true
+	case KindShard:
+		return RoleSteel, true
+	case KindHead:
+		return RoleLeather, true
 	case KindBodyPart:
 		return RoleGuts, true
 	}
