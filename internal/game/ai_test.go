@@ -63,3 +63,67 @@ func TestPathfindingOpensDoors(t *testing.T) {
 		t.Fatal("monster did not open the door")
 	}
 }
+
+func TestAIHostileTargetingRequiresLineOfSight(t *testing.T) {
+	blockers := []struct {
+		name string
+		tile uint8
+	}{
+		{"dense tree", tileDenseTree},
+		{"bramble", tileBramble},
+		{"bush", tileBush},
+		{"stone wall", 10},
+		{"closed door", tileWoodenDoor},
+	}
+	for _, tc := range blockers {
+		t.Run(tc.name, func(t *testing.T) {
+			g := NewGame(7303)
+			g.SetupNewGame(0, "tester")
+			g.Critters = nil
+			g.State = StatePlaying
+			clearAround(g, g.Player.X, g.Player.Y, 8)
+			zombie := g.SpawnCritter(0, g.Player.X+2, g.Player.Y)
+			wallX, wallY := g.Player.X+1, g.Player.Y
+			g.Map.SetTile(wallX, wallY, tc.tile)
+			if target, _ := g.nearestHostile(zombie, 4); target != nil {
+				t.Fatalf("zombie saw a target through %s", tc.name)
+			}
+			g.Map.SetTile(wallX, wallY, 2)
+			if target, _ := g.nearestHostile(zombie, 4); target == nil {
+				t.Fatalf("zombie failed to see a clear target after removing %s", tc.name)
+			}
+		})
+	}
+}
+
+func TestAIAnimalThreatRequiresLineOfSight(t *testing.T) {
+	g := NewGame(7304)
+	g.SetupNewGame(0, "tester")
+	g.Critters = nil
+	clearAround(g, g.Player.X, g.Player.Y, 8)
+	rabbit := g.SpawnCritter(rabbitProto, g.Player.X+2, g.Player.Y)
+	g.Map.SetTile(g.Player.X+1, g.Player.Y, tileDenseTree)
+	if threat, _ := g.nearestAnimalThreat(rabbit, 4); threat != nil {
+		t.Fatal("animal sensed a threat through a dense tree")
+	}
+	g.Map.SetTile(g.Player.X+1, g.Player.Y, 2)
+	if threat, _ := g.nearestAnimalThreat(rabbit, 4); threat != g.Player {
+		t.Fatal("animal did not sense a clear threat")
+	}
+}
+
+func TestObserverUsesLineOfSight(t *testing.T) {
+	g := NewGame(7305)
+	g.SetupNewGame(0, "tester")
+	g.Critters = nil
+	clearAround(g, g.Player.X, g.Player.Y, 8)
+	observer := g.SpawnCritter(8, g.Player.X+2, g.Player.Y) // observer drone
+	g.Map.SetTile(g.Player.X+1, g.Player.Y, 10)
+	if _, canSee := g.canSeeCritter(observer, g.Player, 14); canSee {
+		t.Fatal("observer saw the player through a stone wall")
+	}
+	g.Map.SetTile(g.Player.X+1, g.Player.Y, 2)
+	if _, canSee := g.canSeeCritter(observer, g.Player, 14); !canSee {
+		t.Fatal("observer did not see the player through clear ground")
+	}
+}
