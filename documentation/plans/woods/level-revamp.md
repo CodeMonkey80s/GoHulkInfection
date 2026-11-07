@@ -3,7 +3,7 @@
 Status: **done**
 Parent: [Woods plans](README.md)  
 Related: [Woods colour palette](color-palette.md)  
-Scope: **woods levels 0–8 only**
+Scope: **historical woods levels 0–8 plan; current implementation uses five levels 0–4**
 
 Superseded in part by [Woods Minimalist Snake Redesign](minimalist-snake-redesign.md):
 the five-map 80×23 run replaces the map count, size, progression and per-level
@@ -31,8 +31,8 @@ loot identity and inhabitants.
 The current Go port has:
 
 - four level themes: `woods`, `caves`, `temple of underminer`, `time portal`
-- 80×46 maps sized to fit the viewport; woods levels 0–8 use the outdoor
-  terrain generator, other themes use the recovered 10×40 cube-section templates
+- 80×46 section maps sized to fit the viewport; the original woods levels 0–8
+  used the outdoor terrain generator, now replaced by five 80×23 themed maps
 - 64 recovered tile prototypes plus appended woods terrain tiles
 - 49 recovered item prototypes and a 20-entry weapon table
 - 17 recovered critter prototypes
@@ -66,7 +66,7 @@ their own revamp plans are written.
 
 ---
 
-## 3. Woods revamp (levels 0–8)
+## 3. Woods revamp (historical levels 0–8)
 
 ### 3.1 Goals
 
@@ -193,7 +193,7 @@ Pillars are not generic decoration. They are allowed only in:
 - A pond can replace the river in levels that need a calmer layout.
 - Exit placement must account for water: if the exit is across the river, a bridge is mandatory.
 
-### 3.6 Unique identities for woods levels 0–8
+### 3.6 Unique identities for the historical woods levels 0–8
 
 Each level gets one reserved landmark and a distinct feel.
 
@@ -270,7 +270,8 @@ Tool effects (first pass):
 Signature loot:
 
 At world creation, shuffle **nine signature item categories** and assign one
-unique category to each wood level. No category repeats across levels 0–8.
+unique category to each wood level in the original nine-level design. No category
+repeats across those levels.
 The level’s unique landmark guarantees at least one item from its category, and
 ordinary loot on that level is biased toward it. The specific item within the
 category is also randomized.
@@ -347,7 +348,7 @@ general nearest-valid-target selection based on faction and aggro state.
 
 ### 3.11 Acceptance criteria
 
-For each wood level and several deterministic seeds:
+For each historical wood level and several deterministic seeds:
 
 - [x] no void tiles
 - [x] exactly one main landmark present
@@ -417,7 +418,7 @@ Possible future topics:
   (doors count as openable, bridges count as passable).
 - Avoid void tiles in all generators.
 - Unique landmarks should be visible or strongly hinted at from the road.
-- Keep performance acceptable: 80×46 maps, A*/BFS pathfinding and a small
+- Keep performance acceptable on 80×23 woods and 80×46 section maps, with A*/BFS pathfinding and a small
   number of static light sources are fine.
 - Preserve the original game’s tone, text style and ASCII presentation.
 
@@ -428,7 +429,7 @@ Possible future topics:
 Add deterministic generator tests:
 
 - map-size, no-void and reachability checks
-- one-landmark-per-level check
+- one-landmark-per-woods-map check
 - hut-door/road connectivity check
 - bridge/river consistency check
 - signature-loot presence check
@@ -445,7 +446,7 @@ Add AI tests:
 
 Add visual smoke tests:
 
-- one screenshot per wood level with the map revealed
+- one screenshot per woods map with the map revealed
 - verify roads, landmark, huts, water and exit are visible
 - verify the level’s signature landmark is readable at a glance
 

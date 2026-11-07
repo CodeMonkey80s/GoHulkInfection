@@ -15,7 +15,7 @@ Save compatibility is intentionally out of scope. Each iteration only needs to c
 - [ ] **Theme-specific signature loot** — map loot categories to themes instead of using a random category assignment.
 - [ ] **Difficulty curve** — make the Church clearly safest and the Meteor Field clearly hardest; tune zombie pressure, villager presence and loot by theme.
 - [ ] **Theme atmosphere** — add cemetery fog/smoke, stronger meteor glow, and more mill/pond and church graveyard detail.
-- [ ] **AI line-of-sight** — make zombie/villager perception use the same sight blockers as the player so they cannot aggro through dense trees, walls or closed doors.
+- [x] **AI line-of-sight** — make zombie/villager perception use the same sight blockers as the player so they cannot aggro through dense trees, walls or closed doors.
 - [ ] **Dangerous consumables** — distinguish poisonous food more clearly, or add confirmation before eating it.
 
 ## UI and UX
@@ -26,7 +26,7 @@ Save compatibility is intentionally out of scope. Each iteration only needs to c
 
 ## Engineering and process
 
-- [ ] **Code cleanup** — remove leftover nine-level woods helpers, unused `ExitMode`, and obsolete water-generation paths if no longer used.
+- [x] **Code cleanup** — remove leftover nine-level woods helpers, unused `ExitMode`, and obsolete water-generation paths if no longer used.
 - [ ] **CI gate** — add GitHub Actions running format checks, tests, race tests, vet and build on every PR.
-- [ ] **Docs cleanup** — fix remaining historical 80×46 and nine-level references where they could confuse current behaviour.
+- [x] **Docs cleanup** — fix remaining historical 80×46 and nine-level references where they could confuse current behaviour.
 - [ ] **Playtest pass** — verify lanterns, doors, fences, bridges and FOV blockers behave sensibly in actual play.

@@ -139,21 +139,20 @@ The exact line breaks can be adjusted when the screen is implemented.
 
 ## 6. Map size and viewport
 
-Before this change, maps were 80×80 and scrolled inside an 80×46 viewport.
-Scrolling has been removed:
+Historical decision: this pass moved maps from 80×80 to 80×46. The later
+[minimalist snake redesign](../../plans/woods/minimalist-snake-redesign.md)
+supersedes the woods part of that decision:
 
-- Map size: **80×46**, the same as the visible map area.
-- New maps fill the viewport; no scrolling occurs in normal play.
-- Player, exit and all content are placed inside 80×46.
-- `GenerateLevel` uses a 2×5 section grid, clipping the final section row to
-  the map height, then carves the usual connections.
-- `map_quality_test.go` and tests that assumed 80×80 were updated.
-- The woods level-revamp acceptance criteria were updated to 80×46.
-- The camera code path remains for compatibility with older saves and a future
-  large-map option, but new maps never scroll.
+- The whole UI now fits **80×25**: row 0 message, rows 1–23 map, row 24 HUD.
+- Woods maps are **80×23** and never scroll.
+- Caves, temple and time-portal maps remain **80×46** section maps; their
+  viewport follows the player.
+- All new content is placed inside the relevant map bounds.
+- `GenerateLevel` still uses section templates for non-woods themes.
+- `map_quality_test.go` and layout tests cover both map sizes.
 
-Decision: apply 80×46 to **all themes** immediately. The map must never scroll
-in normal play.
+Decision: keep the compact woods run and the section maps separate. No normal
+play requires an 80×50 terminal.
 
 ## 7. HUD
 
@@ -216,7 +215,7 @@ the menu stays obvious. No large ASCII illustration is needed.
 - [x] Player starts with two unlocked belt slots and a class-appropriate kit.
 - [x] Five classes exist with distinct attributes, skills and starting equipment.
 - [x] The intro states the infection source goal before play begins.
-- [x] Maps are 80×46 and never scroll during normal play.
+- [x] The UI fits 80×25; woods maps are 80×23 and section maps remain 80×46.
 - [x] The permanent HUD is one line: HP, AP and weapon name.
 - [x] The title screen keeps `HULK INFECTION` and the three menu options.
 - [x] Title copyright reads `copyright (c) 2026 Michał Przybyłowicz`.
@@ -229,7 +228,7 @@ the menu stays obvious. No large ASCII illustration is needed.
 - Title design: **Containment Briefing**.
 - Copyright: `copyright (c) 2026 Michał Przybyłowicz`.
 - Belt 3 unlock stays at level 6.
-- Map size 80×46 applies to all themes; no scrolling in normal play.
+- The all-theme 80×46 decision was later superseded: woods use 80×23, section maps stay 80×46.
 - Class names: Butcher, Hunter, Medic, Mechanic, Prepper.
 - Class passives are deferred to a later pass.
 - Look mode: keep the cursor highlight; fix the description line readability.

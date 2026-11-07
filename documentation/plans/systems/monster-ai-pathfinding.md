@@ -33,7 +33,7 @@ The faction/target layer from the woods revamp is good and should be kept.
 - Route around walls, furniture, water and dangerous tiles.
 - Keep villagers and animals believable without making them tactical geniuses.
 - Avoid monsters piling up or blocking each other forever.
-- Keep pathfinding cheap on an 80×46 map.
+- Keep pathfinding cheap on compact 80×23 woods maps and 80×46 section maps.
 - Make behaviour testable and deterministic where possible.
 
 ## 3. Pathfinding design
@@ -111,7 +111,7 @@ Track each critter’s last position and last progress turn.
 
 ## 6. Performance
 
-- 80×46 maps, four-way A*, small expansion cap.
+- 80×23 woods / 80×46 section maps, four-way A*, small expansion cap.
 - Cache paths for a few turns.
 - Only run full pathfinding for critters that are alert or have a target.
 - Idle/wandering critters use a cheap cardinal step.
@@ -133,7 +133,7 @@ Add deterministic tests for:
 - neutral animal fleeing
 - boar charging after being attacked
 - villagers still converting after a zombie kill
-- performance with a crowded 80×46 map
+- performance with crowded compact woods and section maps
 
 ## 8. Implementation phases
 
@@ -154,7 +154,7 @@ Add deterministic tests for:
 - [x] Villagers flee zombies and fight when armed/cornered.
 - [x] Animals flee; boars charge when attacked.
 - [x] Zombies still convert killed villagers.
-- [x] Pathfinding remains fast on a crowded 80×46 map.
+- [x] Pathfinding remains fast on crowded woods and section maps.
 - [x] Caves, temple and time-portal AI remains unchanged.
 
 ## 10. Resolved decisions
