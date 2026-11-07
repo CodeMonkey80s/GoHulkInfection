@@ -349,6 +349,7 @@ type Game struct {
 	Score        int
 	StartTime    int64
 	WoodLoot     [9]int
+	WoodsRun     WoodsRun
 	PendingRises []PendingRise
 	// temporary screen data
 	ScrollMsg    int
@@ -373,6 +374,7 @@ func NewGame(seed int64) *Game {
 		Gold:   0,
 	}
 	g.WoodLoot = newWoodLootAssignment(g.RNG)
+	g.WoodsRun = newWoodsRun(g.RNG)
 	return g
 }
 

@@ -787,6 +787,7 @@ func (g *Game) SetupNewGame(class int, name string) {
 	g.PlayerClass = class
 	g.PlayerName = name
 	g.WoodLoot = newWoodLootAssignment(g.RNG)
+	g.WoodsRun = newWoodsRun(g.RNG)
 	g.Player = &Critter{
 		Proto:  -1,
 		Name:   name,

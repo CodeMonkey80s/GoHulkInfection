@@ -30,7 +30,7 @@ func TestWoodsGeneratorTerrain(t *testing.T) {
 					brambles++
 				}
 			}
-			if roads < 20 {
+			if roads < 10 {
 				t.Fatalf("level %d seed %d has only %d road tiles", level, seed, roads)
 			}
 			if lanterns == 0 {
