@@ -5,6 +5,11 @@ Parent: [Woods plans](README.md)
 Related: [Woods colour palette](color-palette.md)  
 Scope: **woods levels 0–8 only**
 
+Superseded in part by [Woods Minimalist Snake Redesign](minimalist-snake-redesign.md):
+the planned five-map 80×23 run replaces the map count, size, progression and
+per-level theme structure described here. The terrain, loot, faction and
+rendering systems remain reusable.
+
 Implementation status: the first outdoor terrain pass is implemented for woods
 levels 0–8: grass, forest clusters, clearings, bushes, brambles, a dirt road,
 lantern posts and scattered props. The first hut pass is also implemented:
