@@ -11,8 +11,9 @@ import (
 
 const (
 	screenW  = mapWidth
-	screenH  = 50
-	mapViewH = mapHeight
+	screenH  = 25
+	mapViewH = 23
+	hudRow   = screenH - 1
 )
 
 var cp437 = [128]rune{
@@ -349,7 +350,7 @@ func (u *UI) draw() {
 
 func (u *UI) drawTitle() {
 	u.clear(0)
-	left, top, width, height := 1, 4, 78, 28
+	left, top, width, height := 1, 1, 78, 22
 	border := uint8(2)
 	for x := left + 1; x < left+width-1; x++ {
 		u.put(x, top, '-', border, 0)
@@ -373,11 +374,11 @@ func (u *UI) drawTitle() {
 	u.putStr(left+1, top+3, strings.Repeat("-", width-2), 2, 0)
 
 	title := "H  U  L  K     I  N  F  E  C  T  I  O  N"
-	u.putStr(left+(width-len(title))/2, top+6, title, 10, 0)
+	u.putStr(left+(width-len(title))/2, top+5, title, 10, 0)
 	rule := strings.Repeat("=", len(title))
-	u.putStr(left+(width-len(rule))/2, top+7, rule, 2, 0)
+	u.putStr(left+(width-len(rule))/2, top+6, rule, 2, 0)
 	warning := "The dead are walking. The road is closed."
-	u.putStr(left+(width-len(warning))/2, top+10, warning, 7, 0)
+	u.putStr(left+(width-len(warning))/2, top+8, warning, 7, 0)
 
 	menu := []string{"new game", "continue", "quit"}
 	for i, s := range menu {
@@ -387,12 +388,12 @@ func (u *UI) drawTitle() {
 			prefix = "> "
 			fg = 14
 		}
-		u.putStr(left+5, top+13+i*2, prefix+s, fg, 0)
+		u.putStr(left+5, top+11+i*2, prefix+s, fg, 0)
 	}
 
 	copyright := "copyright (c) 2026 Michał Przybyłowicz"
 	u.putStr(left+(width-len([]rune(copyright)))/2, top+height-2, copyright, 8, 0)
-	u.putStr(centerText("arrows / enter", screenW), top+height+2, "arrows / enter", 8, 0)
+	u.putStr(centerText("arrows / enter", screenW), top+height, "arrows / enter", 8, 0)
 }
 
 func (u *UI) drawIntro() {
@@ -422,14 +423,14 @@ func (u *UI) drawIntro() {
 		case i == len(intro)-1:
 			fg = 8
 		}
-		u.putStr(centerText(s, screenW), 10+i, s, fg, 0)
+		u.putStr(centerText(s, screenW), 6+i, s, fg, 0)
 	}
 }
 
 func (u *UI) drawCharCreate() {
 	u.clear(0)
-	u.putStr(centerText("[ @ ] profession...", screenW), 1, "[ @ ] profession...", 11, 0)
-	u.putStr(2, 3, "select class", 8, 0)
+	u.putStr(centerText("[ @ ] profession...", screenW), 0, "[ @ ] profession...", 11, 0)
+	u.putStr(2, 2, "select class", 8, 0)
 	for i, c := range PlayerClasses {
 		mark := "  "
 		fg := uint8(7)
@@ -437,28 +438,28 @@ func (u *UI) drawCharCreate() {
 			mark = "> "
 			fg = 15
 		}
-		u.putStr(4, 5+i, mark+c.Name, fg, 0)
+		u.putStr(4, 4+i, mark+c.Name, fg, 0)
 	}
 	c := &PlayerClasses[u.classSel]
-	u.putStr(2, 11, "class: "+c.Name, 14, 0)
+	u.putStr(2, 10, "class: "+c.Name, 14, 0)
 	descLines := wrapText(c.Desc, 74)
 	for i, l := range descLines {
 		if i > 2 {
 			break
 		}
-		u.putStr(2, 12+i, l, 10, 0)
+		u.putStr(2, 11+i, l, 10, 0)
 	}
-	u.putStr(2, 16, fmt.Sprintf("strength:%d  toughness:%d  agility:%d  intelligence:%d", c.STR, c.TGH, c.AGI, c.INT), 7, 0)
+	u.putStr(2, 15, fmt.Sprintf("strength:%d  toughness:%d  agility:%d  intelligence:%d", c.STR, c.TGH, c.AGI, c.INT), 7, 0)
 	for i, skill := range ActiveSkills {
 		col, row := i/3, i%3
 		x := 2 + col*26
-		y := 18 + row
+		y := 17 + row
 		u.putStr(x, y, fmt.Sprintf("%-16s %3d", SkillNames[skill], c.Skills[skill]), 10, 0)
 	}
-	u.putStr(2, 22, startingKitSummary(u.classSel), 8, 0)
-	u.putStr(2, 24, "name: "+u.g.PlayerName, 14, 0)
-	u.putStr(2, 25, "arrows: select class   r: reroll name   enter: begin", 8, 0)
-	u.putStr(2, 26, "esc: back", 8, 0)
+	u.putStr(2, 21, startingKitSummary(u.classSel), 8, 0)
+	u.putStr(2, 22, "name: "+u.g.PlayerName, 14, 0)
+	u.putStr(2, 23, "arrows: select class   r: reroll name   enter: begin", 8, 0)
+	u.putStr(2, 24, "esc: back", 8, 0)
 }
 
 func (u *UI) drawGame() {
@@ -468,19 +469,12 @@ func (u *UI) drawGame() {
 		return
 	}
 	u.clear(0)
-	left := g.Player.X - screenW/2
-	top := g.Player.Y - mapViewH/2
-	if left < 0 {
-		left = 0
+	left, top := 0, 0
+	if g.Map.W > screenW {
+		left = clampInt(g.Player.X-screenW/2, 0, g.Map.W-screenW)
 	}
-	if top < 0 {
-		top = 0
-	}
-	if left > g.Map.W-screenW {
-		left = g.Map.W - screenW
-	}
-	if top > g.Map.H-mapViewH {
-		top = g.Map.H - mapViewH
+	if g.Map.H > mapViewH {
+		top = clampInt(g.Player.Y-mapViewH/2, 0, g.Map.H-mapViewH)
 	}
 	for sy := 0; sy < mapViewH; sy++ {
 		for sx := 0; sx < screenW; sx++ {
@@ -595,12 +589,12 @@ func (u *UI) drawGame() {
 		}
 	}
 	u.drawTopMessages()
-	u.drawStatus(47)
+	u.drawStatus(hudRow)
 	if u.bashPending {
-		u.fill(0, 45, screenW, 2, ' ', 8, 0)
-		u.fill(0, 45, screenW, 1, ' ', 15, 1)
-		u.putStr(1, 45, "bash: choose a direction", 15, 1)
-		u.putStr(1, 46, "h/j/k/l or arrows bash, esc cancels", 8, 0)
+		u.fill(0, 22, screenW, 2, ' ', 8, 0)
+		u.fill(0, 22, screenW, 1, ' ', 15, 1)
+		u.putStr(1, 22, "bash: choose a direction", 15, 1)
+		u.putStr(1, 23, "h/j/k/l or arrows bash, esc cancels", 8, 0)
 	}
 }
 
@@ -1083,17 +1077,17 @@ func (u *UI) handleQuitConfirm(e *tcell.EventKey) {
 func (u *UI) drawGameOver(victory bool) {
 	u.clear(0)
 	if victory {
-		u.putStr(centerText("you survive", screenW), 18, "you survive", 14, 0)
-		u.putStr(centerText("~~~~~~~~~~~", screenW), 19, "~~~~~~~~~~~", 14, 0)
+		u.putStr(centerText("you survive", screenW), 7, "you survive", 14, 0)
+		u.putStr(centerText("~~~~~~~~~~~", screenW), 8, "~~~~~~~~~~~", 14, 0)
 		lines := wrapText("as you enter the time portal, you feel highly accelerated and years seem to be seconds ... after a while you were thrown out on the other side of the portal. you stand up slowly and look around, examining the cold, shiny walls of your cell ...", 70)
 		for i, l := range lines {
-			u.putStr(5, 22+i, l, 10, 0)
+			u.putStr(5, 11+i, l, 10, 0)
 		}
-		u.putStr(centerText("press enter to return to title", screenW), 32, "press enter to return to title", 8, 0)
+		u.putStr(centerText("press enter to return to title", screenW), 22, "press enter to return to title", 8, 0)
 	} else {
-		u.putStr(centerText("you died.", screenW), 20, "you died.", 12, 0)
-		u.putStr(centerText("=== session ended ===", screenW), 22, "=== session ended ===", 7, 0)
-		u.putStr(centerText("press enter to return to title", screenW), 26, "press enter to return to title", 8, 0)
+		u.putStr(centerText("you died.", screenW), 10, "you died.", 12, 0)
+		u.putStr(centerText("=== session ended ===", screenW), 12, "=== session ended ===", 7, 0)
+		u.putStr(centerText("press enter to return to title", screenW), 16, "press enter to return to title", 8, 0)
 	}
 }
 
@@ -1111,12 +1105,12 @@ func (u *UI) drawLookOverlay() {
 	bg := u.uiColor(RolePanelBackground, 1)
 	fg := u.uiColor(RolePrimaryText, 15)
 	dim := u.uiColor(RoleDimText, 8)
-	u.fillTcell(0, 45, screenW, 2, ' ', fg, bg)
+	u.fillTcell(0, 22, screenW, 2, ' ', fg, bg)
 	if lines := wrapText(desc, screenW-2); len(lines) > 0 {
 		desc = lines[0]
 	}
-	u.putStrTcell(1, 45, desc, fg, bg)
-	u.putStrTcell(1, 46, fmt.Sprintf("look: [%d:%d] move keys move  enter/esc/space quit", g.LookX, g.LookY), dim, bg)
+	u.putStrTcell(1, 22, desc, fg, bg)
+	u.putStrTcell(1, 23, fmt.Sprintf("look: [%d:%d] move keys move  enter/esc/space quit", g.LookX, g.LookY), dim, bg)
 }
 
 func (u *UI) handleLook(e *tcell.EventKey) {
@@ -1136,9 +1130,9 @@ func (u *UI) drawThrowOverlay() {
 	bg := u.uiColor(RolePanelBackground, 1)
 	fg := u.uiColor(RolePrimaryText, 15)
 	dim := u.uiColor(RoleDimText, 8)
-	u.fillTcell(0, 45, screenW, 2, ' ', fg, bg)
-	u.putStrTcell(1, 45, fmt.Sprintf("throw: target [%d:%d]  range %d  enter throw  esc/space cancel", g.LookX, g.LookY, g.FOVRadius()), fg, bg)
-	u.putStrTcell(1, 46, "move keys move cursor", dim, bg)
+	u.fillTcell(0, 22, screenW, 2, ' ', fg, bg)
+	u.putStrTcell(1, 22, fmt.Sprintf("throw: target [%d:%d]  range %d  enter throw  esc/space cancel", g.LookX, g.LookY, g.FOVRadius()), fg, bg)
+	u.putStrTcell(1, 23, "move keys move cursor", dim, bg)
 }
 
 func (g *Game) moveThrowCursor(dx, dy int) {

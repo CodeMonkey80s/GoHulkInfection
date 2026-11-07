@@ -103,8 +103,8 @@ func TestAllThemesUseViewportSizedMaps(t *testing.T) {
 		g := NewGame(int64(level + 500))
 		g.SetupNewGame(0, "tester")
 		g.GenerateLevel(level)
-		if g.Map.W != screenW || g.Map.H != mapViewH {
-			t.Fatalf("level %d map = %dx%d, want %dx%d", level, g.Map.W, g.Map.H, screenW, mapViewH)
+		if g.Map.W != screenW || (g.Map.H != mapHeight && g.Map.H != mapViewH) {
+			t.Fatalf("level %d map = %dx%d, want width %d and height %d or %d", level, g.Map.W, g.Map.H, screenW, mapViewH, mapHeight)
 		}
 	}
 }
@@ -114,14 +114,14 @@ func TestHUDIsOneLine(t *testing.T) {
 	g.SetupNewGame(0, "tester")
 	u, s := newTestUI(g, ColorModeTrueColor)
 	defer s.Fini()
-	u.drawStatus(47)
+	u.drawStatus(hudRow)
 	s.Show()
 	text := screenText(s)
 	rows := strings.Split(text, "\n")
-	if len(rows) < 48 {
+	if len(rows) < screenH+1 {
 		t.Fatal("simulation screen has too few rows")
 	}
-	hud := rows[47]
+	hud := rows[hudRow]
 	if !strings.Contains(hud, "HP ") || !strings.Contains(hud, "AP ") {
 		t.Fatalf("HUD missing HP/AP: %q", hud)
 	}
@@ -145,14 +145,14 @@ func TestLookOverlayUsesReadablePanelColours(t *testing.T) {
 	s.Show()
 	text := screenText(s)
 	rows := strings.Split(text, "\n")
-	if !strings.Contains(rows[45], "there is") {
-		t.Fatalf("look description missing: %q", rows[45])
+	if !strings.Contains(rows[22], "there is") {
+		t.Fatalf("look description missing: %q", rows[22])
 	}
-	if !strings.Contains(rows[46], "look:") {
-		t.Fatalf("look controls missing: %q", rows[46])
+	if !strings.Contains(rows[23], "look:") {
+		t.Fatalf("look controls missing: %q", rows[23])
 	}
 	cells, w, _ := s.GetContents()
-	_, bg, _ := cells[45*w+0].Style.Decompose()
+	_, bg, _ := cells[22*w+0].Style.Decompose()
 	want := u.uiColor(RolePanelBackground, 1)
 	if bg != want || !bg.IsRGB() {
 		t.Fatalf("look panel background = %v, want %v", bg, want)
@@ -237,8 +237,8 @@ func TestLookDescriptionNamesGroundItem(t *testing.T) {
 	u.drawLookOverlay()
 	s.Show()
 	rows := strings.Split(screenText(s), "\n")
-	if !strings.Contains(rows[45], "Crowbar is lying here.") {
-		t.Fatalf("look overlay does not show the item: %q", rows[45])
+	if !strings.Contains(rows[22], "Crowbar is lying here.") {
+		t.Fatalf("look overlay does not show the item: %q", rows[22])
 	}
 }
 
