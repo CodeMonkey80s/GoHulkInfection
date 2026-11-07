@@ -38,8 +38,8 @@ func TestWoodsMapsAreCompactThemedAndConnected(t *testing.T) {
 			if roads < 20 {
 				t.Fatalf("seed %d level %d has only %d road tiles", seed, level, roads)
 			}
-			if lanterns == 0 {
-				t.Fatalf("seed %d level %d has no lantern posts", seed, level)
+			if lanterns < 4 || lanterns > 8 {
+				t.Fatalf("seed %d level %d has %d lantern posts, want 4-8", seed, level, lanterns)
 			}
 			if trees == 0 {
 				t.Fatalf("seed %d level %d has no border trees", seed, level)

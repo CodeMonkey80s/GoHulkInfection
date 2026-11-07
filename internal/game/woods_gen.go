@@ -289,7 +289,7 @@ func (g *Game) placeWoodsLanterns(m *Map, path [][2]int) {
 			placed++
 		}
 	}
-	for i := 6; i < len(path)-1 && placed < 4; i += 2 {
+	for i := 2; i < len(path)-1 && placed < 4; i++ {
 		if tryAt(path[i]) {
 			placed++
 		}
