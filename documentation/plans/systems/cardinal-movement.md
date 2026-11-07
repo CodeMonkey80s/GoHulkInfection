@@ -31,11 +31,12 @@ navigation, `.` wait, four-way connectivity and generator paths are in place.
 | `k` | move north |
 | `l` | move east |
 | `.` | wait / rest |
-| `f` + `h/j/k/l` | directional attack |
+| `f` + `h/j/k/l` | bash an adjacent small obstacle |
 | `g` | get item from the ground |
 | `e` | equipment overlay |
 | `v` | view / look around |
 | `~` | expand/collapse messages |
+| `Space` | close a modal screen without taking an action |
 | `a` | use Hands |
 | `c` / `d` / `r` | use Belt 1–3 |
 | `A` / `B` / `C` / `D` / `R` | drop Hands, Body, Belt 1–3 |
@@ -71,7 +72,8 @@ Specific screens:
 ## 4. Movement and connectivity rules
 
 - Player movement is cardinal only. Moving into an enemy is a bump attack.
-- `f` + `h/j/k/l` attacks without moving.
+- `f` + `h/j/k/l` bashes an adjacent small obstacle without moving.
+- Walking into an enemy is the only player attack.
 - Monsters move cardinal only.
 - Pathfinding, wandering, fleeing and map reachability all use four directions.
 - The woods road pathfinder and hut/landmark connectors use cardinal movement.
@@ -81,7 +83,7 @@ Specific screens:
 ## 5. Implementation phases
 
 1. **Input layer** — replace diagonal/numpad handling with `h/j/k/l`; move wait
-   to `.`; update attack, look and throw direction handling.
+   to `.`; update bash, look and throw direction handling.
 2. **Menu navigation** — add `h/j/k/l` navigation to all screens and overlays.
 3. **Movement primitives** — introduce `dirs4` for movement/reachability;
    remove movement uses of `dirs8`.
@@ -96,11 +98,11 @@ Specific screens:
 - [x] Numpad and `u i o / j k l / m , .` movement are removed.
 - [x] `h/j/k/l` work consistently in gameplay, look/throw and menus.
 - [x] `.` waits/rests.
-- [x] `f` + cardinal direction attacks.
+- [x] `f` + cardinal direction bashes; moving into enemies attacks.
 - [x] All generated maps remain fully reachable under four-way movement.
 - [x] Caves, temple and time-portal maps still generate and connect correctly.
 - [x] Help/README list the new controls.
-- [x] Tests cover movement keys, menu navigation, attack direction and map
+- [x] Tests cover movement keys, menu navigation, bash direction and map
       reachability.
 
 ## 7. Resolved decisions
@@ -110,3 +112,4 @@ Specific screens:
 - `.` waits/rests in gameplay.
 - The equipment overlay uses `j/k` to select a slot and `Enter` to use it,
   while `a/c/d/r` remain direct slot actions.
+- `Space` closes modal screens without taking an action.

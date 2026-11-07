@@ -29,6 +29,7 @@ var inactiveOptions = map[string]bool{
 	"optMechanicLineOfFireHitChance":   true, // line-of-fire shooting
 	"optPlayerUseTargetLine":           true, // ranged target line
 	"optPlayerClearTargetResetTactics": true, // target command removed
+	"optPlayerAttackOnMove":            true, // bump attacks are always enabled now
 }
 
 // ActiveOptionDefs returns the options that are still relevant to the
@@ -113,7 +114,7 @@ var ActiveKeyBindings = []KeyBind{
 	{Key: 'k', Name: "move to north", Desc: "move player north"},
 	{Key: 'l', Name: "move to east", Desc: "move player east"},
 	{Key: '.', Name: "wait / rest", Desc: "wait, rest and recover health"},
-	{Key: 'f', Name: "attack", Desc: "choose a direction and attack the adjacent enemy"},
+	{Key: 'f', Name: "bash", Desc: "choose a direction and bash an adjacent small obstacle"},
 	{Key: 'a', Name: "hands action", Desc: "use the Hands item (tool) or report the weapon ready"},
 	{Key: 'c', Name: "belt 1 action", Desc: "use, swap or consume belt slot 1"},
 	{Key: 'd', Name: "belt 2 action", Desc: "use, swap or consume belt slot 2"},
@@ -131,6 +132,7 @@ var ActiveKeyBindings = []KeyBind{
 	{Key: 'x', Name: "skills", Desc: "display and improve skills"},
 	{Key: 'O', Name: "options", Desc: "display the options screen"},
 	{Key: '?', Name: "help", Desc: "display this key binding screen"},
+	{Key: ' ', Name: "close overlay", Desc: "close a modal screen without taking an action"},
 	{Key: 'S', Name: "save and quit", Desc: "save the game and quit"},
 	{Key: '>', Name: "use portal", Desc: "use a portal, stairs or elevator"},
 	{Key: ']', Name: "next map", Desc: "jump directly to the next map"},

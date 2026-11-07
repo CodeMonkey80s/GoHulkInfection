@@ -35,7 +35,7 @@ The player-facing command set is intentionally melee-focused.
 | `h` `j` `k` `l` | move west / south / north / east |
 | `.` | wait / rest |
 | arrows | move (or move the cursor in look/throw mode) |
-| `f` | choose a direction and attack the adjacent enemy |
+| `f` + `h/j/k/l` | bash an adjacent small obstacle |
 | `a` | use the Hands item / report the weapon ready |
 | `c` `d` `r` | use, swap or consume Belt 1–3 |
 | `A` `B` `C` `D` `R` | drop Hands, Body, Belt 1–3 |
@@ -51,12 +51,14 @@ The player-facing command set is intentionally melee-focused.
 | `>` | use portal / stairs / elevator |
 | `]` or `F7` | jump directly to the next map |
 | `[` or `F8` | jump directly to the previous map |
+| `Space` | close a modal screen without taking an action |
 | `Q` | quit |
 
-Walking into a small obstacle such as a bramble, fence or piece of furniture
-attempts to smash it. There is no separate smash key.
+Walking into a monster attacks it. Walking into a small obstacle such as a
+bramble, fence or piece of furniture attempts to smash it. There is no separate
+smash key.
 
-Screens generally close with `z`, `q`, or `Esc`.  The player is defenceless
+Screens generally close with `z`, `q`, `Space`, or `Esc`.  The player is defenceless
 without a melee weapon; there is no unarmed attack.  Throwing is deferred for
 now.
 

@@ -73,15 +73,14 @@ as unavailable until earned.
 
 Every slot has one context-sensitive action key and one drop key.
 
-### Movement and directional attack
+### Movement and bump attack
 
 - Arrows and `h j k l` move the player cardinally; `.` waits.
 - Moving into an enemy attacks it (bump attack).
-- `f` followed by a direction performs a deliberate directional melee attack
-  without moving.
+- `f` followed by a direction bashes an adjacent small obstacle without moving.
 - There is no “nearest target” attack. The player chooses the direction.
-- If there is no adjacent enemy in that direction, `f` reports that there is
-  nothing to attack.
+- If there is no bashable obstacle in that direction, `f` reports that there is
+  nothing to bash.
 
 ### Throwing
 
@@ -122,7 +121,7 @@ Dropping succeeds only if the current tile has no item on it.
 `a` is context-sensitive:
 
 - **tool** — use the tool (axe, lockpick, shovel, lantern, etc.)
-- **weapon** — report that the weapon is ready; attack with `f` + direction
+- **weapon** — report that the weapon is ready; attack by moving into an enemy
 - **throwable** — unavailable for now; throwing is deferred
 - **empty** — report that the player has nothing ready
 
@@ -169,7 +168,7 @@ Suggested shape:
 
 ```text
 PLAYER SLOTS                                      action
-[a] Hands   chainsaw       dmg 7-44 av 5 dv -12    attack: f + dir
+[a] Hands   chainsaw       dmg 7-44 av 5 dv -12    attack: move into enemy
 Body      jacket         AP 20/20 absorb 50%     unequip (B)
 [c] Belt 1  molotov        fire throwable          swap (deferred)
 [d] Belt 2  medkit         heal 25, charges 5      consume
@@ -352,7 +351,7 @@ type PlayerSlots struct {
 - [ ] Belt 1 and 2 start available; Belt 3 unlocks at level 6.
 - [ ] No weight, burden, ammo, target or tactic UI remains.
 - [ ] No scrolling inventory.
-- [ ] Movement into an enemy attacks; `f` + direction attacks deliberately.
+- [ ] Movement into an enemy attacks; `f` + direction bashes small obstacles.
 - [ ] `a`, `c`, `d`, `r` perform item actions; `A`–`D`, `R` drop items.
 - [ ] Dropping fails when the tile already has an item.
 - [ ] HP and AP are visible and AP absorbs damage.
@@ -368,13 +367,13 @@ type PlayerSlots struct {
 ## 10. Resolved decisions
 
 - One Hands slot.
-- Attack is directional: bump attack or `f` + direction.
+- Attack is bump-only; `f` + direction is contextual bashing.
 - Throwing is deferred; `t` reserved.
 - Belt 2 available from the start, Belt 3 at level 6.
 - Body accepts armour only; belt accepts non-body items.
 - Pickup auto-places into Hands → Body (if armour) → first free belt slot.
 - Belt throwables must be swapped into Hands before throwing.
-- Smash is contextual: walk into small obstacles.
+- Smash is contextual: walk into small obstacles or use `f` + direction.
 - HP regenerates slowly as before; AP is restored by kits, tools and vials.
 - Acid bypasses AP completely for now.
 - Armour has no action key: equip applies AP immediately; `B` unequips/drops it.
