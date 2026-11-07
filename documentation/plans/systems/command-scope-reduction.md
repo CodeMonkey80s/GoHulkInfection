@@ -1,11 +1,12 @@
 # Command & Scope Reduction — Melee-Focused Redesign
 
-Status: **in progress**
+Status: **done**
 Parent: [Feature plans](../README.md)  
 Scope: global player command set and combat systems; first validated in the woods
 
-Implementation status: first pass implemented on branch
-`feature/command-scope-reduction`; pending review and merge.
+Implementation status: first pass implemented and merged. Item names have since
+been refitted by the [item theme review](../../reference/item-review.md): the HE
+grenade and molotov data now appear as holy water and holy fire flasks.
 
 This document proposes cutting the command surface down to what fits a
 zombie-slashing, melee-focused roguelike. The goal is not to remove depth — it

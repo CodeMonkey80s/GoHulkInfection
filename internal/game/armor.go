@@ -12,11 +12,11 @@ func ArmorStatsFor(d *ItemDef) (ArmorStats, bool) {
 		return ArmorStats{}, false
 	}
 	switch d.Name {
-	case "jacket":
+	case "jacket", "padded jerkin":
 		return ArmorStats{MaxAP: 20, Absorb: 50, DV: -1}, true
-	case "flak armor":
+	case "flak armor", "reinforced hide coat":
 		return ArmorStats{MaxAP: 35, Absorb: 60, DV: -2}, true
-	case "power jacket":
+	case "power jacket", "penitent's mail":
 		return ArmorStats{MaxAP: 50, Absorb: 70, DV: -3}, true
 	case "leather jacket":
 		return ArmorStats{MaxAP: 25, Absorb: 55, DV: -1}, true

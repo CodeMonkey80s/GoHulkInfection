@@ -368,9 +368,9 @@ func (g *Game) CreateRemains(c *Critter) {
 		g.PlaceGroundItemNear(&Item{Proto: proto, X: -1, Y: -1}, c.X, c.Y)
 	}
 	if g.Chance(15) {
-		proto := 41 // HE grenade
+		proto := 41 // holy water flask
 		if g.Roll(2) == 0 {
-			proto = 42 // molotov cocktail
+			proto = 42 // holy fire flask
 		}
 		g.PlaceGroundItemNear(&Item{Proto: proto, X: -1, Y: -1}, c.X, c.Y)
 	}
@@ -416,8 +416,8 @@ func (g *Game) CheckLevelUp() {
 	}
 }
 
-// Explode damages everything in a radius.  kind 1 leaves fire behind
-// (molotov); kind 0 is a plain high-explosive blast.
+// Explode damages everything in a radius. kind 1 leaves fire behind
+// (holy fire flask); kind 0 is a direct holy/alchemical burst.
 func (g *Game) Explode(x, y, radius, damage, kind int) {
 	if radius < 1 {
 		radius = 1
@@ -463,8 +463,8 @@ func (g *Game) hasThrowable() bool {
 	return false
 }
 
-// ThrowGrenade throws the selected HE grenade or molotov at a visible tile
-// within the player's current FOV radius.
+// ThrowGrenade throws the selected thematic flask at a visible tile within
+// the player's current FOV radius.
 func (g *Game) ThrowGrenade(x, y int) {
 	it := g.Player.ThrowableItem()
 	if it == nil || !ItemIsThrowable(it.Proto) {
@@ -520,7 +520,7 @@ func (g *Game) ThrowGrenade(x, y int) {
 		dmg = g.RollRange(wd.DmgMin, wd.DmgMax)
 	}
 	kind := 0
-	if d.Name == "molotov cocktail" {
+	if d.Name == "holy fire flask" {
 		kind = 1
 	}
 	g.Explode(lx, ly, blastRadius, dmg+g.Player.Skill(SkillThrowing)/4, kind)

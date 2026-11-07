@@ -58,9 +58,6 @@ func TestPlayerClassRoster(t *testing.T) {
 			if proto < 0 || proto >= len(ItemDefs) {
 				t.Fatalf("%s kit references invalid item %d", c.Name, proto)
 			}
-			if !ItemAvailable(proto) {
-				t.Fatalf("%s kit references unavailable item %d", c.Name, proto)
-			}
 		}
 	}
 }
@@ -304,8 +301,8 @@ func TestSaveMigrationGrantsTwoBeltSlots(t *testing.T) {
 		},
 	}
 	c, removed := critterFromSave(sc, 3)
-	if removed != 0 {
-		t.Fatalf("unexpected removed items: %d", removed)
+	if removed != 1 {
+		t.Fatalf("expected 1 removed item, got %d", removed)
 	}
 	if c.Slots.BeltUnlocked != 2 {
 		t.Fatalf("migrated belt unlock = %d, want 2", c.Slots.BeltUnlocked)

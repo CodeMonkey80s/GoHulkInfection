@@ -289,7 +289,7 @@ func critterFromSave(s saveCritter, version int) (*Critter, int) {
 		if si.Proto < 0 {
 			continue
 		}
-		if !ItemAvailable(si.Proto) {
+		if !CritterItemAvailable(si.Proto) {
 			removed++
 			continue
 		}
@@ -299,7 +299,7 @@ func critterFromSave(s saveCritter, version int) (*Critter, int) {
 	}
 	if version < 2 {
 		// Old layout: melee, ranged, armor, grenade, tool.
-		if len(s.Equip) > 1 && s.Equip[1].Proto >= 0 && !ItemAvailable(s.Equip[1].Proto) {
+		if len(s.Equip) > 1 && s.Equip[1].Proto >= 0 && !CritterItemAvailable(s.Equip[1].Proto) {
 			removed++
 		}
 		want := [NumEquipSlots]int{0, 2, 3, 4}
@@ -309,7 +309,7 @@ func critterFromSave(s saveCritter, version int) (*Critter, int) {
 				if si.Proto < 0 {
 					continue
 				}
-				if !ItemAvailable(si.Proto) {
+				if !CritterItemAvailable(si.Proto) {
 					removed++
 					continue
 				}
@@ -323,7 +323,7 @@ func critterFromSave(s saveCritter, version int) (*Critter, int) {
 				if si.Proto < 0 {
 					continue
 				}
-				if !ItemAvailable(si.Proto) {
+				if !CritterItemAvailable(si.Proto) {
 					removed++
 					continue
 				}
