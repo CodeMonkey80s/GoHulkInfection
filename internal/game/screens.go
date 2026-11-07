@@ -48,19 +48,39 @@ func slotKey(slot int) string {
 	case SlotHands:
 		return "a"
 	case SlotHead:
-		return "h"
+		return "b"
 	case SlotRobe1:
 		return "c"
 	case SlotRobe2:
 		return "d"
 	case SlotRobe3:
-		return "r"
+		return "e"
 	case SlotRobe4:
-		return "4"
+		return "f"
 	case SlotRobe5:
-		return "5"
+		return "g"
 	}
 	return "-"
+}
+
+func slotForKey(key rune) (int, bool) {
+	switch key {
+	case 'a':
+		return SlotHands, true
+	case 'b':
+		return SlotHead, true
+	case 'c':
+		return SlotRobe1, true
+	case 'd':
+		return SlotRobe2, true
+	case 'e':
+		return SlotRobe3, true
+	case 'f':
+		return SlotRobe4, true
+	case 'g':
+		return SlotRobe5, true
+	}
+	return 0, false
 }
 
 func itemSummary(it *Item) string {
@@ -127,18 +147,18 @@ func (u *UI) drawInventory() {
 		y++
 	}
 
-	u.putStr(16, 10, "a  use hands          h  head", 8, 0)
-	u.putStr(16, 11, "c/d/r  use robe slot 1-3", 8, 0)
-	u.putStr(16, 12, "A/H/C/D/R  drop slot", 8, 0)
-	u.putStr(16, 13, "j/k select  enter use  e/z/space close", 8, 0)
+	u.putStr(16, 10, "a hands   b head   c-g robe slots", 8, 0)
+	u.putStr(16, 11, "A-G  drop the corresponding slot", 8, 0)
+	u.putStr(16, 12, "j/k select  enter use  p pick up", 8, 0)
+	u.putStr(16, 13, "i/z/q/space close", 8, 0)
 	u.putStr(16, 14, g.RiteSummary(), 11, 0)
 
 	ground := g.ItemAt(g.Player.X, g.Player.Y)
-	u.putStr(1, 17, "[ g ] item here: "+itemSummary(ground), 10, 0)
+	u.putStr(1, 17, "[ p ] item here: "+itemSummary(ground), 10, 0)
 
 	u.fill(0, 22, screenW, 2, ' ', 8, 0)
 	u.putStr(1, 22, "Robe slots hold vials, shards and small items; the robe cannot be removed.", 8, 0)
-	u.putStr(1, 23, "g get   e/z/space close", 8, 0)
+	u.putStr(1, 23, "lowercase use   uppercase drop   p pick up   i close", 8, 0)
 }
 
 func slotStats(it *Item) string {
@@ -226,30 +246,21 @@ func (u *UI) handleInventory(e *tcell.EventKey) {
 		u.slotSel = (u.slotSel + 1) % len(slots)
 	case 'k':
 		u.slotSel = (u.slotSel + len(slots) - 1) % len(slots)
-	case 'a':
-		g.UseSlot(SlotHands)
-	case 'h':
-		g.UseSlot(SlotHead)
-	case 'c':
-		g.UseSlot(SlotRobe1)
-	case 'd':
-		g.UseSlot(SlotRobe2)
-	case 'r':
-		g.UseSlot(SlotRobe3)
-	case 'A':
-		g.DropSlot(SlotHands)
-	case 'H':
-		g.DropSlot(SlotHead)
-	case 'C':
-		g.DropSlot(SlotRobe1)
-	case 'D':
-		g.DropSlot(SlotRobe2)
-	case 'R':
-		g.DropSlot(SlotRobe3)
-	case 'g':
-		g.PickUp()
-	case 'z', 'q', 'e', ' ':
+	case 'i', 'z', 'q', ' ':
 		g.State = StatePlaying
+	case 'p':
+		g.PickUp()
+	default:
+		key := e.Rune()
+		if slot, ok := slotForKey(key); ok {
+			g.UseSlot(slot)
+			return
+		}
+		if key >= 'A' && key <= 'G' {
+			if slot, ok := slotForKey(key - 'A' + 'a'); ok {
+				g.DropSlot(slot)
+			}
+		}
 	}
 }
 
@@ -296,7 +307,7 @@ func (u *UI) drawPlayerScreen() {
 	}
 	u.fill(0, 22, screenW, 3, ' ', 8, 0)
 	u.putStr(1, 23, "z/space quit screen", 8, 0)
-	u.putStr(1, 24, "e equipment", 8, 0)
+	u.putStr(1, 24, "i inventory", 8, 0)
 }
 
 func skillLevelName(v int) string {

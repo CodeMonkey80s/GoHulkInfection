@@ -33,14 +33,14 @@ func TestActiveBindingsUseNewKeys(t *testing.T) {
 	for _, b := range ActiveKeyBindings {
 		found[rune(b.Key)] = true
 	}
-	for _, key := range []rune{'h', 'j', 'k', 'l', '.', 'e', 'v', '~', 'g', 'r', 'R'} {
+	for _, key := range []rune{'h', 'j', 'k', 'l', '.', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'i', 'p', 'r', 'v', '~'} {
 		if !found[key] {
 			t.Fatalf("active key bindings missing %q", key)
 		}
 	}
-	for _, key := range []rune{'1', '2', '3', '4', '5', '6', '7', '8', '9'} {
+	for _, key := range []rune{'1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G'} {
 		if found[key] {
-			t.Fatalf("active key bindings still contain numpad key %q", key)
+			t.Fatalf("active key bindings still contain removed key %q", key)
 		}
 	}
 }
@@ -206,5 +206,45 @@ func TestBarrelBashDropsLoot(t *testing.T) {
 	msgs := g.LastMessages(1)
 	if len(msgs) == 0 || !strings.Contains(strings.ToLower(msgs[0].Text), "raw fish") {
 		t.Fatalf("missing bash loot message: %v", msgs)
+	}
+}
+
+func TestSlotKeysAndUppercaseDrops(t *testing.T) {
+	want := map[rune]int{
+		'a': SlotHands,
+		'b': SlotHead,
+		'c': SlotRobe1,
+		'd': SlotRobe2,
+		'e': SlotRobe3,
+		'f': SlotRobe4,
+		'g': SlotRobe5,
+	}
+	for key, slot := range want {
+		got, ok := slotForKey(key)
+		if !ok || got != slot {
+			t.Fatalf("slotForKey(%q) = %d,%v, want %d,true", key, got, ok, slot)
+		}
+	}
+
+	g := NewGame(7308)
+	g.SetupNewGame(0, "tester")
+	g.Items = nil
+	g.Critters = nil
+	g.State = StatePlaying
+	weapon := &Item{Proto: itemProtoByName("sickle"), X: -1, Y: -1}
+	g.Player.Slots.Hands = weapon
+	u := &UI{g: g}
+	u.handlePlaying(tcell.NewEventKey(tcell.KeyRune, 'A', tcell.ModNone))
+	if g.Player.Slots.Hands != weapon {
+		t.Fatal("uppercase A dropped an item on the map")
+	}
+
+	g.State = StateInventory
+	u.handleInventory(tcell.NewEventKey(tcell.KeyRune, 'A', tcell.ModNone))
+	if g.Player.Slots.Hands != nil {
+		t.Fatal("uppercase A did not drop the Hands item in inventory")
+	}
+	if g.ItemAt(g.Player.X, g.Player.Y) == nil {
+		t.Fatal("dropped Hands item is not on the ground")
 	}
 }

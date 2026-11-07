@@ -35,30 +35,33 @@ The player-facing command set is intentionally melee-focused.
 | `h` `j` `k` `l` | move west / south / north / east |
 | `.` | wait one turn |
 | arrows | move (or move the cursor in look/throw mode) |
-| `f` + `h/j/k/l` | bash an adjacent small obstacle |
+| `x` + `h/j/k/l` | bash an adjacent small obstacle |
 | `a` | use the Hands item / report the weapon ready |
+| `b` | use the Head item |
+| `c` `d` `e` `f` `g` | use Robe slots 1–5 |
 | `r` / `t` | use the first / second known Rite |
-| `A` `H` `C` `D` `R` | drop Hands, Head, Robe 1–3 |
-| `g` | get the item from the ground |
-| `e` | equipment overlay |
+| `p` | pick up the item from the ground |
+| `i` | inventory / equipment screen |
 | `v` | view / look around |
 | `~` | expand/collapse latest messages |
 | `@` | character information |
-| `O` | options |
+| `o` | options |
 | `?` | help / key bindings |
-| `S` | save and quit |
+| `s` | save and quit |
 | `>` | use portal / stairs / elevator |
 | `]` or `F7` | jump directly to the next map |
 | `[` or `F8` | jump directly to the previous map |
 | `Space` | close a modal screen without taking an action |
-| `Q` | quit |
+| `q` or `z` | quit |
 
 Walking into a monster attacks it. Player and monster movement and attacks are
 cardinal only (`hjkl`); there are no diagonal attacks. Bashing is intentional:
-use `f` and a direction. A bash takes a turn, and some containers such as
+use `x` and a direction. A bash takes a turn, and some containers such as
 barrels or crates may drop supplies when smashed.
 
-Screens generally close with `z`, `q`, `Space`, or `Esc`. The player is
+On the inventory screen lowercase `a`–`g` use slots and uppercase `A`–`G` drop
+them. Uppercase letters do nothing on the map. Screens generally close with
+`i`, `z`, `q`, `Space`, or `Esc`. The player is
 defenceless without a melee weapon; there is no unarmed attack. Flask throwing
 is deferred for now.
 
@@ -111,7 +114,7 @@ grants a second Rite is not implemented yet.
 * blood, corpses and limbs
 * Hands, Head and a permanently worn Robe with three starting slots
 * one-line HUD with HP/AP, the ready weapon and Rite charges; one-line message bar
-* `~` expands the latest eight messages; `e` opens a non-scrolling equipment overlay
+* `~` expands the latest eight messages; `i` opens the non-scrolling inventory/equipment overlay
 * one item maximum per ground tile; dropping onto an occupied tile is refused
 * experience is stored for now; player levels and skill points are removed
 * auto-opening doors, portals, bashing, acid/fire/smoke, rain
