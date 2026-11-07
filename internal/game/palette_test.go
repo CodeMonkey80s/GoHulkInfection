@@ -607,3 +607,21 @@ func TestGroundTilesRenderAsBlankColouredSpace(t *testing.T) {
 		}
 	}
 }
+
+func TestWallsAndWaterUseBrogueLikeGlyphs(t *testing.T) {
+	for _, id := range []int{10, 11, 14, 28, 29, 30, 31, 32, 56} {
+		if got := tileDisplayRune(id, &TileDefs[id]); got != '#' {
+			t.Fatalf("wall tile %d renders %q, want '#'", id, got)
+		}
+	}
+	for _, id := range []int{7, 8, 53} {
+		if got := tileDisplayRune(id, &TileDefs[id]); got != '=' {
+			t.Fatalf("water tile %d renders %q, want '='", id, got)
+		}
+	}
+	for _, id := range []int{2, 9, 13, 20, 25, 26, 27, int(tileDirtRoad), int(tileMud), int(tileBurnedGround)} {
+		if got := tileDisplayRune(id, &TileDefs[id]); got != ' ' {
+			t.Fatalf("ground tile %d renders %q, want blank space", id, got)
+		}
+	}
+}

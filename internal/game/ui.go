@@ -277,10 +277,12 @@ func (u *UI) worldBackgroundColor(role ColorRole, ok bool, fallback uint8, x, y 
 			return pal(fallback)
 		}
 		c := u.applyWoodsAccent(pc.RGB, role, x, y)
-		return ResolveRGB(ShadeRGB(c, 0.40, 0.15), fallback, u.colorMode)
+		return ResolveRGB(ShadeRGB(c, 0.22, 0.15), fallback, u.colorMode)
 	}
 	c := VaryRGB(pc.RGB, u.g.Level, x, y)
 	c = u.applyWoodsAccent(c, role, x, y)
+	// Keep terrain backgrounds very dark so the tile glyphs read clearly.
+	c = ShadeRGB(c, 0.30, 0.12)
 	c = u.applyWarmLight(c, x, y)
 	return ResolveRGB(c, fallback, u.colorMode)
 }
@@ -493,10 +495,7 @@ func (u *UI) drawGame() {
 			if !vis {
 				fg = 8
 			}
-			r := cp437Rune(d.Glyph)
-			if TileIsGround(tileID) {
-				r = ' '
-			}
+			r := tileDisplayRune(tileID, d)
 			if g.Options.Bool("optMapDrawPortals") && (d.Name == "time portal" || d.Name == "stone stairs" || d.Name == "elevator") {
 				fg = 14
 				fgRole, fgRoleOK = RoleGoldRelic, true
@@ -596,6 +595,27 @@ func (u *UI) drawGame() {
 	}
 }
 
+// tileDisplayRune applies the Brogue-style presentation rules: plain ground is
+// blank, walls use '#', and water uses '='.
+func tileDisplayRune(tile int, d *TileDef) rune {
+	if d == nil {
+		return '?'
+	}
+	if TileIsGround(tile) {
+		return ' '
+	}
+	if strings.Contains(strings.ToLower(d.Name), "wall") {
+		return '#'
+	}
+	if role, ok := TileColorRole(tile); ok {
+		switch role {
+		case RoleDeepWater, RoleShallowWater, RoleRiver, RoleMarsh:
+			return '='
+		}
+	}
+	return cp437Rune(d.Glyph)
+}
+
 // CellForHighlight returns the glyph/colour of a world cell for the look/throw
 // cursor.  Unexplored cells are shown as '?'.
 func (g *Game) CellForHighlight(x, y int) (rune, uint8) {
@@ -607,10 +627,7 @@ func (g *Game) CellForHighlight(x, y int) (rune, uint8) {
 		return '?', 8
 	}
 	d := g.Map.Def(x, y)
-	r, fg := cp437Rune(d.Glyph), d.Color
-	if TileIsGround(int(g.Map.Tile(x, y))) {
-		r = ' '
-	}
+	r, fg := tileDisplayRune(int(g.Map.Tile(x, y)), d), d.Color
 	if !g.Map.Visible[i] && !g.Options.Bool("optMapDrawHiddenTiles") {
 		fg = 8
 	}
