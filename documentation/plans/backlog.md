@@ -7,6 +7,17 @@ Scope: follow-up improvements identified after the woods snake redesign. Defer u
 
 Save compatibility is intentionally out of scope. Each iteration only needs to create and load saves produced by that same iteration.
 
+## Recommended sequence
+
+Point 1 is complete: the woods snake redesign was merged in PR #26. The remaining order is:
+
+2. **Playtest the full five-map run** — entry/exit flow, FOV blockers, lanterns, bridges, huts, population and the Meteor Field → caves transition.
+3. **Woods hardening iteration** — generator invariant validation, exhaustive theme × entry/exit matrix tests, end-to-end run test and a CI gate for format/tests/race/vet/build.
+4. **Woods polish iteration** — theme-specific signature loot, difficulty curve, theme atmosphere, map name/exit-direction cues and remaining modal-screen tests.
+5. **Next major feature selection** — choose from the roadmap only after the woods run is stable. Keep HUD depth and poisonous-food confirmation as smaller deferred extras.
+
+The individual work items below are grouped by area; the sequence above is the intended order.
+
 ## Gameplay and generation
 
 - [ ] **Generator invariant validation** — after generation, verify the sealed border, exactly one entry/exit, connected roads, reachable portal, one landmark, no void tiles and valid bridges.
@@ -29,4 +40,4 @@ Save compatibility is intentionally out of scope. Each iteration only needs to c
 - [x] **Code cleanup** — remove leftover nine-level woods helpers, unused `ExitMode`, and obsolete water-generation paths if no longer used.
 - [ ] **CI gate** — add GitHub Actions running format checks, tests, race tests, vet and build on every PR.
 - [x] **Docs cleanup** — fix remaining historical 80×46 and nine-level references where they could confuse current behaviour.
-- [ ] **Playtest pass** — verify lanterns, doors, fences, bridges and FOV blockers behave sensibly in actual play.
+- [ ] **Playtest the full five-map run** — verify entry/exit flow, FOV blockers, lanterns, bridges, huts, population and the Meteor Field → caves transition in actual play.
