@@ -2,6 +2,10 @@
 
 Status: **done**
 
+The five-class roster and its starting kits are superseded by the
+[Priest player revamp](priest-player-revamp.md). The intro, HUD, viewport and
+control work remains valid.
+
 Implementation status: complete. Classes, starting kits, intro, title screen,
 one-line HUD, look-description colours and the 80×46 viewport are implemented.
 Parent: [Feature plans](../README.md)

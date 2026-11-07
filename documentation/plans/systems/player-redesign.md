@@ -14,6 +14,10 @@ The belt-start and HUD details below are superseded by
 will start with two belt slots and the permanent HUD becomes one line showing
 only HP, AP and the weapon name.
 
+The class roster and STR/TGH/AGI/INT system are superseded by the
+[Priest player revamp](priest-player-revamp.md). The five-slot equipment model
+and minimal HUD remain.
+
 This plan redesigns the player around a small, tactical set of ADOM-style
 equipment slots. It assumes the melee-only command scope from the current
 feature branch: no ranged weapons, no ammo, no unarmed attack, no tactics.
