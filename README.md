@@ -90,7 +90,8 @@ and 6.
   zombie conversion and edge/centre/landmark exits
 * 24-bit woods palette with per-level accents, warm light, deterministic tile
   variation, true-colour UI panels and 16-colour DOS fallback
-* turn/energy based critters with zombie, observer and animal AI
+* turn/energy based critters with faction-aware cardinal A* pathfinding,
+  zombie, observer and animal AI
 * melee combat with recovered weapon AV/DV and damage values
 * throwing is deferred; HE grenade and molotov data are retained for a future pass
 * recovered weapon table (attack/defense value and damage range per subtype)

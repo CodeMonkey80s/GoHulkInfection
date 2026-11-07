@@ -1,8 +1,30 @@
 package game
 
-import "fmt"
+import (
+	"container/heap"
+	"fmt"
+)
 
 type point struct{ x, y int }
+
+type pathNode struct {
+	x, y int
+	f    int
+}
+
+type pathHeap []pathNode
+
+func (h pathHeap) Len() int            { return len(h) }
+func (h pathHeap) Less(i, j int) bool  { return h[i].f < h[j].f }
+func (h pathHeap) Swap(i, j int)       { h[i], h[j] = h[j], h[i] }
+func (h *pathHeap) Push(x interface{}) { *h = append(*h, x.(pathNode)) }
+func (h *pathHeap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	it := old[n-1]
+	*h = old[:n-1]
+	return it
+}
 
 var dirs4 = [][2]int{{0, -1}, {1, 0}, {0, 1}, {-1, 0}}
 
@@ -27,6 +49,16 @@ func (g *Game) UpdateMonsters() {
 }
 
 func (g *Game) MonsterTurn(c *Critter) {
+	if c.X == c.LastX && c.Y == c.LastY {
+		c.Stuck++
+	} else {
+		c.Stuck = 0
+	}
+	c.LastX, c.LastY = c.X, c.Y
+	if c.Stuck >= 3 {
+		c.Path = nil
+		c.Stuck = 0
+	}
 	switch c.AI {
 	case AIObserver:
 		p := g.Player
@@ -212,43 +244,94 @@ func (g *Game) observerTurn(c *Critter, canSee bool, dist int) {
 
 func (g *Game) stepToward(c *Critter, tx, ty int) {
 	if c.X == tx && c.Y == ty {
+		c.Path = nil
 		return
 	}
-	nx, ny, ok := g.findStep(c, tx, ty)
-	if !ok {
+	if c.Stuck >= 2 {
+		c.Path = nil
+		if g.trySidestep(c, tx, ty) {
+			c.Stuck = 0
+			return
+		}
+	}
+	path := g.pathFor(c, tx, ty)
+	if len(path) == 0 {
 		g.wander(c)
 		return
 	}
-	if other := g.CritterAt(nx, ny); other != nil && other != c {
+	next := path[0]
+	if other := g.CritterAt(next.x, next.y); other != nil && other != c {
 		if g.areHostile(c, other) {
 			g.MonsterAttack(c, other)
+			return
+		}
+		c.Path = nil
+		if !g.trySidestep(c, tx, ty) {
+			g.wander(c)
 		}
 		return
 	}
-	if g.Map.BlocksMove(nx, ny) {
-		// Try to open a door.
-		d := g.Map.Def(nx, ny)
+	if g.Map.BlocksMove(next.x, next.y) {
+		d := g.Map.Def(next.x, next.y)
 		if d.Type == 3 {
-			g.OpenDoor(nx, ny)
+			g.OpenDoor(next.x, next.y)
+			return
 		}
+		c.Path = nil
+		g.wander(c)
 		return
 	}
-	c.X, c.Y = nx, ny
+	c.X, c.Y = next.x, next.y
+	c.Path = path[1:]
 	g.applyMonsterTile(c)
+}
+
+func (g *Game) trySidestep(c *Critter, tx, ty int) bool {
+	bestX, bestY := c.X, c.Y
+	bestD := manhattan(c.X, c.Y, tx, ty)
+	fallbackX, fallbackY := c.X, c.Y
+	for _, d := range dirs4 {
+		nx, ny := c.X+d[0], c.Y+d[1]
+		if !g.Map.IsPassable(nx, ny) || g.CritterAt(nx, ny) != nil {
+			continue
+		}
+		idx := g.Map.idx(nx, ny)
+		if g.Map.Fire[idx] > 0 || g.Map.Acid[idx] > 0 {
+			continue
+		}
+		if fallbackX == c.X && fallbackY == c.Y {
+			fallbackX, fallbackY = nx, ny
+		}
+		nd := manhattan(nx, ny, tx, ty)
+		if nd < bestD {
+			bestD = nd
+			bestX, bestY = nx, ny
+		}
+	}
+	if bestX == c.X && bestY == c.Y {
+		bestX, bestY = fallbackX, fallbackY
+	}
+	if bestX == c.X && bestY == c.Y {
+		return false
+	}
+	c.X, c.Y = bestX, bestY
+	g.applyMonsterTile(c)
+	return true
 }
 
 func (g *Game) stepAway(c *Critter, fx, fy int) bool {
 	bestX, bestY := c.X, c.Y
-	bestD := chebyshev(c.X, c.Y, fx, fy)
+	bestD := manhattan(c.X, c.Y, fx, fy)
 	for _, d := range dirs4 {
 		nx, ny := c.X+d[0], c.Y+d[1]
-		if !g.Map.IsPassable(nx, ny) {
+		if !g.Map.IsPassable(nx, ny) || g.CritterAt(nx, ny) != nil {
 			continue
 		}
-		if g.CritterAt(nx, ny) != nil {
+		idx := g.Map.idx(nx, ny)
+		if g.Map.Fire[idx] > 0 || g.Map.Acid[idx] > 0 {
 			continue
 		}
-		nd := chebyshev(nx, ny, fx, fy)
+		nd := manhattan(nx, ny, fx, fy)
 		if nd > bestD {
 			bestD = nd
 			bestX, bestY = nx, ny
@@ -264,11 +347,153 @@ func (g *Game) wander(c *Critter) {
 	for i := 0; i < 4; i++ {
 		d := dirs4[g.Roll(len(dirs4))]
 		nx, ny := c.X+d[0], c.Y+d[1]
-		if g.Map.IsPassable(nx, ny) && g.CritterAt(nx, ny) == nil {
-			c.X, c.Y = nx, ny
-			g.applyMonsterTile(c)
-			return
+		if !g.Map.IsPassable(nx, ny) || g.CritterAt(nx, ny) != nil {
+			continue
 		}
+		idx := g.Map.idx(nx, ny)
+		if g.Map.Fire[idx] > 0 || g.Map.Acid[idx] > 0 {
+			continue
+		}
+		c.X, c.Y = nx, ny
+		g.applyMonsterTile(c)
+		return
+	}
+}
+
+func (g *Game) pathFor(c *Critter, tx, ty int) []point {
+	if len(c.Path) > 0 && c.PathTargetX == tx && c.PathTargetY == ty && g.Turn <= c.PathExpires {
+		return c.Path
+	}
+	path := g.findPath(c, tx, ty)
+	c.Path = path
+	c.PathTargetX, c.PathTargetY = tx, ty
+	c.PathExpires = g.Turn + 3
+	return path
+}
+
+func manhattan(x0, y0, x1, y1 int) int {
+	return abs(x1-x0) + abs(y1-y0)
+}
+
+// findStep returns the first cardinal step of an A* path to (tx,ty).
+func (g *Game) findStep(c *Critter, tx, ty int) (int, int, bool) {
+	path := g.findPath(c, tx, ty)
+	if len(path) == 0 {
+		return 0, 0, false
+	}
+	return path[0].x, path[0].y, true
+}
+
+// findPath runs four-way A* and returns the path excluding the start tile.
+func (g *Game) findPath(c *Critter, tx, ty int) []point {
+	if !g.Map.InBounds(tx, ty) {
+		return nil
+	}
+	const inf = 1 << 30
+	const maxExpansions = 4096
+	w, h := g.Map.W, g.Map.H
+	n := w * h
+	start := c.Y*w + c.X
+	goal := ty*w + tx
+	if start == goal {
+		return nil
+	}
+	gScore := make([]int, n)
+	closed := make([]bool, n)
+	prev := make([]int, n)
+	for i := range gScore {
+		gScore[i] = inf
+		prev[i] = -1
+	}
+	gScore[start] = 0
+	open := &pathHeap{{x: c.X, y: c.Y, f: manhattan(c.X, c.Y, tx, ty)}}
+	heap.Init(open)
+	expansions := 0
+	for open.Len() > 0 && expansions < maxExpansions {
+		cur := heap.Pop(open).(pathNode)
+		ci := cur.y*w + cur.x
+		if closed[ci] {
+			continue
+		}
+		closed[ci] = true
+		if ci == goal {
+			break
+		}
+		expansions++
+		for _, d := range dirs4 {
+			nx, ny := cur.x+d[0], cur.y+d[1]
+			if nx < 0 || ny < 0 || nx >= w || ny >= h {
+				continue
+			}
+			ni := ny*w + nx
+			if closed[ni] {
+				continue
+			}
+			step, ok := g.pathStepCost(c, nx, ny, tx, ty)
+			if !ok {
+				continue
+			}
+			tentative := gScore[ci] + step
+			if tentative < gScore[ni] {
+				prev[ni] = ci
+				gScore[ni] = tentative
+				heap.Push(open, pathNode{x: nx, y: ny, f: tentative + manhattan(nx, ny, tx, ty)})
+			}
+		}
+	}
+	if prev[goal] == -1 {
+		return nil
+	}
+	var rev []point
+	for at := goal; at != start; at = prev[at] {
+		if at < 0 {
+			return nil
+		}
+		rev = append(rev, point{x: at % w, y: at / w})
+	}
+	path := make([]point, len(rev))
+	for i := range rev {
+		path[i] = rev[len(rev)-1-i]
+	}
+	return path
+}
+
+func (g *Game) pathStepCost(c *Critter, nx, ny, tx, ty int) (int, bool) {
+	if !g.Map.InBounds(nx, ny) {
+		return 0, false
+	}
+	if nx == tx && ny == ty {
+		return 1, true
+	}
+	t := g.Map.Tile(nx, ny)
+	d := g.Map.Def(nx, ny)
+	if d.BlockMove {
+		if d.Type == 3 {
+			return 3, true
+		}
+		return 0, false
+	}
+	if t == tileDeepWater {
+		return 0, false
+	}
+	idx := g.Map.idx(nx, ny)
+	if g.Map.Fire[idx] > 0 || g.Map.Acid[idx] > 0 || g.Map.Smoke[idx] > 0 {
+		return 20, true
+	}
+	if t == tileShallowWater || t == tileLilyPad {
+		return 8, true
+	}
+	if t == tileRiverBank {
+		return 2, true
+	}
+	if other := g.CritterAt(nx, ny); other != nil && other != c {
+		return 40, true
+	}
+	switch t {
+	case tileBush, tileReeds:
+		return 2, true
+	default:
+		return 1, true
 	}
 }
 
@@ -283,66 +508,6 @@ func (g *Game) applyMonsterTile(c *Critter) {
 	if g.Map.Acid[i] > 0 {
 		g.DamageCritter(c, 12, nil, 2)
 	}
-}
-
-// findStep does a breadth-first search and returns the first step from c to (tx,ty).
-func (g *Game) findStep(c *Critter, tx, ty int) (int, int, bool) {
-	if !g.Map.InBounds(tx, ty) {
-		return 0, 0, false
-	}
-	w, h := g.Map.W, g.Map.H
-	visited := make([]bool, w*h)
-	prev := make([]int, w*h)
-	for i := range prev {
-		prev[i] = -1
-	}
-	start := c.Y*w + c.X
-	goal := ty*w + tx
-	q := []int{start}
-	visited[start] = true
-	head := 0
-	for head < len(q) {
-		cur := q[head]
-		head++
-		if cur == goal {
-			break
-		}
-		cx, cy := cur%w, cur/w
-		for _, d := range dirs4 {
-			nx, ny := cx+d[0], cy+d[1]
-			if nx < 0 || ny < 0 || nx >= w || ny >= h {
-				continue
-			}
-			ni := ny*w + nx
-			if visited[ni] {
-				continue
-			}
-			blocked := g.Map.BlocksMove(nx, ny)
-			isDoor := g.Map.Def(nx, ny).Type == 3
-			if blocked && !isDoor {
-				continue
-			}
-			if other := g.CritterAt(nx, ny); other != nil && other != c {
-				if nx != tx || ny != ty {
-					continue
-				}
-			}
-			visited[ni] = true
-			prev[ni] = cur
-			q = append(q, ni)
-		}
-	}
-	if !visited[goal] {
-		return 0, 0, false
-	}
-	cur := goal
-	for prev[cur] != start {
-		if prev[cur] < 0 {
-			return 0, 0, false
-		}
-		cur = prev[cur]
-	}
-	return cur % w, cur / w, true
 }
 
 func (g *Game) OpenDoor(x, y int) {
