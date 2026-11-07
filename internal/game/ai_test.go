@@ -112,6 +112,41 @@ func TestAIAnimalThreatRequiresLineOfSight(t *testing.T) {
 	}
 }
 
+func TestMonstersDoNotAttackDiagonally(t *testing.T) {
+	g := NewGame(7306)
+	g.SetupNewGame(0, "tester")
+	g.Critters = nil
+	g.State = StatePlaying
+	clearAround(g, g.Player.X, g.Player.Y, 4)
+	zombie := g.SpawnCritter(0, g.Player.X+1, g.Player.Y+1)
+	hp := g.Player.HP
+	for i := 0; i < 3; i++ {
+		zombie.X, zombie.Y = g.Player.X+1, g.Player.Y+1
+		g.MonsterTurn(zombie)
+	}
+	if g.Player.HP != hp {
+		t.Fatalf("monster attacked diagonally: HP %d -> %d", hp, g.Player.HP)
+	}
+}
+
+func TestPlayerDoesNotAttackDiagonally(t *testing.T) {
+	g := NewGame(7307)
+	g.SetupNewGame(0, "tester")
+	g.Critters = nil
+	g.State = StatePlaying
+	clearAround(g, g.Player.X, g.Player.Y, 4)
+	target := g.SpawnCritter(0, g.Player.X+1, g.Player.Y+1)
+	hp := target.HP
+	g.PlayerDirectionalAttack(1, 1)
+	if target.HP != hp {
+		t.Fatal("player attacked diagonally")
+	}
+	g.PlayerMelee(target)
+	if target.HP != hp {
+		t.Fatal("PlayerMelee allowed a diagonal attack")
+	}
+}
+
 func TestObserverUsesLineOfSight(t *testing.T) {
 	g := NewGame(7305)
 	g.SetupNewGame(0, "tester")

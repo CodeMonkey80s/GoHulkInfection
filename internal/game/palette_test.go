@@ -319,8 +319,8 @@ func TestDrawGameUsesTrueColourBackground(t *testing.T) {
 				t.Fatalf("true-colour map background is not RGB: %v", bg)
 			}
 			r, g, b := bg.RGB()
-			if r > 16 || g > 16 || b > 16 {
-				t.Fatalf("map background is not near-black: %v", bg)
+			if r+g+b < 30 {
+				t.Fatalf("map tile background is still near-black: %v", bg)
 			}
 			break
 		}
@@ -542,6 +542,68 @@ func TestDrawGameUsesPalette(t *testing.T) {
 		s.Fini()
 		if !found {
 			t.Fatalf("player glyph not drawn in %s mode", mode)
+		}
+	}
+}
+
+func TestEveryTileHasABackground(t *testing.T) {
+	for id := 0; id < len(TileDefs); id++ {
+		role, ok := TileBackgroundRole(id)
+		if !ok || role == "" {
+			t.Fatalf("tile %d has no background role", id)
+		}
+	}
+	for _, id := range []int{2, 9, 13, 20, 25, 26, 27, int(tileDirtRoad), int(tileMud), int(tileBurnedGround), int(tileRiverBank)} {
+		role, _ := TileBackgroundRole(id)
+		if role == RoleMapBackground {
+			t.Fatalf("ground/floor tile %d still uses the void background", id)
+		}
+		if !TileIsGround(id) {
+			t.Fatalf("tile %d should render as ground", id)
+		}
+	}
+}
+
+func TestGroundTilesRenderAsBlankColouredSpace(t *testing.T) {
+	g := NewGame(16500)
+	g.SetupNewGame(0, "tester")
+	g.Map = NewMap(20, 12)
+	g.Theme = 0
+	g.Critters = nil
+	g.Items = nil
+	for i := range g.Map.Tiles {
+		g.Map.Tiles[i] = 2
+	}
+	g.Player.X, g.Player.Y = 1, 1
+	ground := []struct {
+		x, y int
+		tile uint8
+	}{
+		{5, 5, 2},
+		{6, 5, 9},
+		{7, 5, 13},
+		{8, 5, 20},
+		{9, 5, tileDirtRoad},
+		{10, 5, tileMud},
+		{11, 5, tileBurnedGround},
+	}
+	for _, tc := range ground {
+		g.Map.SetTile(tc.x, tc.y, tc.tile)
+	}
+	g.UpdateFOV()
+	u, s := newTestUI(g, ColorModeTrueColor)
+	defer s.Fini()
+	u.drawGame()
+	s.Show()
+	cells, w, _ := s.GetContents()
+	for _, tc := range ground {
+		cell := cells[(tc.y+1)*w+tc.x]
+		if len(cell.Runes) > 0 && cell.Runes[0] != ' ' {
+			t.Fatalf("ground tile %d rendered glyph %q, want blank space", tc.tile, cell.Runes[0])
+		}
+		_, bg, _ := cell.Style.Decompose()
+		if !bg.IsRGB() {
+			t.Fatalf("ground tile %d background is not RGB: %v", tc.tile, bg)
 		}
 	}
 }

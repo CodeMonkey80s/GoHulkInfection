@@ -479,3 +479,11 @@ func (g *Game) SaveAndQuit() {
 	g.Msg("game saved.", 10)
 	g.Quit = true
 }
+
+// DeleteSave removes the current save, used when the run is over.
+func (g *Game) DeleteSave() {
+	if g == nil || g.SavePath == "" {
+		return
+	}
+	_ = os.Remove(g.SavePath)
+}

@@ -11,8 +11,9 @@ func chebyshev(x0, y0, x1, y1 int) int {
 	return dy
 }
 
+// isAdjacent is cardinal only; diagonal attacks are not allowed.
 func isAdjacent(a, b *Critter) bool {
-	return a != nil && b != nil && chebyshev(a.X, a.Y, b.X, b.Y) <= 1 && !(a.X == b.X && a.Y == b.Y)
+	return a != nil && b != nil && manhattan(a.X, a.Y, b.X, b.Y) == 1
 }
 
 func (c *Critter) CurrentWeapon() *Item {
@@ -120,6 +121,10 @@ func (g *Game) PlayerDirectionalAttack(dx, dy int) {
 		g.Msg("choose a direction to attack.", 8)
 		return
 	}
+	if abs(dx)+abs(dy) != 1 {
+		g.Msg("attacks are cardinal only.", 8)
+		return
+	}
 	c := g.CritterAt(p.X+dx, p.Y+dy)
 	if c == nil || !c.IsAlive() {
 		g.Msg("there is nothing to attack in that direction.", 8)
@@ -133,6 +138,10 @@ func (g *Game) PlayerMelee(target *Critter) {
 	weapon := p.HandItem()
 	if weapon == nil {
 		g.Msg("you are defenceless without a weapon.", 12)
+		return
+	}
+	if !isAdjacent(p, target) {
+		g.Msg("attacks are cardinal only.", 8)
 		return
 	}
 	chance := g.HitChance(p, target, 1)
@@ -281,6 +290,7 @@ func (g *Game) KillCritter(target, killer *Critter) {
 	if target.Player {
 		g.Msg("you died.", 12)
 		g.Msg("=== session ended ===", 7)
+		g.DeleteSave()
 		g.State = StateGameOver
 		return
 	}

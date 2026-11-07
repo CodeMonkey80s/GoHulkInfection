@@ -84,6 +84,23 @@ func TestSaveLoadRoundtrip(t *testing.T) {
 	}
 }
 
+func TestDeathDeletesSave(t *testing.T) {
+	g := NewGame(35)
+	g.SetupNewGame(0, "tester")
+	path := filepath.Join(t.TempDir(), "death.json")
+	g.SavePath = path
+	if err := g.SaveGame(path); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(path); err != nil {
+		t.Fatal("save was not created")
+	}
+	g.DamageCritter(g.Player, 9999, nil, 0)
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Fatalf("save still exists after death: %v", err)
+	}
+}
+
 func TestChangeLevelRelative(t *testing.T) {
 	g := NewGame(9)
 	g.SetupNewGame(0, "tester")
