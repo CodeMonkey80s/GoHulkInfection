@@ -105,11 +105,11 @@ func (g *Game) zombieTurn(c *Critter) {
 	if c.Align == AlignEnemy && c.IsAnimal {
 		radius = 8
 	}
-	target, dist := g.nearestHostile(c, radius)
+	target, _ := g.nearestHostile(c, radius)
 	if target != nil {
 		c.LastSeenX, c.LastSeenY = target.X, target.Y
 		c.Alert = 8
-		if dist <= 1 {
+		if isAdjacent(c, target) {
 			g.MonsterAttack(c, target)
 			return
 		}
@@ -153,7 +153,7 @@ func (g *Game) villagerTurn(c *Critter) {
 		return
 	}
 	armed := c.HandItem() != nil
-	if dist <= 1 {
+	if isAdjacent(c, enemy) {
 		if armed {
 			g.MonsterAttack(c, enemy)
 			return
@@ -264,7 +264,7 @@ func (g *Game) observerTurn(c *Critter, canSee bool, dist int) {
 		}
 		return
 	}
-	if dist <= 1 {
+	if isAdjacent(c, g.Player) {
 		g.MonsterAttack(c, g.Player)
 		return
 	}

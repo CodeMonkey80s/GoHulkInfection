@@ -53,9 +53,10 @@ The player-facing command set is intentionally melee-focused.
 | `Space` | close a modal screen without taking an action |
 | `Q` | quit |
 
-Walking into a monster attacks it. Bashing is intentional: use `f` and a
-direction. A bash takes a turn, and some containers such as barrels or crates
-may drop supplies when smashed.
+Walking into a monster attacks it. Player and monster movement and attacks are
+cardinal only (`hjkl`); there are no diagonal attacks. Bashing is intentional:
+use `f` and a direction. A bash takes a turn, and some containers such as
+barrels or crates may drop supplies when smashed.
 
 Screens generally close with `z`, `q`, `Space`, or `Esc`. The player is
 defenceless without a melee weapon; there is no unarmed attack. Flask throwing
@@ -116,7 +117,7 @@ grants a second Rite is not implemented yet.
 * auto-opening doors, portals, bashing, acid/fire/smoke, rain
 * options screen wired to the gameplay (AI, doors, god/ghost mode, …)
 * JSON save/load for the current development format; older saves may break
-  between iterations
+  between iterations, and the save is removed when the priest dies
 
 ## Fidelity notes
 

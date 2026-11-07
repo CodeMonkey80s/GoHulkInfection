@@ -1,5 +1,7 @@
 package game
 
+import "strings"
+
 // TileColorRole returns the woods palette role for a recovered tile ID.
 // Tiles that belong to other themes still get a role so they can be recoloured
 // consistently if they are reused by the woods generator later.
@@ -193,4 +195,85 @@ func CritterColorRole(proto int) (ColorRole, bool) {
 		return RolePlayer, true
 	}
 	return "", false
+}
+
+// TileBackgroundRole returns a dark theme colour for the tile background.
+// Every tile receives a background so the map reads as coloured terrain rather
+// than glyphs on black.
+func TileBackgroundRole(tile int) (ColorRole, bool) {
+	if tile <= 1 {
+		return RoleMapBackground, true
+	}
+	role, ok := TileColorRole(tile)
+	if !ok {
+		return RoleMapBackground, true
+	}
+	return backgroundRoleFor(role), true
+}
+
+func backgroundRoleFor(role ColorRole) ColorRole {
+	switch role {
+	case RoleGrassBase, RoleGrassLight, RoleGrassDark, RoleLeafLitter,
+		RoleBush, RoleBramble, RoleThorn, RoleOrchardLeaf,
+		RoleFlowerGold, RoleFlowerPink, RoleFlowerPale,
+		RoleCanopyMid, RoleCanopyLight, RolePineCanopy:
+		return RoleGrassDark
+	case RoleStump, RoleDeadTree, RoleMud, RoleDirtRoad, RoleRoadLight, RoleReeds:
+		return RoleMud
+	case RoleMarsh:
+		return RoleMarsh
+	case RoleDeepWater:
+		return RoleDeepWater
+	case RoleRiver:
+		return RoleRiver
+	case RoleShallowWater, RoleFoam, RoleFrog:
+		return RoleShallowWater
+	case RoleBridgeWood, RoleBridgeRope, RoleWoodWallDark, RoleWoodWall, RoleWoodLight,
+		RoleRoof, RoleDoor, RoleWindowFrame, RoleWarmWindowGlass, RoleFence,
+		RoleFurniture, RoleThatch, RoleHay, RolePlasterWall, RoleFadedPaint,
+		RoleMarketCloth, RoleCloth:
+		return RoleWoodWallDark
+	case RoleStoneWall, RoleStoneLight, RoleRock, RoleRockLight, RoleAltarStone,
+		RoleGravestone, RoleBone, RoleCrypt, RoleIronFence, RoleIronDark,
+		RoleSilver, RoleSteel:
+		return RoleStoneWall
+	case RoleGraveDirt, RoleGraveFog:
+		return RoleGraveDirt
+	case RoleGoldRelic, RoleCandle, RoleLanternMetal, RoleLanternGlow,
+		RoleFirelight, RoleFlame, RoleFlameCore:
+		return RoleMud
+	case RoleFreshBlood, RoleDarkBlood, RoleDriedBlood, RoleBloodGrass,
+		RoleGuts, RoleRottenFlesh, RoleZombieSkin, RoleZombieShadow, RoleBoneTeeth:
+		return RoleDarkBlood
+	case RolePoison, RoleAcid, RoleAcidDark:
+		return RoleCharcoal
+	case RoleSmoke, RoleAsh, RoleCharcoal:
+		return RoleCharcoal
+	}
+	name := string(role)
+	switch {
+	case strings.HasPrefix(name, "terrain."):
+		return RoleMud
+	case strings.HasPrefix(name, "vegetation."):
+		return RoleGrassDark
+	case strings.HasPrefix(name, "water."):
+		return RoleShallowWater
+	case strings.HasPrefix(name, "structure."):
+		return RoleStoneWall
+	case strings.HasPrefix(name, "light."):
+		return RoleMud
+	default:
+		return RoleMapBackground
+	}
+}
+
+// TileIsGround reports whether a tile is plain ground/floor and should render
+// as a coloured space without a glyph.
+func TileIsGround(tile int) bool {
+	switch tile {
+	case 2, 9, 13, 20, 25, 26, 27,
+		int(tileDirtRoad), int(tileMud), int(tileBurnedGround), int(tileRiverBank):
+		return true
+	}
+	return false
 }

@@ -265,7 +265,7 @@ func (u *UI) worldColor(role ColorRole, ok bool, fallback uint8, x, y int, visib
 // worldBackgroundColor resolves a background colour. It keeps the supplied
 // fallback index instead of the remembered-tile grey used for glyphs.
 func (u *UI) worldBackgroundColor(role ColorRole, ok bool, fallback uint8, x, y int, visible bool) tcell.Color {
-	if !ok || !u.woodsColorsActive() {
+	if !ok {
 		return pal(fallback)
 	}
 	pc, found := WoodsPalette.Lookup(role)
@@ -483,9 +483,10 @@ func (u *UI) drawGame() {
 				u.putTcell(sx, sy+1, ' ', mapBG, mapBG)
 				continue
 			}
+			tileID := int(g.Map.Tile(mx, my))
 			d := g.Map.Def(mx, my)
 			vis := g.Map.Visible[i] || g.Options.Bool("optMapDrawHiddenTiles")
-			tileRole, tileRoleOK := TileColorRole(int(g.Map.Tile(mx, my)))
+			tileRole, tileRoleOK := TileColorRole(tileID)
 			fg := d.Color
 			fgRole, fgRoleOK := tileRole, tileRoleOK
 			fgVisible := vis
@@ -493,21 +494,24 @@ func (u *UI) drawGame() {
 				fg = 8
 			}
 			r := cp437Rune(d.Glyph)
+			if TileIsGround(tileID) {
+				r = ' '
+			}
 			if g.Options.Bool("optMapDrawPortals") && (d.Name == "time portal" || d.Name == "stone stairs" || d.Name == "elevator") {
 				fg = 14
 				fgRole, fgRoleOK = RoleGoldRelic, true
 				fgVisible = true
 			}
-			bg := uint8(0)
-			bgRole, bgRoleOK := RoleMapBackground, true
+			bgRole, bgRoleOK := TileBackgroundRole(tileID)
+			bg := d.Color
+			if pc, found := WoodsPalette.Lookup(bgRole); found {
+				bg = pc.Fallback
+			}
 			blooded := g.Map.Blood[i] > 0 && d.Type == 1
 			if blooded {
-				bg = 4 // DOS red background
-				if !vis {
-					bg = 0
-					bgRole, bgRoleOK = RoleMapBackground, true
-				} else {
-					bgRole, bgRoleOK = RoleDarkBlood, true
+				bgRole, bgRoleOK = RoleDarkBlood, true
+				if pc, found := WoodsPalette.Lookup(bgRole); found {
+					bg = pc.Fallback
 				}
 			}
 			if g.Map.Fire[i] > 0 {
@@ -604,6 +608,9 @@ func (g *Game) CellForHighlight(x, y int) (rune, uint8) {
 	}
 	d := g.Map.Def(x, y)
 	r, fg := cp437Rune(d.Glyph), d.Color
+	if TileIsGround(int(g.Map.Tile(x, y))) {
+		r = ' '
+	}
 	if !g.Map.Visible[i] && !g.Options.Bool("optMapDrawHiddenTiles") {
 		fg = 8
 	}

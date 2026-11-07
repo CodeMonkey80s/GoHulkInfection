@@ -31,6 +31,7 @@ func (g *Game) EndPlayerTurn() {
 	g.decayTileEffects()
 	g.UpdateFOV()
 	if !g.Player.IsAlive() {
+		g.DeleteSave()
 		g.State = StateGameOver
 	}
 }
