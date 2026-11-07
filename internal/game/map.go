@@ -857,19 +857,12 @@ func (g *Game) UpdateFOV() {
 		return
 	}
 	if g.Theme == 0 {
-		g.Map.RevealAll()
+		// Woods FOV has no radius limit; dense trees, walls, closed doors and
+		// other sight-blocking tiles still occlude the view.
+		g.Map.FOV(g.Player.X, g.Player.Y, g.Map.W+g.Map.H)
 		return
 	}
 	g.Map.FOV(g.Player.X, g.Player.Y, g.FOVRadius())
-}
-
-// RevealAll marks the whole compact woods map visible. The map edge is the
-// only visibility limit; light sources still cast local warm pools.
-func (m *Map) RevealAll() {
-	for i := range m.Visible {
-		m.Visible[i] = true
-		m.Seen[i] = true
-	}
 }
 
 func (g *Game) TileDescription(x, y int) string {

@@ -5,17 +5,55 @@ import (
 	"testing"
 )
 
-func TestWoodsFOVCoversWholeMap(t *testing.T) {
-	for level := 0; level < numWoodsMaps; level++ {
-		g := NewGame(int64(12000 + level))
-		g.SetupNewGame(0, "tester")
-		g.GenerateLevel(level)
-		g.UpdateFOV()
-		for i := range g.Map.Visible {
-			if !g.Map.Visible[i] || !g.Map.Seen[i] {
-				t.Fatalf("level %d tile %d is not visible/seen under unlimited woods FOV", level, i)
+func TestWoodsFOVHasUnlimitedRadiusButBlockersOcclude(t *testing.T) {
+	blockers := []struct {
+		name string
+		tile uint8
+	}{
+		{"dense tree", tileDenseTree},
+		{"bramble", tileBramble},
+		{"bush", tileBush},
+		{"stone wall", 10},
+		{"closed wooden door", tileWoodenDoor},
+	}
+	for _, tc := range blockers {
+		t.Run(tc.name, func(t *testing.T) {
+			g := NewGame(12000)
+			g.SetupNewGame(0, "tester")
+			g.Map = NewMap(mapWidth, woodsMapHeight)
+			g.Theme = 0
+			for i := range g.Map.Tiles {
+				g.Map.Tiles[i] = 2
 			}
-		}
+			g.Player.X, g.Player.Y = 10, 11
+			g.Map.SetTile(25, 11, tc.tile)
+			g.UpdateFOV()
+			if !g.Map.Visible[g.Map.idx(24, 11)] {
+				t.Fatalf("tile before %s is not visible", tc.name)
+			}
+			if g.Map.Visible[g.Map.idx(26, 11)] {
+				t.Fatalf("woods FOV sees straight through %s", tc.name)
+			}
+		})
+	}
+
+	// The radius is unlimited: a distant tile with clear line of sight is
+	// visible even though the map is much wider than the normal FOV radius.
+	g := NewGame(12001)
+	g.SetupNewGame(0, "tester")
+	g.Map = NewMap(mapWidth, woodsMapHeight)
+	g.Theme = 0
+	for i := range g.Map.Tiles {
+		g.Map.Tiles[i] = 2
+	}
+	g.Player.X, g.Player.Y = 10, 11
+	g.Map.SetTile(25, 11, tileDenseTree)
+	g.UpdateFOV()
+	if !g.Map.Visible[g.Map.idx(79, 2)] {
+		t.Fatal("unlimited woods FOV was culled by a radius limit")
+	}
+	if g.Map.Visible[g.Map.idx(79, 11)] {
+		t.Fatal("woods FOV sees through a dense tree")
 	}
 }
 

@@ -13,8 +13,9 @@ build file lives here.
 ## Current focus
 
 **Woods minimalist snake redesign complete.** The woods run is now five themed
-80×23 maps with a random snake route, unlimited in-map FOV and compact content
-budgets. Caves, temple and time-portal work remains postponed.
+80×23 maps with a random snake route, unlimited-radius FOV with line-of-sight
+blockers and compact content budgets. Caves, temple and time-portal work remains
+postponed.
 
 - [Woods level revamp](plans/woods/level-revamp.md) — generator, landmarks, huts, roads, loot, factions and AI (reused by the five-map run)
 - [Woods colour palette](plans/woods/color-palette.md) — true-colour palette, accents, lighting and UI

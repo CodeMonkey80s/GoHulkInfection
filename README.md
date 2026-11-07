@@ -69,7 +69,7 @@ and 6.
 ## Screens
 
 * title, intro story, class selection
-* compact 80×23 woods map view with unlimited in-map FOV and remembered terrain
+* compact 80×23 woods map view with unlimited-radius FOV, line-of-sight blockers and remembered terrain
 * message log and message-buffer screen
 * inventory, equipment and ground-item screen with item data
 * character sheet, skill-level screen, options screen, key-binding screen
@@ -89,9 +89,10 @@ and 6.
   explored maps no longer contain void holes
 * portals are placed on reachable tiles and the starting room is connected to
   the main corridor grid
-* unlimited woods FOV (the 80×23 map edge is the only limit), with local warm
-  light pools around lanterns, fires and meteor rocks; section maps keep
-  recursive shadow-casting FOV (the algorithm credited in `contributors.txt`)
+* unlimited-radius woods FOV with line-of-sight occlusion by dense trees,
+  walls and closed doors, plus local warm light pools around lanterns, fires and
+  meteor rocks; section maps keep recursive shadow-casting FOV (the algorithm
+  credited in `contributors.txt`)
 * four level themes: woods, caves, temple of the underminer, time portal
 * woods maps use outdoor terrain with compact props, a central themed landmark,
   road-facing huts, ponds/rivers, bridges, signature loot, villagers, animals

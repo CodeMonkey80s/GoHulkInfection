@@ -11,9 +11,9 @@ The five-map run replaces the current woods entirely; caves, temple and
 time-portal work is postponed.
 
 Implementation status: the five-map 80×23 run, themed generators, snake
-directions, unlimited woods FOV, compact population/loot budgets, save data and
-render/connectivity tests are implemented. The caves, temple and time-portal
-section generator remains unchanged.
+directions, unlimited-radius woods FOV with sight-blocking terrain, compact
+population/loot budgets, save data and render/connectivity tests are implemented.
+The caves, temple and time-portal section generator remains unchanged.
 
 ---
 
@@ -187,9 +187,12 @@ The meteor glow is the map’s dominant accent colour.
 
 ## 5.6 Visibility and light
 
-- Player FOV has **no radius limit**; the 80×23 map edge is the visibility limit.
-- The whole current map is visible once the player is on it.
-- Lanterns, fires and the meteor glow are visible across the map.
+- Player FOV has **no radius limit**; only the 80×23 map bounds stop it.
+- Dense trees, brambles, bushes, walls and closed doors still block line of
+  sight, so occluded rooms and the far side of the tree border remain hidden
+  until the player can see them.
+- Lanterns, fires and meteor glow are not culled by distance: they are visible
+  wherever line of sight reaches them.
 - Warm light pools remain local around the light source; they are atmosphere, not
   a visibility restriction.
 - No fog-of-war radius tuning is needed for the compact maps.
@@ -230,7 +233,7 @@ Replace:
 - [x] The whole game fits an 80×25 terminal.
 - [x] Woods maps are 80×23 and never scroll.
 - [x] Each map has exactly one entry edge and one exit edge.
-- [x] FOV covers the whole map; map edges are the only visibility limit.
+- [x] FOV has unlimited radius; dense trees, walls and closed doors still block line of sight.
 - [x] All other edges are blocked by dense trees.
 - [x] The snake direction sequence is generated once and saved.
 - [x] No map immediately reverses direction.
@@ -249,5 +252,5 @@ Replace:
 - The Meteor Field is fixed last: entry west, exit east to the caves.
 - The five-map run replaces the current nine-map woods entirely.
 - Caves, temple and time-portal work is postponed.
-- FOV is unlimited within the 80×23 map; map edges are the only limit.
+- FOV radius is unlimited within the 80×23 map; sight-blocking terrain still occludes the view.
 - The three middle themes are shuffled once per run.
