@@ -121,6 +121,7 @@ func (g *Game) buildChurchLandmark(m *Map, cx, cy, entryEdge int) [2]int {
 	altarX := cx - side[0]*3
 	altarY := cy - side[1]*2
 	m.SetTile(altarX, altarY, tileChapelAltar)
+	g.addChurchPond(m, cx, cy)
 	for i := 0; i < 8; i++ {
 		x, y := cx-7+g.Roll(15), cy-5+g.Roll(11)
 		if m.Tile(x, y) == 2 && !(x == anchor[0] && y == anchor[1]) {
@@ -135,6 +136,23 @@ func (g *Game) buildChurchLandmark(m *Map, cx, cy, entryEdge int) [2]int {
 	}
 	m.LandmarkX, m.LandmarkY = cx, cy
 	return anchor
+}
+
+func (g *Game) addChurchPond(m *Map, cx, cy int) bool {
+	candidates := [][2]int{
+		{cx + 10, cy}, {cx - 10, cy},
+		{cx, cy + 8}, {cx, cy - 8},
+		{cx + 9, cy + 6}, {cx + 9, cy - 6},
+		{cx - 9, cy + 6}, {cx - 9, cy - 6},
+		{cx + 12, cy + 4}, {cx - 12, cy + 4},
+		{cx + 12, cy - 4}, {cx - 12, cy - 4},
+	}
+	for _, off := range candidates {
+		if g.paintWoodsPondIf(m, off[0], off[1], 3, 2, false) {
+			return true
+		}
+	}
+	return false
 }
 
 func (g *Game) buildPeasantHousesLandmark(m *Map, cx, cy, entryEdge int) [2]int {

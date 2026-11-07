@@ -67,6 +67,9 @@ func TestWoodsThemeWaterAndBridges(t *testing.T) {
 					t.Fatalf("seed %d Mill map has no road bridge", seed)
 				}
 			}
+			if g.WoodsRun.Themes[level] == WoodsChurch && water == 0 {
+				t.Fatalf("seed %d Church map has no pond or rain pool", seed)
+			}
 			totalBridges += bridges
 		}
 	}

@@ -1,9 +1,6 @@
 package game
 
-import (
-	"container/heap"
-	"math"
-)
+import "container/heap"
 
 type roadNode struct {
 	x, y int
@@ -366,55 +363,10 @@ func (g *Game) scatterWoodsProps(m *Map, theme int, path [][2]int, entry, exit [
 	}
 }
 
-func sampleWoodsNoise(grid []float64, gw, gh int, fx, fy float64) float64 {
-	x0, y0 := int(fx), int(fy)
-	tx, ty := fx-float64(x0), fy-float64(y0)
-	if x0 < 0 {
-		x0, tx = 0, 0
-	}
-	if y0 < 0 {
-		y0, ty = 0, 0
-	}
-	if x0 >= gw-1 {
-		x0, tx = gw-2, 1
-	}
-	if y0 >= gh-1 {
-		y0, ty = gh-2, 1
-	}
-	tx = tx * tx * (3 - 2*tx)
-	ty = ty * ty * (3 - 2*ty)
-	a := grid[y0*gw+x0]
-	b := grid[y0*gw+x0+1]
-	c := grid[(y0+1)*gw+x0]
-	d := grid[(y0+1)*gw+x0+1]
-	top := a + (b-a)*tx
-	bottom := c + (d-c)*tx
-	return top + (bottom-top)*ty
-}
-
-func clearWoodsArea(m *Map, cx, cy, radius, edge int) {
-	for y := cy - radius; y <= cy+radius; y++ {
-		for x := cx - radius; x <= cx+radius; x++ {
-			if x < edge || y < edge || x >= m.W-edge || y >= m.H-edge {
-				continue
-			}
-			if abs(x-cx)+abs(y-cy) <= radius+edge {
-				m.SetTile(x, y, 2) // grass
-			}
-		}
-	}
-}
-
 // addWoodsThemeWater paints the optional themed pond or river. The Mill's pond
 // deliberately overlaps the road so the route crosses it on a bridge.
 func (g *Game) addWoodsThemeWater(m *Map, theme int, path [][2]int, cx, cy int) {
 	switch theme {
-	case WoodsChurch:
-		for _, off := range [][2]int{{cx + 8, cy + 4}, {cx - 8, cy + 4}, {cx + 8, cy - 4}, {cx - 8, cy - 4}} {
-			if g.paintWoodsPondIf(m, off[0], off[1], 3+g.Roll(2), 2+g.Roll(2), false) {
-				return
-			}
-		}
 	case WoodsMillPond:
 		order := make([]int, 0, len(path))
 		for i := len(path) / 3; i < len(path)*2/3; i++ {
@@ -504,5 +456,3 @@ func minInt(a, b int) int {
 	}
 	return b
 }
-
-var _ = math.Hypot

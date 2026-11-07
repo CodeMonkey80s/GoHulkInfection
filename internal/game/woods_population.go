@@ -60,7 +60,7 @@ func (g *Game) rollProto(pool []int) int {
 func (g *Game) spawnWoodsCritter(proto, minDist int) *Critter {
 	for i := 0; i < 300; i++ {
 		x, y := g.Map.RandomFree(g.RNG)
-		if isWoodsWater(g.Map.Tile(x, y)) || g.Map.Tile(x, y) == tileRiverBank {
+		if isWoodsWater(g.Map.Tile(x, y)) || g.Map.Tile(x, y) == tileRiverBank || g.Map.Tile(x, y) == portalTile(0) {
 			continue
 		}
 		if abs(x-g.Player.X)+abs(y-g.Player.Y) < minDist {
@@ -78,7 +78,7 @@ func (g *Game) spawnWoodsCritterNearLandmark(proto, radius, minPlayerDist int) *
 	for i := 0; i < 200; i++ {
 		x := g.Map.LandmarkX - radius + g.Roll(radius*2+1)
 		y := g.Map.LandmarkY - radius + g.Roll(radius*2+1)
-		if !g.Map.IsPassable(x, y) || isWoodsWater(g.Map.Tile(x, y)) {
+		if !g.Map.IsPassable(x, y) || isWoodsWater(g.Map.Tile(x, y)) || g.Map.Tile(x, y) == portalTile(0) {
 			continue
 		}
 		if abs(x-g.Player.X)+abs(y-g.Player.Y) < minPlayerDist {
@@ -102,7 +102,7 @@ func (g *Game) spawnWoodsLoot(level, theme int) {
 	}
 	for i := 0; i < 2+g.Roll(2); i++ {
 		x, y := g.Map.RandomFree(g.RNG)
-		if abs(x-g.Player.X)+abs(y-g.Player.Y) < 4 {
+		if abs(x-g.Player.X)+abs(y-g.Player.Y) < 4 || g.Map.Tile(x, y) == portalTile(0) {
 			continue
 		}
 		if g.ItemAt(x, y) != nil {

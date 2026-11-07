@@ -177,6 +177,43 @@ func TestWoodsLandmarksIdentifyEachTheme(t *testing.T) {
 					t.Fatalf("seed %d level %d theme %d missing landmark tile %d", seed, level, theme, tile)
 				}
 			}
+			switch theme {
+			case WoodsChurch:
+				if counts[tileBellTower] != 1 || counts[tileChapelAltar] != 1 {
+					t.Fatalf("seed %d Church has %d bell towers and %d altars", seed, counts[tileBellTower], counts[tileChapelAltar])
+				}
+			case WoodsPeasantHouses:
+				if counts[tileWell] != 1 {
+					t.Fatalf("seed %d Peasant Houses has %d wells", seed, counts[tileWell])
+				}
+			case WoodsCemetery:
+				if counts[tileCryptDoor] != 1 {
+					t.Fatalf("seed %d Cemetery has %d crypt doors", seed, counts[tileCryptDoor])
+				}
+			case WoodsMeteorField:
+				if counts[tileMeteorRock] < 3 {
+					t.Fatalf("seed %d Meteor Field has only %d meteor rocks", seed, counts[tileMeteorRock])
+				}
+			}
+			centralTile := map[int]uint8{
+				WoodsChurch:        tileBellTower,
+				WoodsPeasantHouses: tileWell,
+				WoodsMillPond:      tileMillStone,
+				WoodsCemetery:      tileCryptDoor,
+				WoodsMeteorField:   tileMeteorRock,
+			}[theme]
+			foundCentral := false
+			for y := 0; y < g.Map.H && !foundCentral; y++ {
+				for x := 0; x < g.Map.W; x++ {
+					if g.Map.Tile(x, y) == centralTile && abs(x-g.Map.LandmarkX)+abs(y-g.Map.LandmarkY) <= 10 {
+						foundCentral = true
+						break
+					}
+				}
+			}
+			if !foundCentral {
+				t.Fatalf("seed %d level %d theme %d has no central identity tile", seed, level, theme)
+			}
 			if g.Map.LandmarkX < g.Map.W/4 || g.Map.LandmarkX > g.Map.W*3/4 {
 				t.Fatalf("seed %d level %d landmark is not central: x=%d", seed, level, g.Map.LandmarkX)
 			}
