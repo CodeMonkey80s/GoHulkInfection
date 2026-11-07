@@ -1,6 +1,6 @@
 # Woods Plans — Levels 0–8
 
-Status: **done**
+Status: **in progress** (core woods revamp and palette done; minimalist snake redesign proposed)
 
 This folder contains the current plans for the woods theme.
 
@@ -8,6 +8,7 @@ This folder contains the current plans for the woods theme.
 
 - [Level revamp](level-revamp.md) — replaces the reused room-section layout with an outdoor woods generator, adds unique landmarks, huts, roads, water, loot and factions.
 - [Colour palette](color-palette.md) — true-colour proposal for the woods theme, including per-level accents and rendering rules.
+- [Minimalist snake redesign](minimalist-snake-redesign.md) — proposed five-map 80×23 woods run with themed central landmarks and a random snake route.
 
 ## Recommended implementation order
 
@@ -20,8 +21,9 @@ This folder contains the current plans for the woods theme.
 7. **Factions and AI** — implemented: villagers, neutral animals, local zombie aggro and villager conversion.
 8. **Exit placement and validation** — implemented: edge/centre/landmark exits, connectivity checks and visual smoke tests.
 
-The level revamp is the larger structural plan; the palette can be implemented
-first because new tiles will need colour roles anyway.
+The level revamp and palette are implemented. The minimalist snake redesign is
+the proposed next structural pass; it reuses the completed terrain, loot,
+faction, movement and rendering systems.
 
 ## Related current code
 

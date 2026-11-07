@@ -8,6 +8,7 @@ Status legend: `Not planned yet` · `Proposed` · `Planned` · `In progress` · 
 |---|---|---|
 | Woods level revamp — outdoor generator, landmarks, huts, roads, loot, factions | Done | [woods/level-revamp.md](woods/level-revamp.md) |
 | Woods true-colour palette and per-level accents | Done | [woods/color-palette.md](woods/color-palette.md) |
+| Woods minimalist snake redesign — five 80×23 themed maps | Proposed | [woods/minimalist-snake-redesign.md](woods/minimalist-snake-redesign.md) |
 
 The woods folder has a short overview and implementation order here:
 [woods/README.md](woods/README.md).
