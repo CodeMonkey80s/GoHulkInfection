@@ -28,6 +28,18 @@ func (c *Critter) SlotItem(slot int) *Item {
 		if c.Slots.BeltUnlocked >= 3 {
 			return c.Slots.Belt[2]
 		}
+	case SlotHead:
+		return c.Slots.Head
+	case SlotRobe1:
+		return c.RobeSlot(0)
+	case SlotRobe2:
+		return c.RobeSlot(1)
+	case SlotRobe3:
+		return c.RobeSlot(2)
+	case SlotRobe4:
+		return c.RobeSlot(3)
+	case SlotRobe5:
+		return c.RobeSlot(4)
 	}
 	return nil
 }
@@ -53,6 +65,18 @@ func (c *Critter) SetSlotItem(slot int, it *Item) {
 		if c.Slots.BeltUnlocked >= 3 {
 			c.Slots.Belt[2] = it
 		}
+	case SlotHead:
+		c.Slots.Head = it
+	case SlotRobe1:
+		c.SetRobeSlot(0, it)
+	case SlotRobe2:
+		c.SetRobeSlot(1, it)
+	case SlotRobe3:
+		c.SetRobeSlot(2, it)
+	case SlotRobe4:
+		c.SetRobeSlot(3, it)
+	case SlotRobe5:
+		c.SetRobeSlot(4, it)
 	}
 }
 
@@ -119,10 +143,9 @@ func (c *Critter) AutoPlaceItem(it *Item) bool {
 	if d == nil {
 		return false
 	}
-	if d.Kind == KindArmor {
-		if c.Slots.Body == nil {
-			ensureArmorAP(it)
-			c.Slots.Body = it
+	if d.Kind == KindHead {
+		if c.Slots.Head == nil {
+			c.Slots.Head = it
 			return true
 		}
 		return false
@@ -131,8 +154,11 @@ func (c *Critter) AutoPlaceItem(it *Item) bool {
 		c.Slots.Hands = it
 		return true
 	}
-	if i := c.FirstFreeBelt(); i >= 0 {
-		c.Slots.Belt[i] = it
+	if i := c.FirstFreeRobeSlot(); i >= 0 {
+		if d.Kind == KindShard {
+			ensureShardAP(it)
+		}
+		c.Slots.Robe[i] = it
 		return true
 	}
 	return false
@@ -365,6 +391,36 @@ func (g *Game) UseSlot(slot int) {
 			}
 		default:
 			g.Msg("you cannot use "+d.Name+" from the belt.", 8)
+		}
+	case SlotHead:
+		g.Msg("you wear "+d.Name+".", 8)
+	case SlotRobe1, SlotRobe2, SlotRobe3, SlotRobe4, SlotRobe5:
+		switch d.Kind {
+		case KindMedical:
+			if g.playerConsumeMedical(it) {
+				if it.Charges <= 0 {
+					g.Player.SetSlotItem(slot, nil)
+				}
+				g.EndPlayerTurn()
+			}
+		case KindFood:
+			if g.playerConsumeFood(it) {
+				if it.Charges <= 0 {
+					g.Player.SetSlotItem(slot, nil)
+				}
+				g.EndPlayerTurn()
+			}
+		case KindShard:
+			ensureShardAP(it)
+			g.Msg(fmt.Sprintf("your %s has %d/%d AP.", d.Name, it.AP, shardMaxAP(it)), 8)
+		case KindRelic:
+			g.Msg("you turn the "+d.Name+" over. it is a relic of the old world.", 8)
+		case KindTool:
+			if g.playerUseTool(it) {
+				g.EndPlayerTurn()
+			}
+		default:
+			g.Msg("you cannot use "+d.Name+" from the robe.", 8)
 		}
 	}
 }

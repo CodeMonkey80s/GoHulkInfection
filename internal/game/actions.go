@@ -23,16 +23,11 @@ func (g *Game) EndPlayerTurn() {
 			}
 		}
 	}
-	if g.Turn%10 == 0 && g.Player.IsAlive() {
-		heal := 1 + g.Player.Skill(SkillMetabolism)/25
-		g.Player.HP += heal
-		if g.Player.HP > g.Player.MaxHP {
-			g.Player.HP = g.Player.MaxHP
-		}
-		g.Player.Blood = max(0, g.Player.Blood-1)
-	}
 	g.updateWeather()
 	g.UpdateMonsters()
+	if g.PeaceTurns > 0 {
+		g.PeaceTurns--
+	}
 	g.decayTileEffects()
 	g.UpdateFOV()
 	if !g.Player.IsAlive() {

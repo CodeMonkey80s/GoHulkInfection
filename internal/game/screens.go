@@ -11,6 +11,18 @@ func slotName(slot int) string {
 	switch slot {
 	case SlotHands:
 		return "Hands"
+	case SlotHead:
+		return "Head"
+	case SlotRobe1:
+		return "Robe 1"
+	case SlotRobe2:
+		return "Robe 2"
+	case SlotRobe3:
+		return "Robe 3"
+	case SlotRobe4:
+		return "Robe 4"
+	case SlotRobe5:
+		return "Robe 5"
 	case SlotBody:
 		return "Body"
 	case SlotBelt1:
@@ -23,18 +35,30 @@ func slotName(slot int) string {
 	return "?"
 }
 
-var inventorySlots = []int{SlotHands, SlotBody, SlotBelt1, SlotBelt2, SlotBelt3}
+func (g *Game) EquipmentSlots() []int {
+	slots := []int{SlotHands, SlotHead}
+	for i := 0; i < g.Player.Slots.RobeSlots && i < MaxRobeSlots; i++ {
+		slots = append(slots, SlotRobe1+i)
+	}
+	return slots
+}
 
 func slotKey(slot int) string {
 	switch slot {
 	case SlotHands:
 		return "a"
-	case SlotBelt1:
+	case SlotHead:
+		return "h"
+	case SlotRobe1:
 		return "c"
-	case SlotBelt2:
+	case SlotRobe2:
 		return "d"
-	case SlotBelt3:
+	case SlotRobe3:
 		return "r"
+	case SlotRobe4:
+		return "4"
+	case SlotRobe5:
+		return "5"
 	}
 	return "-"
 }
@@ -64,7 +88,9 @@ func itemSummary(it *Item) string {
 		return fmt.Sprintf("%s  heal %d  charges %d", d.Name, d.Heal, it.Charges)
 	case KindFood:
 		return fmt.Sprintf("%s  heal %d  charges %d", d.Name, d.Heal, it.Charges)
-	case KindTool, KindRelic:
+	case KindShard:
+		return fmt.Sprintf("%s  AP max %d", d.Name, d.Charges)
+	case KindTool, KindRelic, KindHead:
 		return d.Desc
 	default:
 		return d.Name
@@ -77,7 +103,7 @@ func (u *UI) drawInventory() {
 	u.putStr(centerText("[ e ] equipment", screenW), 0, "[ e ] equipment", 2, 0)
 	u.putStr(1, 1, "key  slot     item              stats                         action", 8, 0)
 
-	slots := inventorySlots
+	slots := g.EquipmentSlots()
 	y := 3
 	for i, slot := range slots {
 		it := g.Player.SlotItem(slot)
@@ -86,22 +112,6 @@ func (u *UI) drawInventory() {
 			key = " "
 		}
 		label := slotName(slot)
-		locked := false
-		if slot == SlotBelt2 && g.Player.Slots.BeltUnlocked < 2 {
-			locked = true
-		}
-		if slot == SlotBelt3 && g.Player.Slots.BeltUnlocked < 3 {
-			locked = true
-		}
-		if locked {
-			fg, bg := uint8(8), uint8(0)
-			if i == u.slotSel {
-				fg, bg = 0, 7
-			}
-			u.putStr(1, y, fmt.Sprintf("[%s] %-7s %-16s %-28s %s", key, label, "locked", fmt.Sprintf("level %d", 3+3*(slot-SlotBelt2)), "-"), fg, bg)
-			y++
-			continue
-		}
 		name := "-"
 		stats := ""
 		if it != nil {
@@ -117,20 +127,18 @@ func (u *UI) drawInventory() {
 		y++
 	}
 
-	u.putStr(2, 10, "O", 14, 0)
-	u.putStr(1, 11, "/|\\", 14, 0)
-	u.putStr(1, 12, "/ \\", 14, 0)
-	u.putStr(16, 10, "a/c/d/r  act / swap / consume", 8, 0)
-	u.putStr(16, 11, "A-D/R  drop", 8, 0)
-	u.putStr(16, 12, "B    unequip body", 8, 0)
+	u.putStr(16, 10, "a  use hands          h  head", 8, 0)
+	u.putStr(16, 11, "c/d/r  use robe slot 1-3", 8, 0)
+	u.putStr(16, 12, "A/H/C/D/R  drop slot", 8, 0)
 	u.putStr(16, 13, "j/k select  enter use  e/z/space close", 8, 0)
+	u.putStr(16, 14, g.RiteSummary(), 11, 0)
 
 	ground := g.ItemAt(g.Player.X, g.Player.Y)
-	u.putStr(1, 16, "[ g ] item here: "+itemSummary(ground), 10, 0)
+	u.putStr(1, 17, "[ g ] item here: "+itemSummary(ground), 10, 0)
 
 	u.fill(0, 22, screenW, 2, ' ', 8, 0)
-	u.putStr(1, 22, "a hands   c/d/r belt   g get   A-D/R drop   e/z/space close", 8, 0)
-	u.putStr(1, 23, "Body armour is worn; B drops it.", 8, 0)
+	u.putStr(1, 22, "Robe slots hold vials, shards and small items; the robe cannot be removed.", 8, 0)
+	u.putStr(1, 23, "g get   e/z/space close", 8, 0)
 }
 
 func slotStats(it *Item) string {
@@ -158,10 +166,15 @@ func slotStats(it *Item) string {
 		return fmt.Sprintf("heal %d  charges %d", d.Heal, it.Charges)
 	case KindFood:
 		return fmt.Sprintf("heal %d  charges %d", d.Heal, it.Charges)
+	case KindShard:
+		ensureShardAP(it)
+		return fmt.Sprintf("AP %d/%d", it.AP, shardMaxAP(it))
 	case KindTool:
 		return d.Desc
 	case KindRelic:
 		return "relic"
+	case KindHead:
+		return "head item"
 	}
 	return d.Name
 }
@@ -173,19 +186,18 @@ func slotAction(slot int, it *Item) string {
 	if slot == SlotHands {
 		return "act a"
 	}
-	if slot == SlotBody {
-		return "unequip B"
-	}
 	d := it.Def()
 	if d == nil {
 		return "-"
 	}
 	switch d.Kind {
 	case KindMelee, KindGrenade, KindTool:
-		return "swap " + slotKey(slot)
+		return "use " + slotKey(slot)
 	case KindMedical, KindFood:
 		return "consume " + slotKey(slot)
-	case KindRelic:
+	case KindShard:
+		return "inspect"
+	case KindRelic, KindHead:
 		return "inspect"
 	}
 	return "-"
@@ -193,37 +205,47 @@ func slotAction(slot int, it *Item) string {
 
 func (u *UI) handleInventory(e *tcell.EventKey) {
 	g := u.g
+	slots := g.EquipmentSlots()
+	if len(slots) == 0 {
+		g.State = StatePlaying
+		return
+	}
+	if u.slotSel >= len(slots) {
+		u.slotSel = len(slots) - 1
+	}
 	switch e.Key() {
 	case tcell.KeyEscape:
 		g.State = StatePlaying
 		return
 	case tcell.KeyEnter:
-		g.UseSlot(inventorySlots[u.slotSel])
+		g.UseSlot(slots[u.slotSel])
 		return
 	}
 	switch e.Rune() {
 	case 'j':
-		u.slotSel = (u.slotSel + 1) % len(inventorySlots)
+		u.slotSel = (u.slotSel + 1) % len(slots)
 	case 'k':
-		u.slotSel = (u.slotSel + len(inventorySlots) - 1) % len(inventorySlots)
+		u.slotSel = (u.slotSel + len(slots) - 1) % len(slots)
 	case 'a':
 		g.UseSlot(SlotHands)
+	case 'h':
+		g.UseSlot(SlotHead)
 	case 'c':
-		g.UseSlot(SlotBelt1)
+		g.UseSlot(SlotRobe1)
 	case 'd':
-		g.UseSlot(SlotBelt2)
+		g.UseSlot(SlotRobe2)
 	case 'r':
-		g.UseSlot(SlotBelt3)
+		g.UseSlot(SlotRobe3)
 	case 'A':
 		g.DropSlot(SlotHands)
-	case 'B':
-		g.DropSlot(SlotBody)
+	case 'H':
+		g.DropSlot(SlotHead)
 	case 'C':
-		g.DropSlot(SlotBelt1)
+		g.DropSlot(SlotRobe1)
 	case 'D':
-		g.DropSlot(SlotBelt2)
+		g.DropSlot(SlotRobe2)
 	case 'R':
-		g.DropSlot(SlotBelt3)
+		g.DropSlot(SlotRobe3)
 	case 'g':
 		g.PickUp()
 	case 'z', 'q', 'e', ' ':
@@ -231,12 +253,8 @@ func (u *UI) handleInventory(e *tcell.EventKey) {
 	}
 }
 
-func playerArmorLine(p *Critter) string {
-	arm := p.BodyItem()
-	if arm == nil {
-		return "armour AP: 0/0"
-	}
-	cur, max := armorAP(arm)
+func (g *Game) playerArmorLine() string {
+	cur, max := g.PlayerAP()
 	return fmt.Sprintf("armour AP: %d/%d", cur, max)
 }
 
@@ -245,38 +263,40 @@ func (u *UI) drawPlayerScreen() {
 	p := g.Player
 	u.clear(0)
 	u.putStr(centerText("[ @ ] character information", screenW), 0, "[ @ ] character information", 2, 0)
-	u.putStr(1, 2, "[   ] attributes...", 10, 0)
-	u.putStr(41, 2, "[ = ] skills...", 10, 0)
-	u.putStr(1, 3, strings.Repeat("~", 37), 2, 0)
-	u.putStr(41, 3, strings.Repeat("~", 37), 2, 0)
-	attrs := []string{
-		fmt.Sprintf("class: %s", PlayerClasses[g.PlayerClass].Name),
-		fmt.Sprintf("name: %s", p.Name),
-		fmt.Sprintf("strength: %d", p.STR),
-		fmt.Sprintf("toughness: %d", p.TGH),
-		fmt.Sprintf("agility: %d", p.AGI),
-		fmt.Sprintf("intelligence: %d", p.INT),
-		fmt.Sprintf("health: %d/%d", p.HP, p.MaxHP),
-		playerArmorLine(p),
-		fmt.Sprintf("gold: %d", p.Gold),
+	u.putStr(1, 2, strings.Repeat("~", 76), 2, 0)
+	u.putStr(2, 4, "name: "+p.Name, 14, 0)
+	u.putStr(2, 5, fmt.Sprintf("health: %d/%d", p.HP, p.MaxHP), 11, 0)
+	u.putStr(2, 6, g.playerArmorLine(), 11, 0)
+	u.putStr(2, 7, fmt.Sprintf("experience: %d (stored)", p.XP), 11, 0)
+	u.putStr(2, 8, fmt.Sprintf("gold: %d", p.Gold), 11, 0)
+	u.putStr(2, 10, "[ rites ]", 10, 0)
+	row := 11
+	for i, rite := range g.PlayerRites {
+		if rite < 0 || rite >= len(RiteDefs) {
+			continue
+		}
+		u.putStr(3, row, fmt.Sprintf("%-16s %d charge", riteName(rite), g.RiteCharges[i]), 11, 0)
+		row++
 	}
-	for i, s := range attrs {
-		u.putStr(3, 5+i, s, 11, 0)
+	if row == 11 {
+		u.putStr(3, row, "none", 8, 0)
+		row++
 	}
-	u.putStr(41, 5, fmt.Sprintf("level: %d", p.Level), 11, 0)
-	u.putStr(41, 6, fmt.Sprintf("experience: %d", p.XP), 11, 0)
-	u.putStr(41, 7, fmt.Sprintf("need to gain: %d", 200*p.Level), 11, 0)
-	u.putStr(41, 8, fmt.Sprintf("skill points: %d", g.FreePoints), 11, 0)
-	u.putStr(41, 10, "[ %% ] experience...", 10, 0)
-	u.putStr(41, 11, strings.Repeat("~", 37), 2, 0)
-	for i, skill := range ActiveSkills {
-		y := 13 + i
-		val := p.Skill(skill)
-		u.putStr(43, y, fmt.Sprintf("%-16s %3d  %s", SkillNames[skill], val, skillLevelName(val)), 11, 0)
+	row++
+	u.putStr(2, row, "[ equipment ]", 10, 0)
+	row++
+	for _, slot := range g.EquipmentSlots() {
+		it := p.SlotItem(slot)
+		name := "-"
+		if it != nil {
+			name = it.Name()
+		}
+		u.putStr(3, row, fmt.Sprintf("%-8s %s", slotName(slot), name), 11, 0)
+		row++
 	}
 	u.fill(0, 22, screenW, 3, ' ', 8, 0)
 	u.putStr(1, 23, "z/space quit screen", 8, 0)
-	u.putStr(1, 24, "x skill levels", 8, 0)
+	u.putStr(1, 24, "e equipment", 8, 0)
 }
 
 func skillLevelName(v int) string {
@@ -319,9 +339,6 @@ func (u *UI) handlePlayerScreen(e *tcell.EventKey) {
 		switch e.Rune() {
 		case 'z', 'q', '@', ' ':
 			u.g.State = StatePlaying
-		case 'x':
-			u.g.State = StateSkills
-			u.skillSel = 0
 		}
 	}
 }

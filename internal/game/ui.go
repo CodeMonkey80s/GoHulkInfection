@@ -315,8 +315,6 @@ func (u *UI) draw() {
 		u.drawTitle()
 	case StateIntro:
 		u.drawIntro()
-	case StateCharCreate:
-		u.drawCharCreate()
 	case StatePlaying:
 		u.drawGame()
 	case StateInventory:
@@ -398,32 +396,28 @@ func (u *UI) drawTitle() {
 
 func (u *UI) drawIntro() {
 	u.clear(0)
-	intro := []string{
-		"T H E   W O O D S   A R E   D E A D",
-		"",
-		"The first body rose seven days ago. By morning the town was gone.",
-		"By nightfall the trees were full of things that used to be people.",
-		"",
-		"You are the last one to leave the road.",
-		"",
-		"Somewhere in these woods is the source of the infection.",
-		"Find it. Destroy it. Do not let it reach the cities.",
-		"",
-		"You have a weapon, a handful of supplies, and no way back.",
-		"",
-		"press enter to continue",
+	g := u.g
+	rite := RiteDefs[0]
+	if g.PlayerRites[0] >= 0 && g.PlayerRites[0] < len(RiteDefs) {
+		rite = RiteDefs[g.PlayerRites[0]]
 	}
-	for i, s := range intro {
-		fg := uint8(10)
-		switch {
-		case i == 0:
-			fg = 12
-		case i == 8:
-			fg = 14
-		case i == len(intro)-1:
-			fg = 8
-		}
-		u.putStr(centerText(s, screenW), 6+i, s, fg, 0)
+	lines := []struct {
+		text  string
+		row   int
+		color uint8
+	}{
+		{"T H E   W O O D S   A R E   D E A D", 2, 12},
+		{g.PlayerName, 5, 14},
+		{"The bishop assigned you to a village that no longer answers letters.", 7, 10},
+		{"The dead are walking. Find the source and put it to rest.", 9, 14},
+		{"Rite: " + rite.Name + " - " + rite.Desc, 12, 11},
+		{"Hands: sickle   Robe: 3 slots   Shard: leather   Vial: healing", 14, 10},
+		{"The first body rose seven days ago. By morning the town was gone.", 17, 10},
+		{"Somewhere in these woods is the source of the infection.", 18, 10},
+		{"press enter to begin", 21, 8},
+	}
+	for _, line := range lines {
+		u.putStr(centerText(line.text, screenW), line.row, line.text, line.color, 0)
 	}
 }
 
@@ -679,10 +673,7 @@ func slotBrief(it *Item) string {
 func (u *UI) drawStatus(y int) {
 	g := u.g
 	p := g.Player
-	ac, am := 0, 0
-	if arm := p.BodyItem(); arm != nil {
-		ac, am = armorAP(arm)
-	}
+	ac, am := g.PlayerAP()
 	hpColor := uint8(10)
 	if p.MaxHP > 0 {
 		ratio := float64(p.HP) / float64(p.MaxHP)
@@ -705,7 +696,9 @@ func (u *UI) drawStatus(y int) {
 	ap := fmt.Sprintf("AP %d/%d", ac, am)
 	u.putStr(0, y, hp, hpColor, 0)
 	u.putStr(len(hp)+3, y, ap, apColor, 0)
-	u.putStr(len(hp)+len(ap)+6, y, weapon, 7, 0)
+	weaponX := len(hp) + len(ap) + 6
+	u.putStr(weaponX, y, weapon, 7, 0)
+	u.putStr(weaponX+len(weapon)+3, y, g.RiteSummary(), 11, 0)
 }
 
 func wrapText(s string, width int) []string {
@@ -740,14 +733,7 @@ func (u *UI) handleKey(e *tcell.EventKey) {
 	case StateTitle:
 		u.handleTitle(e)
 	case StateIntro:
-		if isEnter(e) || e.Key() == tcell.KeyEscape {
-			g.State = StateCharCreate
-			if g.PlayerName == "" {
-				g.PlayerName = RandomNames[g.Roll(len(RandomNames))]
-			}
-		}
-	case StateCharCreate:
-		u.handleCharCreate(e)
+		u.handleIntro(e)
 	case StatePlaying:
 		u.handlePlaying(e)
 	case StateInventory:
@@ -777,6 +763,26 @@ func (u *UI) handleKey(e *tcell.EventKey) {
 
 func isEnter(e *tcell.EventKey) bool {
 	return e.Key() == tcell.KeyEnter || e.Rune() == '\n' || e.Rune() == '\r'
+}
+
+func (u *UI) handleIntro(e *tcell.EventKey) {
+	if e.Key() == tcell.KeyEscape || e.Rune() == 'q' {
+		u.g.State = StateTitle
+		return
+	}
+	if e.Rune() == 'r' {
+		// Development reroll: regenerate the priest, kit and world.
+		u.g = NewGame(time.Now().UnixNano())
+		u.g.State = StateIntro
+		return
+	}
+	if !isEnter(e) {
+		return
+	}
+	u.g.SetupNewGame(0, u.g.PlayerName)
+	u.g.State = StatePlaying
+	u.g.Msg("=== session started ===", 8)
+	u.g.UpdateFOV()
 }
 
 func (u *UI) handleTitle(e *tcell.EventKey) {
@@ -815,9 +821,7 @@ func (u *UI) handleTitle(e *tcell.EventKey) {
 		}
 		switch u.titleSel {
 		case 0:
-			name := u.g.PlayerName
 			u.g = NewGame(time.Now().UnixNano())
-			u.g.PlayerName = name
 			u.g.State = StateIntro
 		case 1:
 			if err := u.g.LoadGame(u.g.SavePath); err != nil {
@@ -906,8 +910,7 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 		g.Msg("debug: map revealed.", 10)
 		return
 	case tcell.KeyF5:
-		g.Player.XP += 200 * g.Player.Level
-		g.CheckLevelUp()
+		g.Player.XP += 200
 		g.Msg("debug: experience granted.", 10)
 		return
 	case tcell.KeyF7:
@@ -960,22 +963,20 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 		g.WaitTurn()
 	case 'a':
 		g.UseSlot(SlotHands)
-	case 'c':
-		g.UseSlot(SlotBelt1)
-	case 'd':
-		g.UseSlot(SlotBelt2)
 	case 'r':
-		g.UseSlot(SlotBelt3)
+		g.UseRite(0)
+	case 't':
+		g.UseRite(1)
 	case 'A':
 		g.DropSlot(SlotHands)
-	case 'B':
-		g.DropSlot(SlotBody)
+	case 'H':
+		g.DropSlot(SlotHead)
 	case 'C':
-		g.DropSlot(SlotBelt1)
+		g.DropSlot(SlotRobe1)
 	case 'D':
-		g.DropSlot(SlotBelt2)
+		g.DropSlot(SlotRobe2)
 	case 'R':
-		g.DropSlot(SlotBelt3)
+		g.DropSlot(SlotRobe3)
 	case 'g':
 		g.PickUp()
 	case 'f':
@@ -999,9 +1000,6 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 		g.State = StatePlayerScreen
 	case 'S':
 		g.SaveAndQuit()
-	case 'x':
-		g.State = StateSkills
-		u.skillSel = 0
 	case '>':
 		g.UsePortal()
 	case ']':

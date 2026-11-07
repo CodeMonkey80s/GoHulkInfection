@@ -65,35 +65,36 @@ func TestPlayerClassRoster(t *testing.T) {
 	}
 }
 
-func TestSetupNewGameUsesClassValuesAndKit(t *testing.T) {
-	for class, def := range PlayerClasses {
-		g := NewGame(int64(100 + class))
-		g.SetupNewGame(class, "tester")
-		if g.Player.STR != def.STR || g.Player.TGH != def.TGH ||
-			g.Player.AGI != def.AGI || g.Player.INT != def.INT {
-			t.Fatalf("%s attributes do not match class data", def.Name)
+func TestSetupNewGameCreatesPriestProfileAndKit(t *testing.T) {
+	for seed := int64(100); seed < 108; seed++ {
+		g := NewGame(seed)
+		g.SetupNewGame(0, "tester")
+		if g.Player.Name != "tester" {
+			t.Fatalf("player name = %q", g.Player.Name)
 		}
-		if g.Player.Skills != def.Skills {
-			t.Fatalf("%s skills do not match class data", def.Name)
+		if len(g.KnownRites()) != 1 {
+			t.Fatalf("seed %d has %d rites, want 1", seed, len(g.KnownRites()))
 		}
-		if g.Player.Slots.BeltUnlocked != 2 {
-			t.Fatalf("%s starts with %d belt slots, want 2", def.Name, g.Player.Slots.BeltUnlocked)
+		if g.RiteCharges[0] != 1 {
+			t.Fatalf("seed %d rite charge = %d", seed, g.RiteCharges[0])
 		}
-		kit := ClassStartingKit(class)
-		if g.Player.Slots.Hands == nil || g.Player.Slots.Hands.Proto != kit.Hands {
-			t.Fatalf("%s starting hands do not match kit", def.Name)
+		if g.Player.Slots.Hands == nil || g.Player.Slots.Hands.Name() != "sickle" {
+			t.Fatalf("seed %d starting weapon missing", seed)
 		}
-		if g.Player.Slots.Body == nil || g.Player.Slots.Body.Proto != kit.Body {
-			t.Fatalf("%s starting body does not match kit", def.Name)
+		if g.Player.Slots.RobeSlots != 3 {
+			t.Fatalf("seed %d robe slots = %d", seed, g.Player.Slots.RobeSlots)
 		}
-		if g.Player.Slots.Belt[0] == nil || g.Player.Slots.Belt[0].Proto != kit.Belt[0] {
-			t.Fatalf("%s starting belt 1 does not match kit", def.Name)
+		if g.Player.Slots.Robe[0] == nil || g.Player.Slots.Robe[0].Name() != "leather shard" {
+			t.Fatalf("seed %d starting shard missing", seed)
 		}
-		if g.Player.Slots.Belt[1] != nil {
-			t.Fatalf("%s should start with belt 2 empty", def.Name)
+		if g.Player.Slots.Robe[1] == nil || g.Player.Slots.Robe[1].Name() != "healing vial" {
+			t.Fatalf("seed %d starting vial missing", seed)
 		}
-		if g.Player.Slots.Belt[2] != nil {
-			t.Fatalf("%s starts with an item in locked belt 3", def.Name)
+		if g.Player.Slots.Robe[2] != nil {
+			t.Fatalf("seed %d third robe slot should start empty", seed)
+		}
+		if g.Player.Slots.Body != nil || g.Player.Slots.BeltUnlocked != 0 {
+			t.Fatalf("seed %d still uses legacy body/belt slots", seed)
 		}
 	}
 }
@@ -170,8 +171,11 @@ func TestHUDIsOneLine(t *testing.T) {
 	if !strings.Contains(hud, "HP ") || !strings.Contains(hud, "AP ") {
 		t.Fatalf("HUD missing HP/AP: %q", hud)
 	}
-	if !strings.Contains(hud, "hammer") {
+	if !strings.Contains(hud, "sickle") {
 		t.Fatalf("HUD missing weapon name: %q", hud)
+	}
+	if !strings.Contains(hud, "Rite:") {
+		t.Fatalf("HUD missing rite: %q", hud)
 	}
 	if strings.Contains(hud, "[a]") || strings.Contains(hud, "Lvl") {
 		t.Fatalf("HUD still contains old slot/level text: %q", hud)
@@ -204,21 +208,24 @@ func TestLookOverlayUsesReadablePanelColours(t *testing.T) {
 	}
 }
 
-func TestCharCreateShowsFiveClassesAndKit(t *testing.T) {
+func TestIntroShowsGeneratedPriestAndRite(t *testing.T) {
 	g := NewGame(703)
 	u, s := newTestUI(g, ColorModeTrueColor)
 	defer s.Fini()
-	u.classSel = len(PlayerClasses) - 1
-	u.drawCharCreate()
+	u.drawIntro()
 	s.Show()
 	text := screenText(s)
-	for _, class := range PlayerClasses {
-		if !strings.Contains(text, class.Name) {
-			t.Fatalf("class selection missing %q", class.Name)
-		}
+	if !strings.Contains(text, g.PlayerName) {
+		t.Fatalf("intro missing priest name %q", g.PlayerName)
 	}
-	if !strings.Contains(text, "hands: crowbar") {
-		t.Fatalf("class selection missing starting kit: %q", text)
+	if !strings.Contains(text, "Rite:") || !strings.Contains(text, RiteDefs[g.PlayerRites[0]].Name) {
+		t.Fatalf("intro missing generated rite: %q", text)
+	}
+	if strings.Contains(text, "select class") {
+		t.Fatal("intro still shows class selection")
+	}
+	if !strings.Contains(text, "press enter to begin") {
+		t.Fatal("intro missing start prompt")
 	}
 }
 
@@ -233,8 +240,8 @@ func TestInventoryGetPicksUpItem(t *testing.T) {
 	if g.ItemAt(g.Player.X, g.Player.Y) != nil {
 		t.Fatal("item was not removed from the ground")
 	}
-	if g.Player.Slots.Belt[1] == nil || g.Player.Slots.Belt[1].Proto != 48 {
-		t.Fatal("picked-up item was not placed in the free belt slot")
+	if g.Player.Slots.Robe[2] == nil || g.Player.Slots.Robe[2].Proto != 48 {
+		t.Fatal("picked-up item was not placed in the free robe slot")
 	}
 	if g.State != StateInventory {
 		t.Fatalf("inventory closed after pickup: state %v", g.State)

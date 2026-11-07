@@ -451,6 +451,8 @@ func (g *Game) finishLevel(m *Map, level, theme int) {
 	g.Options["optGameLevelID"] = level
 	g.Theme = theme
 	g.Weather = WeatherClear
+	g.PeaceTurns = 0
+	g.RefreshRiteCharges()
 	if theme == 0 {
 		woodsTheme := g.currentWoodsTheme()
 		g.spawnWoodsPopulation(woodsTheme)
@@ -787,16 +789,23 @@ func (g *Game) SpawnCritter(proto, x, y int) *Critter {
 }
 
 func (g *Game) SetupNewGame(class int, name string) {
-	if class < 0 || class >= len(PlayerClasses) {
-		class = 0
+	// The class argument is kept for old callers; the priest is always the
+	// same character now.
+	_ = class
+	if name != "" {
+		g.PlayerName = name
 	}
-	g.PlayerClass = class
-	g.PlayerName = name
+	if g.PlayerName == "" {
+		g.PlayerName = PriestNames[g.Roll(len(PriestNames))]
+	}
+	if g.PlayerRites[0] < 0 || g.PlayerRites[0] >= len(RiteDefs) {
+		g.RollPriestProfile()
+	}
 	g.WoodLoot = newWoodLootAssignment(g.RNG)
 	g.WoodsRun = newWoodsRun(g.RNG)
 	g.Player = &Critter{
 		Proto:  -1,
-		Name:   name,
+		Name:   g.PlayerName,
 		Player: true,
 		Align:  AlignPlayer,
 		Class:  4,
@@ -804,14 +813,13 @@ func (g *Game) SetupNewGame(class int, name string) {
 		Color:  14,
 		Glyph:  '@',
 		Dead:   false,
+		STR:    9,
+		TGH:    10,
+		AGI:    9,
+		INT:    9,
+		SPD:    2,
+		Skills: [NumSkills]int{55, 50, 30, 60, 0, 40, 50, 55, 30},
 	}
-	c := &PlayerClasses[class]
-	g.Player.STR = c.STR
-	g.Player.TGH = c.TGH
-	g.Player.AGI = c.AGI
-	g.Player.INT = c.INT
-	g.Player.SPD = 2
-	g.Player.Skills = c.Skills
 	g.Player.MaxHP = g.Player.TGH * 3
 	g.Player.HP = g.Player.MaxHP
 	g.Player.Level = 1
@@ -819,20 +827,15 @@ func (g *Game) SetupNewGame(class int, name string) {
 	g.Player.Gold = 0
 	g.Player.Blood = 0
 	g.Player.Poison = 0
-	g.Player.Slots = PlayerSlots{BeltUnlocked: 2}
-	kit := ClassStartingKit(class)
-	g.Player.Slots.Hands = startingItem(kit.Hands)
+	g.Player.Slots = PlayerSlots{RobeSlots: 3}
+	g.Player.Slots.Hands = g.priestStartingItem("sickle")
 	if g.Player.Slots.Hands != nil {
 		g.Player.Slots.Hands.Active = true
 	}
-	g.Player.Slots.Body = startingItem(kit.Body)
-	ensureArmorAP(g.Player.Slots.Body)
-	for i, proto := range kit.Belt {
-		if i >= 2 {
-			break
-		}
-		g.Player.Slots.Belt[i] = startingItem(proto)
-	}
+	g.Player.Slots.Robe[0] = g.priestStartingItem("leather shard")
+	g.Player.Slots.Robe[1] = g.priestStartingItem("healing vial")
+	g.RiteCharges = [MaxRites]int{}
+	g.RefreshRiteCharges()
 	g.Level = 0
 	g.Turn = 0
 	g.Messages = nil

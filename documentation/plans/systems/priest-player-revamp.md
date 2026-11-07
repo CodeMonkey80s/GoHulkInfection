@@ -1,6 +1,6 @@
 # Priest Player Revamp — Random Rite, Robe Slots and Holy Gear
 
-Status: **proposed**
+Status: **in progress**
 Parent: [Feature plans](../README.md)
 Related: [Player redesign](player-redesign.md), [Player experience adjustments](player-experience-adjustments.md), [Woods minimalist snake redesign](../woods/minimalist-snake-redesign.md), [Player and monster states](player-monster-states.md)
 Scope: player identity, one random starting rite plus one shrine rite, intro, robe/head/slot equipment, priest-themed items and zombie/villager variants.
@@ -14,6 +14,13 @@ rather than perks or hidden statistics.
 A separate end-game plan will cover the demon finale and the stone-circle map.
 Player and monster states such as bleeding will also get a separate plan. Neither
 is part of this revamp.
+
+Implementation status: the first slice is implemented — no class selection,
+priest/rite generation, development reroll, Hands/Head/Robe slots, vials and
+shards with sequential breakage, no baseline auto-healing, XP stored without
+levels and HUD rite charges. The shrine/second rite, flasks, head-item effects,
+robe-slot upgrades, villager variants, states and demon end-game remain for
+later slices.
 
 ---
 
@@ -406,36 +413,36 @@ These are ideas, not locked decisions:
 
 ## 13. Acceptance criteria
 
-- [ ] There is no class-selection screen.
-- [ ] The player is always a priest with a randomly generated name.
-- [ ] Perks and numeric skill values are removed.
-- [ ] The priest starts with exactly one random Rite.
+- [x] There is no class-selection screen.
+- [x] The player is always a priest with a randomly generated name.
+- [x] Perks and numeric skill values are removed.
+- [x] The priest starts with exactly one random Rite.
 - [ ] A single shrine per run grants exactly one additional random Rite.
-- [ ] Each Rite has one charge per map, refreshed on entry.
-- [ ] The HUD shows the available Rite and its remaining charge.
-- [ ] The intro is generated from the assigned Rite and starting kit.
-- [ ] Hidden `r` rerolls everything during development.
-- [ ] STR/TGH/AGI/INT and player-facing levels are removed.
-- [ ] XP is still stored but does not grant levels yet.
-- [ ] There is no baseline automatic healing.
+- [x] Each Rite has one charge per map, refreshed on entry.
+- [x] The HUD shows the available Rite and its remaining charge.
+- [x] The intro is generated from the assigned Rite and starting kit.
+- [x] Hidden `r` rerolls everything during development.
+- [x] STR/TGH/AGI/INT and player-facing levels are removed.
+- [x] XP is still stored but does not grant levels yet.
+- [x] There is no baseline automatic healing.
 - [ ] Any later regeneration must be a Rite, relic or separate progression
       decision, not a perk.
-- [ ] Equipment is limited to Hands, Head and the permanently worn Robe.
+- [x] Equipment is limited to Hands, Head and the permanently worn Robe.
 - [ ] The robe starts with three slots and can gain more during the adventure.
-- [ ] Each robe slot holds exactly one vial, flask, shard or small item.
-- [ ] Vials restore a small flat amount of HP.
+- [x] Each robe slot holds exactly one vial, flask, shard or small item.
+- [x] Vials restore a small flat amount of HP.
 - [ ] Flasks are throwable and occupy one slot.
-- [ ] Shards provide different maximum AP values.
-- [ ] Damage drains shards in order; a shard at 0 AP breaks and frees its slot.
-- [ ] Excess shard damage carries to the next shard and then HP.
-- [ ] Drained shards are not repaired and can be replaced.
-- [ ] Every starting item fits the priest theme.
+- [x] Shards provide different maximum AP values.
+- [x] Damage drains shards in order; a shard at 0 AP breaks and frees its slot.
+- [x] Excess shard damage carries to the next shard and then HP.
+- [x] Drained shards are not repaired and can be replaced.
+- [x] Every starting item fits the priest theme.
 - [ ] Living peasants, militia, runners and thugs have matching zombie versions.
 - [ ] Zombie kills convert the matching villager type.
-- [ ] The game remains readable at 80×25.
-- [ ] The Meteor Field remains the final woods map until the separate demon
+- [x] The game remains readable at 80×25.
+- [x] The Meteor Field remains the final woods map until the separate demon
       end-game plan is implemented.
-- [ ] Bleeding and other player/monster states are deferred to their separate plan.
+- [x] Bleeding and other player/monster states are deferred to their separate plan.
 
 ## 14. Open questions
 

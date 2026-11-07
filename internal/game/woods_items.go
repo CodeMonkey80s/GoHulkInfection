@@ -9,7 +9,7 @@ import (
 var signatureCategoryItems = [][]string{
 	{"saw", "shovel", "rope", "lantern", "torch", "lockpick", "fishing rod", "whetstone", "hatchet"},
 	{"apple", "pear", "berries", "honey", "bread", "cheese", "dried meat", "mushroom", "cooked fish", "stew"},
-	{"leather jacket", "hide vest", "padded coat", "chain shirt", "ranger cloak", "bone charm"},
+	{"leather shard", "chain shard", "iron shard", "silver shard", "blessed shard", "bone charm"},
 	{"fishing rod", "raw fish", "cooked fish", "rope", "whetstone"},
 	{"hunting knife", "boar spear", "spear", "snare", "hatchet", "rope"},
 	{"healing herb", "red potion", "green potion", "blue potion", "antidote", "holy water"},
