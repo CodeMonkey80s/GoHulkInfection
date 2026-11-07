@@ -1,18 +1,19 @@
-# Priest Player Revamp — Weighted Perks, Robe Slots and Holy Gear
+# Priest Player Revamp — Random Rite, Robe Slots and Holy Gear
 
 Status: **proposed**
 Parent: [Feature plans](../README.md)
 Related: [Player redesign](player-redesign.md), [Player experience adjustments](player-experience-adjustments.md), [Woods minimalist snake redesign](../woods/minimalist-snake-redesign.md), [Player and monster states](player-monster-states.md)
-Scope: player identity, weighted random perks, intro, robe/head/slot equipment, priest-themed items and zombie/villager variants.
+Scope: player identity, one random starting rite plus one shrine rite, intro, robe/head/slot equipment, priest-themed items and zombie/villager variants.
 
 This plan replaces the current class-selection screen and stat-based survivor
 roster with a single protagonist: a priest recently reassigned to the village.
 The design target is a minimalist experience: few numbers, clear choices and
-replayability through randomly assigned perks and gear rather than hidden
-statistics.
+replayability through a randomly assigned rite, equipment and map/run variation
+rather than perks or hidden statistics.
 
 A separate end-game plan will cover the demon finale and the stone-circle map.
-That work is deliberately not part of this revamp.
+Player and monster states such as bleeding will also get a separate plan. Neither
+is part of this revamp.
 
 ---
 
@@ -21,10 +22,14 @@ That work is deliberately not part of this revamp.
 - Make the player a priest, not a generic survivor class.
 - Remove class selection entirely.
 - Remove player-facing STR/TGH/AGI/INT and complicated derived statistics.
-- Generate the priest’s perks and starting kit with weighted randomness so
-  different runs encourage different builds.
-- Make more powerful perks rarer than common perks.
-- Generate the intro text from the assigned perks and starting kit.
+- Remove perks entirely.
+- Give the priest one randomly assigned starting Rite.
+- Allow exactly one additional random Rite from a single shrine per run.
+- Keep Rites simple, active and limited to one charge per map.
+- Show the available Rite and its remaining charge in the HUD.
+- Remove player-facing levels; keep XP stored for now and decide progression
+  later.
+- Generate the intro text from the priest’s name, Rite and starting kit.
 - Keep the priest’s past mysterious but hinted at through the intro.
 - Replace body armour and belt slots with a permanent robe, a head slot and
   installable robe slots.
@@ -41,8 +46,15 @@ plan:
 
 - The priest is always the player character; there is no class-selection screen.
 - Traditional STR/TGH/AGI/INT statistics are removed from player-facing play.
-- Perks are assigned randomly at character creation using weighted probabilities.
-- More powerful perks have a lower chance to appear.
+- **Perks are removed completely.**
+- Every priest can perform the basic actions: move, fight, search, use items,
+  open doors, pick up/drop, throw flasks and use portals.
+- The priest receives exactly **one random Rite at character creation**.
+- A single shrine per run grants exactly **one additional random Rite**.
+- Each Rite has **one charge per map** for now.
+- The HUD must show that the priest has a usable Rite and its remaining charge.
+- Player-facing levels are removed. XP remains stored for now; progression will
+  be decided later.
 - The robe is always worn and cannot be removed.
 - The player has **Hands**, **Head** and **Robe** equipment areas.
 - The robe starts with **three slots**.
@@ -62,8 +74,9 @@ plan:
 - The current Meteor Field remains the final woods map for this revamp. The
   stone circle, demons and final victory are deferred to a separate end-game
   plan.
-- There is no baseline automatic healing. HP regeneration is only available
-  through an obtainable perk and restores a small, capped amount.
+- There is no baseline automatic healing. The earlier Convalescence perk is no
+  longer part of the plan; any small regeneration must come from a later Rite,
+  relic or separate progression decision.
 - Player and monster states such as bleeding are deferred to a separate plan
   and are not part of this revamp.
 
@@ -73,65 +86,68 @@ Keep only the following player-facing resources:
 
 - **HP** — health.
 - **AP** — total armour points supplied by equipped shards.
-- **Perks** — passive traits, randomly assigned and later earned.
-- **Rites/spells** — active abilities, if kept separate from perks. This split
-  is still open.
+- **Rite charges** — one use per map for each known Rite.
 - **Robe slots** — the inventory limit for vials, flasks, shards and small
   relics.
 
-No player-facing strength, toughness, agility or intelligence. Combat should
-remain readable through weapon values, HP, AP and explicit perk effects rather
-than hidden derived formulas.
+No player-facing strength, toughness, agility or intelligence. No perks and no
+skill sheet. Combat should remain readable through weapon values, HP, AP and
+explicit item/Rite effects.
 
-## 4. Perks, rites and progression
+XP may still be awarded and stored internally, but it does not grant levels or
+player-facing progression yet. The old level-up, free-point and belt-unlock flow
+should be removed.
 
-### 4.1 Perks
+## 4. Rites
 
-Perks define a run’s build. They are passive unless explicitly stated otherwise.
+### 4.1 Rules
 
-- Assigned at character creation with weighted probabilities.
-- Powerful perks are rarer; rarity should mean “more unusual or build-defining”,
-  not strictly stronger in every situation.
-- Perks must not duplicate within one run.
-- The intro uses the assigned perks for background lines.
-- Perks can be gained later through experience and a perk progression tree.
-- The tree should stay shallow and readable; exact tiers and prerequisites are
-  still open.
-- Prefer binary effects or simple “+1 rank” bonuses over percentage stacking.
+- Rites are active abilities, not passive perks.
+- The priest starts with one random Rite.
+- One shrine per run grants a second random Rite, once only.
+- Each known Rite has one charge per map.
+- Charges refresh when entering a new map.
+- Using a Rite consumes its charge for the current map.
+- Rites should have one clear effect and no percentage scaling.
+- Rites should remain useful without a dedicated statistic such as Faith.
 
-Example perk themes:
+### 4.2 Starting Rite list
 
-| Perk | Rough role | Intro hint |
-|---|---|---|
-| **Former Soldier** | better melee; starts with a military knife | “You wore a uniform before you wore the collar.” |
-| **Gravedigger** | tougher; starts with a shovel; better grave loot | “You know the weight of wet earth.” |
-| **Disgraced Exorcist** | better holy effects; starts with holy water | “Something followed you out of the last village.” |
-| **Poacher’s Son** | better throwing; starts with a flask | “You learned to throw before you learned to pray.” |
-| **Plague Orphan** | poison resistance; extra food | “The fever took your family, not you.” |
-| **Pilgrim** | better searching; starts with a walking staff | “You have walked farther than most maps admit.” |
-| **Convalescence** | slow, capped out-of-combat regeneration | “Your wounds close slowly when you are left alone.” |
+The first implementation should keep the list small and readable:
 
-The exact perk pool, rarity weights and number of starting perks remain open.
-The current candidate is three starting perks, with more gained during play.
+| Rite | Effect |
+|---|---|
+| **Blessing** | Restore 2 AP to the most damaged equipped shard. |
+| **Healing Wounds** | Restore 5 HP to the priest. |
+| **Shout** | Enemies within 6 tiles flee for 3 turns. |
+| **Banish** | Target undead flees for 5 turns; weak undead are removed from the map. |
+| **Immobilize** | Target enemy cannot move for 3 turns. |
+| **Smite** | Deal 6 holy damage to one visible enemy, with a small bonus against undead. |
+| **Sanctuary** | Enemies lose interest and do not attack for 3 turns. |
 
-There is no baseline automatic healing. The recommended shape for
-**Convalescence** is a small out-of-combat regeneration effect, capped per map.
-Exact timing and cap values remain open for tuning.
+Exact values remain tuning targets, but the effects should stay simple.
 
-### 4.2 Rites and spells
+### 4.3 Shrine Rite
 
-Active abilities such as **Shout**, **Banish**, **Blessing**, **Healing Wounds**
-and **Immobilize** may be separate from passive perks.
+- Exactly one shrine per run can grant a second Rite.
+- The granted Rite is random.
+- It should not duplicate an already known Rite; reroll until unique.
+- The shrine is consumed after use.
+- The exact placement rules and appearance are still open.
 
-The intended distinction is:
+### 4.4 HUD
 
-- **Perks** — passive, permanent, no resource cost.
-- **Rites/spells** — active, limited by charges or uses, learned from relics,
-  shrines or progression.
-- Perks may modify rites, for example by adding one use of Banish.
+The one-line HUD currently shows HP, AP and the ready weapon. It must also make
+the Rite usable at a glance.
 
-Whether rites are completely separate from the perk tree, and whether the priest
-starts with one rite, is still an open question.
+Example compact form:
+
+```text
+HP 24/30   AP 6/8   sickle   Rite: Smite 1
+```
+
+The final layout and key binding are still open, but the Rite name and remaining
+charge must be visible without opening a modal screen.
 
 ## 5. Random generation
 
@@ -140,20 +156,21 @@ At the start of a new game, generate:
 1. **Name** — from a priest name table, e.g. Father Aleksy, Barnaba, Cyryl,
    Damian, Eliasz, Feliks, Grzegorz, Hieronim, Ignacy, Jakub, Kazimierz, Leon,
    Mateusz, Mikołaj, Piotr, Rafał, Szymon, Tomasz, Urban, Wiktor.
-2. **Perks** — weighted random assignment, no duplicates. The starting count is
-   still open; three is the current preference, five is the upper option.
-3. **Starting kit** — a basic weapon, basic robe, likely one basic shard and
-   whichever vials/flasks fit the assigned perks.
-4. **Intro text** — assembled from the name, assigned perks and starting kit.
+2. **Rite** — one random Rite from the current list.
+3. **Starting kit** — a basic weapon, basic robe, one basic shard, one healing
+   vial and an empty or Rite-appropriate third slot.
+4. **Intro text** — assembled from the name, Rite and starting kit.
 
 The player never sees a class-selection screen.
 
 ### Hidden reroll
 
-The previous proposal kept a hidden `r` reroll on the intro screen. It is still
-under consideration because unlimited rerolling can undermine rare-perk
-weights. If kept, it should regenerate name, perks, kit and intro without being
-listed in the UI or help screen.
+For now the hidden `r` reroll regenerates **everything** generated for the new
+game: name, Rite, starting kit, intro and run/world generation. This is a
+development convenience while the design is still changing. It may be restricted
+later.
+
+The reroll remains undocumented in the UI and help screen for now.
 
 ## 6. Robe, head and slots
 
@@ -231,8 +248,10 @@ The priest starts with:
 
 - a basic weapon in Hands
 - a basic robe with three slots
-- a small starting kit chosen to fit the assigned perks
-- likely one basic armour shard so the priest is not armourless
+- one basic armour shard
+- one healing vial
+- one empty slot, unless the generated Rite or starting kit fills it
+- one random Rite
 
 Example provisional kit:
 
@@ -242,7 +261,8 @@ Example provisional kit:
 | Head | empty or simple hat |
 | Robe slot 1 | basic leather shard |
 | Robe slot 2 | healing vial |
-| Robe slot 3 | empty or starting flask |
+| Robe slot 3 | empty |
+| Rite | random: Smite / Blessing / Shout / … |
 
 ## 7. Priest-themed items
 
@@ -278,7 +298,7 @@ Shard values should stay small and readable, with no absorption percentages.
 - **Oil flask** — fire starter or flask refill.
 - **Healing herb / poultice** — healing.
 - **Antidote** — poison cure.
-- **Rosary** — focus or rite aid.
+- **Rosary** — focus or Rite aid.
 - **Prayer book** — lore/searching aid.
 - **Silver cross / bone relic / old tome** — chapel relics.
 
@@ -359,7 +379,6 @@ These are ideas, not locked decisions:
 - **Holy ground** — chapel floor and consecrated areas weaken undead.
 - **Blessed water** — thrown holy water leaves a short-lived blessed puddle.
 - **Flask fire** — flammable flasks create a small fire patch.
-- **Faith checks** — holy perks improve relics and blessed effects.
 - **Searching checks** — hidden compartments in barrels, crates, graves and
   altars.
 - **Village survivors** — peasants may ask for help, give hints or drop supplies.
@@ -369,35 +388,38 @@ These are ideas, not locked decisions:
 
 ## 12. Implementation phases
 
-These phases should be updated again once the perk/rite and progression
-questions are resolved.
-
-1. **Data model** — add `PriestProfile`, weighted perks, Hands/Head/Robe slots,
-   shard AP state and robe-slot installation.
-2. **Generation** — random name, weighted perks, starting kit and intro text.
-3. **Intro/UI** — remove class selection; add generated intro and decide on the
-   hidden reroll.
+1. **Data model** — add `PriestProfile`, one or two known Rites, Hands/Head/Robe
+   slots, shard AP state and robe-slot installation.
+2. **Generation** — random name, random Rite, starting kit and intro text.
+3. **Intro/UI** — remove class selection and player levels; add generated intro,
+   HUD Rite display and development reroll.
 4. **Equipment** — replace belt/body slots with the permanent robe and universal
    robe slots; implement vials, flasks and shards.
 5. **Damage model** — sequential shard depletion, breakage at 0 AP and excess
    damage to HP.
-6. **Perks and rites** — implement the shallow perk tree, perk gain cadence and
-   active rites if kept separate.
+6. **Rites** — one starting Rite, one shrine Rite, one charge per map and Rite
+   activation UI.
 7. **Items** — weapons, head items, shards, vials, flasks and relics.
 8. **Villager/zombie variants** — living types, matching zombies and conversion.
-9. **Tests and tuning** — weighted generation, perk invariants, starting kits,
+9. **Tests and tuning** — Rite generation, shrine uniqueness, starting kits,
    slot limits, shard breakage, intro text and balance.
 
 ## 13. Acceptance criteria
 
 - [ ] There is no class-selection screen.
 - [ ] The player is always a priest with a randomly generated name.
-- [ ] Perks are assigned with weighted rarity and never duplicate.
-- [ ] Powerful perks are rarer than common perks.
-- [ ] The intro is generated from the assigned perks and starting kit.
-- [ ] STR/TGH/AGI/INT are removed from player-facing play.
+- [ ] Perks and numeric skill values are removed.
+- [ ] The priest starts with exactly one random Rite.
+- [ ] A single shrine per run grants exactly one additional random Rite.
+- [ ] Each Rite has one charge per map, refreshed on entry.
+- [ ] The HUD shows the available Rite and its remaining charge.
+- [ ] The intro is generated from the assigned Rite and starting kit.
+- [ ] Hidden `r` rerolls everything during development.
+- [ ] STR/TGH/AGI/INT and player-facing levels are removed.
+- [ ] XP is still stored but does not grant levels yet.
 - [ ] There is no baseline automatic healing.
-- [ ] Only the Convalescence perk restores a small, capped amount of HP.
+- [ ] Any later regeneration must be a Rite, relic or separate progression
+      decision, not a perk.
 - [ ] Equipment is limited to Hands, Head and the permanently worn Robe.
 - [ ] The robe starts with three slots and can gain more during the adventure.
 - [ ] Each robe slot holds exactly one vial, flask, shard or small item.
@@ -417,19 +439,18 @@ questions are resolved.
 
 ## 14. Open questions
 
-- Should the priest start with three or five perks?
-- What is the total perk pool, and what rarity weights should it use?
-- How deep is the perk tree, what are its tiers and what cadence grants perks?
-- Are rites/spells separate from perks, or part of the same progression?
-- Does the hidden reroll remain, and can it fish for rare perks?
-- What exactly is in the starting kit, including whether a basic shard is always
-  equipped?
-- How are new robe slots earned during the adventure?
+- What is the exact HUD layout and key binding for activating a Rite?
+- How should the HUD show both Rites after the shrine grants a second one?
+- What are the final tuning values for the seven starting Rites?
+- Where does the single shrine appear, and how is it presented?
 - What are the shard types and their maximum AP values?
-- What are the exact trigger, amount and per-map cap for Convalescence?
 - How much HP should each vial restore?
-- What flask types exist, and what gates throwing them?
+- What flask types exist, and what is their exact effect?
 - Which head items exist, and what is each one’s single effect?
+- How are new robe slots earned during the adventure?
 - How many living villager types appear in the first implementation pass?
 - What counts as purging corruption: killing, banishing, curing or a mix?
+- What will XP eventually be used for, now that levels are removed?
+- Where should small regeneration come from now that the Convalescence perk is
+  gone?
 - What are the final demon/end-game rules? Deferred to a separate plan.
