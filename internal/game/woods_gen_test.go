@@ -5,62 +5,115 @@ import (
 	"testing"
 )
 
-func TestWoodsGeneratorTerrain(t *testing.T) {
-	for level := 0; level < 9; level++ {
-		for seed := int64(0); seed < 10; seed++ {
-			g := NewGame(seed + int64(level)*1000)
-			g.SetupNewGame(0, "tester")
+func TestWoodsMapsAreCompactThemedAndConnected(t *testing.T) {
+	for seed := int64(0); seed < 12; seed++ {
+		g := NewGame(seed)
+		g.SetupNewGame(0, "tester")
+		for level := 0; level < numWoodsMaps; level++ {
 			g.GenerateLevel(level)
-
-			if g.Map.W != mapWidth || g.Map.H != mapHeight {
-				t.Fatalf("level %d seed %d map = %dx%d", level, seed, g.Map.W, g.Map.H)
+			if g.Map.W != mapWidth || g.Map.H != woodsMapHeight {
+				t.Fatalf("seed %d level %d map = %dx%d, want %dx%d", seed, level, g.Map.W, g.Map.H, mapWidth, woodsMapHeight)
 			}
-			roads, lanterns, bushes, trees, brambles := 0, 0, 0, 0, 0
+			theme := g.WoodsRun.Themes[level]
+			if g.Map.Name != woodsThemeName(theme) {
+				t.Fatalf("seed %d level %d name = %q, want %q", seed, level, g.Map.Name, woodsThemeName(theme))
+			}
+			voids := 0
+			roads, lanterns, trees := 0, 0, 0
 			for _, tile := range g.Map.Tiles {
 				switch tile {
-				case tileDirtRoad:
+				case 0, 1:
+					voids++
+				case tileDirtRoad, tileWoodenBridge, tileStoneBridge:
 					roads++
 				case tileLanternPost:
 					lanterns++
-				case tileBush:
-					bushes++
-				case 3, 4:
+				case 3, 4, tileDenseTree:
 					trees++
-				case tileBramble:
-					brambles++
 				}
 			}
-			if roads < 10 {
-				t.Fatalf("level %d seed %d has only %d road tiles", level, seed, roads)
+			if voids > 0 {
+				t.Fatalf("seed %d level %d has %d void tiles", seed, level, voids)
+			}
+			if roads < 20 {
+				t.Fatalf("seed %d level %d has only %d road tiles", seed, level, roads)
 			}
 			if lanterns == 0 {
-				t.Fatalf("level %d seed %d has no lantern posts", level, seed)
+				t.Fatalf("seed %d level %d has no lantern posts", seed, level)
 			}
-			if bushes == 0 || trees == 0 || brambles == 0 {
-				t.Fatalf("level %d seed %d missing vegetation: bushes=%d trees=%d brambles=%d", level, seed, bushes, trees, brambles)
+			if trees == 0 {
+				t.Fatalf("seed %d level %d has no border trees", seed, level)
 			}
 			if !g.Map.IsPassable(g.Player.X, g.Player.Y) {
-				t.Fatalf("level %d seed %d start is not passable", level, seed)
+				t.Fatalf("seed %d level %d start is not passable", seed, level)
 			}
 			px, py := findPortal(g)
 			if px < 0 {
-				t.Fatalf("level %d seed %d has no portal", level, seed)
+				t.Fatalf("seed %d level %d has no portal", seed, level)
+			}
+			if portalEdge(g, px, py) != g.WoodsRun.Exits[level] {
+				t.Fatalf("seed %d level %d portal at %d,%d is not on exit edge %d", seed, level, px, py, g.WoodsRun.Exits[level])
 			}
 			if !reachable(g, g.Player.X, g.Player.Y, px, py) {
-				t.Fatalf("level %d seed %d portal is not reachable", level, seed)
+				t.Fatalf("seed %d level %d portal is not reachable", seed, level)
 			}
 			if px == g.Player.X && py == g.Player.Y {
-				t.Fatalf("level %d seed %d spawned the player on the exit", level, seed)
+				t.Fatalf("seed %d level %d spawned the player on the exit", seed, level)
 			}
+			checkWoodsBorderGaps(t, g, level)
+		}
+	}
+}
+
+func portalEdge(g *Game, x, y int) int {
+	switch {
+	case y == 0:
+		return EdgeNorth
+	case y == g.Map.H-1:
+		return EdgeSouth
+	case x == g.Map.W-1:
+		return EdgeEast
+	default:
+		return EdgeWest
+	}
+}
+
+func checkWoodsBorderGaps(t *testing.T, g *Game, level int) {
+	t.Helper()
+	cells := map[int]int{}
+	for x := 0; x < g.Map.W; x++ {
+		if g.Map.IsPassable(x, 0) {
+			cells[EdgeNorth]++
+		}
+		if g.Map.IsPassable(x, g.Map.H-1) {
+			cells[EdgeSouth]++
+		}
+	}
+	for y := 0; y < g.Map.H; y++ {
+		if g.Map.IsPassable(0, y) {
+			cells[EdgeWest]++
+		}
+		if g.Map.IsPassable(g.Map.W-1, y) {
+			cells[EdgeEast]++
+		}
+	}
+	entry, exit := g.WoodsRun.Entries[level], g.WoodsRun.Exits[level]
+	for _, edge := range []int{EdgeNorth, EdgeSouth, EdgeEast, EdgeWest} {
+		want := 0
+		if edge == entry || edge == exit {
+			want = 1
+		}
+		if cells[edge] != want {
+			t.Fatalf("level %d edge %d has %d passable border tiles, want %d", level, edge, cells[edge], want)
 		}
 	}
 }
 
 func TestWoodsGeneratorBuildsHuts(t *testing.T) {
-	for level := 0; level < 9; level++ {
-		for seed := int64(0); seed < 10; seed++ {
-			g := NewGame(seed + int64(level)*2000)
-			g.SetupNewGame(0, "tester")
+	for seed := int64(0); seed < 8; seed++ {
+		g := NewGame(seed + 2000)
+		g.SetupNewGame(0, "tester")
+		for level := 0; level < numWoodsMaps; level++ {
 			g.GenerateLevel(level)
 			doors, windows, furniture := 0, 0, 0
 			for y := 0; y < g.Map.H; y++ {
@@ -74,7 +127,7 @@ func TestWoodsGeneratorBuildsHuts(t *testing.T) {
 						roadside := false
 						for _, d := range [][2]int{{0, -1}, {0, 1}, {-1, 0}, {1, 0}} {
 							t := g.Map.Tile(x+d[0], y+d[1])
-							if t == tileDirtRoad || t == tileWoodenBridge {
+							if t == tileDirtRoad || t == tileWoodenBridge || t == tileStoneBridge {
 								roadside = true
 								break
 							}
@@ -89,85 +142,53 @@ func TestWoodsGeneratorBuildsHuts(t *testing.T) {
 					}
 				}
 			}
-			spec := woodLevelSpecFor(level)
-			maxDoors := spec.HutMax
-			if level == 0 || level == 3 {
-				maxDoors++ // landmark shed/mill house also has a wooden door
-			}
-			if doors < spec.HutMin || doors > maxDoors {
-				t.Fatalf("level %d seed %d has %d hut doors, want %d-%d", level, seed, doors, spec.HutMin, maxDoors)
-			}
-			if windows == 0 {
-				t.Fatalf("level %d seed %d has no hut windows", level, seed)
-			}
-			if furniture == 0 {
-				t.Fatalf("level %d seed %d has no hut furniture", level, seed)
-			}
-		}
-	}
-}
-
-func TestWoodsLandmarks(t *testing.T) {
-	expected := [][]uint8{
-		{tileWoodpile},
-		{tileOrchardTree, tileBeehive, tileCiderPress},
-		{tileGravestone, tileIronFence, tileCryptDoor},
-		{tileMillStone},
-		{tileTent, tileCampfire, tileCage, tileDryingRack},
-		{tileMushroomRing, tileDruidAltar, 12},
-		{tileWell, tileMarketStall, tileCart, tileHaystack},
-		{tileKiln},
-		{tileChapelAltar, tileBellTower, tileGravestone},
-	}
-	for level := 0; level < 9; level++ {
-		for seed := int64(0); seed < 5; seed++ {
-			g := NewGame(seed + int64(level)*5000)
-			g.SetupNewGame(0, "tester")
-			g.GenerateLevel(level)
-			spec := woodLevelSpecFor(level)
-			if g.Map.Name != spec.Name {
-				t.Fatalf("level %d name = %q, want %q", level, g.Map.Name, spec.Name)
-			}
-			counts := map[uint8]int{}
-			for _, tile := range g.Map.Tiles {
-				counts[tile]++
-			}
-			for _, tile := range expected[level] {
-				if counts[tile] == 0 {
-					t.Fatalf("level %d seed %d missing landmark tile %d", level, seed, tile)
+			if g.WoodsRun.Themes[level] == WoodsPeasantHouses {
+				if doors < 2 {
+					t.Fatalf("level %d seed %d has only %d cottage doors", level, seed, doors)
+				}
+				if windows == 0 || furniture == 0 {
+					t.Fatalf("level %d seed %d cottage is missing windows/furniture", level, seed)
 				}
 			}
 		}
 	}
 }
 
-func TestWoodsExitModes(t *testing.T) {
-	seen := map[int]int{}
-	for level := 0; level < 8; level++ {
-		for seed := int64(0); seed < 30; seed++ {
-			g := NewGame(seed + int64(level)*8000)
-			g.SetupNewGame(0, "tester")
-			g.GenerateLevel(level)
-			seen[g.Map.ExitMode]++
-		}
+func TestWoodsLandmarksIdentifyEachTheme(t *testing.T) {
+	want := map[int][]uint8{
+		WoodsChurch:        {tileBellTower, tileChapelAltar, tileGravestone},
+		WoodsPeasantHouses: {tileWell, tileMarketStall, tileCart, tileHaystack},
+		WoodsMillPond:      {tileMillStone, tileBarrel, tileCart},
+		WoodsCemetery:      {tileIronFence, tileCryptDoor, tileGravestone},
+		WoodsMeteorField:   {tileMeteorRock, tileBurnedGround, tileDeadTree},
 	}
-	for _, mode := range []int{ExitEdge, ExitCenter, ExitLandmark} {
-		if seen[mode] == 0 {
-			t.Fatalf("exit mode %d never appeared: %v", mode, seen)
-		}
-	}
-	for seed := int64(0); seed < 20; seed++ {
-		g := NewGame(seed + 90000)
+	for seed := int64(0); seed < 8; seed++ {
+		g := NewGame(seed + 5000)
 		g.SetupNewGame(0, "tester")
-		g.GenerateLevel(8)
-		if g.Map.ExitMode != ExitLandmark {
-			t.Fatalf("level 8 exit mode = %d, want landmark", g.Map.ExitMode)
+		for level := 0; level < numWoodsMaps; level++ {
+			g.GenerateLevel(level)
+			theme := g.WoodsRun.Themes[level]
+			counts := map[uint8]int{}
+			for _, tile := range g.Map.Tiles {
+				counts[tile]++
+			}
+			for _, tile := range want[theme] {
+				if counts[tile] == 0 {
+					t.Fatalf("seed %d level %d theme %d missing landmark tile %d", seed, level, theme, tile)
+				}
+			}
+			if g.Map.LandmarkX < g.Map.W/4 || g.Map.LandmarkX > g.Map.W*3/4 {
+				t.Fatalf("seed %d level %d landmark is not central: x=%d", seed, level, g.Map.LandmarkX)
+			}
+			if g.Map.LandmarkY < 2 || g.Map.LandmarkY >= g.Map.H-2 {
+				t.Fatalf("seed %d level %d landmark y out of bounds: %d", seed, level, g.Map.LandmarkY)
+			}
 		}
 	}
 }
 
 func TestAllWoodsLevelsRender(t *testing.T) {
-	for level := 0; level < 9; level++ {
+	for level := 0; level < numWoodsMaps; level++ {
 		g := NewGame(int64(91000 + level))
 		g.SetupNewGame(0, "tester")
 		g.GenerateLevel(level)
@@ -180,6 +201,10 @@ func TestAllWoodsLevelsRender(t *testing.T) {
 			text := screenText(s)
 			if !strings.Contains(text, "@") {
 				t.Fatalf("level %d mode %s did not render the player", level, mode)
+			}
+			rows := strings.Split(text, "\n")
+			if len(rows) != screenH+1 {
+				t.Fatalf("level %d mode %s rendered %d rows, want %d", level, mode, len(rows)-1, screenH)
 			}
 			s.Fini()
 		}

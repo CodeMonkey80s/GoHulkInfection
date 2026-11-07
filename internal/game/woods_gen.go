@@ -5,12 +5,6 @@ import (
 	"math"
 )
 
-const (
-	ExitEdge = iota
-	ExitCenter
-	ExitLandmark
-)
-
 type roadNode struct {
 	x, y int
 	cost int
@@ -30,196 +24,167 @@ func (h *roadHeap) Pop() interface{} {
 	return it
 }
 
-// generateWoodsLevel replaces the room-section layout for levels 0-8 with a
-// first-pass outdoor terrain generator: grass, forest density, clearings,
-// a main dirt road and lantern posts.
+// generateWoodsLevel builds one compact 80x23 map from the run's theme order
+// and snake direction sequence.
 func (g *Game) generateWoodsLevel(level int) {
-	spec := woodLevelSpecFor(level)
-	m := NewMap(mapWidth, mapHeight)
+	index := woodsRunIndex(level)
+	if !validWoodsRun(&g.WoodsRun) {
+		g.WoodsRun = newWoodsRun(g.RNG)
+	}
+	theme := g.WoodsRun.Themes[index]
+	entryEdge := g.WoodsRun.Entries[index]
+	exitEdge := g.WoodsRun.Exits[index]
+
+	m := NewMap(mapWidth, woodsMapHeight)
 	m.Theme = 0
-	m.Name = spec.Name
+	m.Name = woodsThemeName(theme)
 	for i := range m.Tiles {
 		m.Tiles[i] = 2 // grass
 	}
-	for x := 0; x < m.W; x++ {
-		m.SetTile(x, 0, tileBramble)
-		m.SetTile(x, m.H-1, tileBramble)
-	}
-	for y := 0; y < m.H; y++ {
-		m.SetTile(0, y, tileBramble)
-		m.SetTile(m.W-1, y, tileBramble)
-	}
+	g.buildWoodsTreeBorder(m)
 
-	startX, startY := 2, 6+g.Roll(m.H-12)
-	exitMode := g.chooseWoodsExitMode(level)
-	exitX, exitY := g.woodsExit(m, exitMode, startX, startY)
-	m.ExitMode = exitMode
+	entryPos := g.woodsEdgePosition(m, entryEdge)
+	exitPos := g.woodsEdgePosition(m, exitEdge)
+	_, entryInside := woodsEdgePoints(m, entryEdge, entryPos)
+	_, exitInside := woodsEdgePoints(m, exitEdge, exitPos)
 
-	clearings := make([][3]int, 0, 6)
-	clearings = append(clearings,
-		[3]int{startX, startY, 4},
-		[3]int{exitX, exitY, 4},
-	)
-	for i := 0; i < 3+g.Roll(3); i++ {
-		clearings = append(clearings, [3]int{
-			8 + g.Roll(m.W-16),
-			4 + g.Roll(m.H-8),
-			3 + g.Roll(4),
-		})
-	}
+	cx, cy := g.woodsLandmarkCenter(m, theme)
+	anchor := g.buildWoodsThemeLandmark(m, theme, cx, cy, entryEdge)
+	path := g.buildWoodsRoute(m, entryEdge, entryPos, exitEdge, exitPos, anchor)
+	g.addWoodsThemeWater(m, theme, path, cx, cy)
+	g.rebridgeWoodsPath(m, path)
 
-	g.growWoodsForest(m, level, clearings)
-	for _, c := range clearings {
-		clearWoodsArea(m, c[0], c[1], c[2], 2)
-	}
-	g.generateWoodsWater(m)
-	clearWoodsArea(m, startX, startY, 2, 1)
-	clearWoodsArea(m, exitX, exitY, 2, 1)
-
-	path := g.findWoodsRoad(m, startX, startY, exitX, exitY)
-	for _, p := range path {
-		g.setWoodsRoadTile(m, p[0], p[1])
-	}
-	g.setWoodsRoadTile(m, startX, startY)
-	m.SetTile(exitX, exitY, portalTile(0))
-	landmarkPath := path
-	if exitMode == ExitLandmark && level != 8 && len(path) > 24 {
-		if level == 0 {
-			landmarkPath = path[:24]
-		} else {
-			landmarkPath = path[len(path)-24:]
-		}
-	}
-	g.placeWoodsLandmark(m, level, landmarkPath, startX, startY, exitX, exitY)
-	g.placeWoodsHuts(m, path, startX, startY, exitX, exitY, spec.HutMin, spec.HutMax)
+	spec := woodThemeSpecFor(theme)
+	g.placeWoodsHuts(m, path, entryInside[0], entryInside[1], exitInside[0], exitInside[1], spec.HutMin, spec.HutMax)
 	g.placeWoodsLanterns(m, path)
-	g.scatterWoodsProps(m, startX, startY, exitX, exitY)
+	g.scatterWoodsProps(m, theme, path, entryInside, exitInside)
 
 	if g.Player == nil {
 		g.Player = &Critter{Proto: -1, Player: true, Align: AlignPlayer, Class: 4}
 	}
-	g.Player.X, g.Player.Y = startX, startY
+	g.Player.X, g.Player.Y = m.FirstFreeNear(entryInside[0], entryInside[1])
 	g.finishLevel(m, level, 0)
 }
 
-func (g *Game) chooseWoodsExitMode(level int) int {
-	if level == 8 {
-		return ExitLandmark
-	}
-	switch r := g.Roll(100); {
-	case r < 50:
-		return ExitEdge
-	case r < 75:
-		return ExitCenter
-	default:
-		return ExitLandmark
-	}
-}
-
-func (g *Game) woodsExit(m *Map, mode, startX, startY int) (int, int) {
-	for tries := 0; tries < 80; tries++ {
-		var x, y int
-		switch mode {
-		case ExitEdge:
-			switch g.Roll(4) {
-			case 0:
-				x, y = 3+g.Roll(m.W-6), 2
-			case 1:
-				x, y = m.W-3, 3+g.Roll(m.H-6)
-			case 2:
-				x, y = 3+g.Roll(m.W-6), m.H-3
-			default:
-				x, y = 2, 3+g.Roll(m.H-6)
-			}
-		case ExitCenter:
-			x, y = m.W/2-8+g.Roll(16), m.H/2-6+g.Roll(12)
-		default:
-			x, y = m.W/2+g.Roll(m.W/2-10), 6+g.Roll(m.H-12)
-		}
-		x = clampInt(x, 2, m.W-3)
-		y = clampInt(y, 2, m.H-3)
-		if abs(x-startX)+abs(y-startY) >= 18 {
-			return x, y
-		}
-	}
-	return m.W - 3, m.H / 2
-}
-
-func (g *Game) growWoodsForest(m *Map, level int, clearings [][3]int) {
-	const cell = 8
-	gw := (m.W+cell-1)/cell + 1
-	gh := (m.H+cell-1)/cell + 1
-	grid := make([]float64, gw*gh)
-	for i := range grid {
-		grid[i] = g.RNG.Float64()
-	}
-	density := 0.52 + float64(level)*0.012
-	for y := 1; y < m.H-1; y++ {
-		for x := 1; x < m.W-1; x++ {
-			n := sampleWoodsNoise(grid, gw, gh, float64(x)/cell, float64(y)/cell)
-			n = n*0.85 + g.RNG.Float64()*0.15
-			for _, c := range clearings {
-				d := math.Hypot(float64(x-c[0]), float64(y-c[1]))
-				if d < float64(c[2]) {
-					n -= (1 - d/float64(c[2])) * 0.35
-				}
-			}
-			switch {
-			case n > density+0.22:
-				m.SetTile(x, y, 4) // big tree
-			case n > density+0.08:
-				m.SetTile(x, y, 3) // tree
-			case n > density-0.02:
-				if g.Roll(100) < 20 {
-					m.SetTile(x, y, tileBramble)
-				} else {
-					m.SetTile(x, y, tileBush)
-				}
-			}
-		}
-	}
-}
-
-func sampleWoodsNoise(grid []float64, gw, gh int, fx, fy float64) float64 {
-	x0, y0 := int(fx), int(fy)
-	tx, ty := fx-float64(x0), fy-float64(y0)
-	if x0 < 0 {
-		x0, tx = 0, 0
-	}
-	if y0 < 0 {
-		y0, ty = 0, 0
-	}
-	if x0 >= gw-1 {
-		x0, tx = gw-2, 1
-	}
-	if y0 >= gh-1 {
-		y0, ty = gh-2, 1
-	}
-	tx = tx * tx * (3 - 2*tx)
-	ty = ty * ty * (3 - 2*ty)
-	a := grid[y0*gw+x0]
-	b := grid[y0*gw+x0+1]
-	c := grid[(y0+1)*gw+x0]
-	d := grid[(y0+1)*gw+x0+1]
-	top := a + (b-a)*tx
-	bottom := c + (d-c)*tx
-	return top + (bottom-top)*ty
-}
-
-func clearWoodsArea(m *Map, cx, cy, radius, edge int) {
-	for y := cy - radius; y <= cy+radius; y++ {
-		for x := cx - radius; x <= cx+radius; x++ {
-			if x < edge || y < edge || x >= m.W-edge || y >= m.H-edge {
+func (g *Game) buildWoodsTreeBorder(m *Map) {
+	for y := 0; y < m.H; y++ {
+		for x := 0; x < m.W; x++ {
+			if x >= 2 && y >= 2 && x < m.W-2 && y < m.H-2 {
 				continue
 			}
-			if abs(x-cx)+abs(y-cy) <= radius+edge {
-				m.SetTile(x, y, 2) // grass
+			switch {
+			case g.Roll(100) < 18:
+				m.SetTile(x, y, tileBramble)
+			case g.Roll(100) < 22:
+				m.SetTile(x, y, tileDeadTree)
+			default:
+				m.SetTile(x, y, tileDenseTree)
 			}
+		}
+	}
+}
+
+func (g *Game) woodsEdgePosition(m *Map, edge int) int {
+	switch edge {
+	case EdgeNorth, EdgeSouth:
+		return 10 + g.Roll(m.W-20)
+	default:
+		return 4 + g.Roll(m.H-8)
+	}
+}
+
+// woodsEdgePoints returns the tile on the map edge and the first safe tile
+// inside the two-tile tree border.
+func woodsEdgePoints(m *Map, edge, pos int) (edgePoint, insidePoint [2]int) {
+	switch edge {
+	case EdgeNorth:
+		return [2]int{pos, 0}, [2]int{pos, 3}
+	case EdgeSouth:
+		return [2]int{pos, m.H - 1}, [2]int{pos, m.H - 4}
+	case EdgeEast:
+		return [2]int{m.W - 1, pos}, [2]int{m.W - 4, pos}
+	default:
+		return [2]int{0, pos}, [2]int{3, pos}
+	}
+}
+
+func (g *Game) buildWoodsRoute(m *Map, entryEdge, entryPos, exitEdge, exitPos int, anchor [2]int) [][2]int {
+	entryEdgePoint, entryInside := woodsEdgePoints(m, entryEdge, entryPos)
+	exitEdgePoint, exitInside := woodsEdgePoints(m, exitEdge, exitPos)
+	if m.BlocksMove(anchor[0], anchor[1]) {
+		m.SetTile(anchor[0], anchor[1], 2)
+	}
+
+	first := g.findWoodsRoad(m, entryInside[0], entryInside[1], anchor[0], anchor[1])
+	second := g.findWoodsRoad(m, anchor[0], anchor[1], exitInside[0], exitInside[1])
+	var path [][2]int
+	path = append(path, first...)
+	if len(second) > 1 {
+		path = append(path, second[1:]...)
+	}
+	if len(first) == 0 || len(second) == 0 {
+		path = g.directWoodsRoute(entryInside, anchor, exitInside)
+	}
+	for _, p := range path {
+		g.setWoodsRoadTile(m, p[0], p[1])
+	}
+	g.carveWoodsEdgeRoad(m, entryEdgePoint, entryInside)
+	g.carveWoodsEdgeRoad(m, exitEdgePoint, exitInside)
+	m.SetTile(exitEdgePoint[0], exitEdgePoint[1], portalTile(0))
+	return path
+}
+
+func (g *Game) carveWoodsEdgeRoad(m *Map, edgePoint, insidePoint [2]int) {
+	path := m.Line(edgePoint[0], edgePoint[1], insidePoint[0], insidePoint[1])
+	g.setWoodsRoadTile(m, edgePoint[0], edgePoint[1])
+	for _, p := range path {
+		g.setWoodsRoadTile(m, p[0], p[1])
+	}
+	g.setWoodsRoadTile(m, insidePoint[0], insidePoint[1])
+}
+
+func (g *Game) directWoodsRoute(points ...[2]int) [][2]int {
+	var out [][2]int
+	for i := 0; i < len(points); i++ {
+		if i == 0 {
+			out = append(out, points[i])
+			continue
+		}
+		from := points[i-1]
+		to := points[i]
+		x, y := from[0], from[1]
+		for x != to[0] {
+			if x < to[0] {
+				x++
+			} else {
+				x--
+			}
+			out = append(out, [2]int{x, y})
+		}
+		for y != to[1] {
+			if y < to[1] {
+				y++
+			} else {
+				y--
+			}
+			out = append(out, [2]int{x, y})
+		}
+	}
+	return out
+}
+
+func (g *Game) rebridgeWoodsPath(m *Map, path [][2]int) {
+	for _, p := range path {
+		if isWoodsWater(m.Tile(p[0], p[1])) {
+			m.SetTile(p[0], p[1], tileWoodenBridge)
 		}
 	}
 }
 
 func woodsRoadCost(t uint8) int {
+	if isWoodsStructure(t) {
+		return 80
+	}
 	switch t {
 	case tileDeepWater:
 		return 40
@@ -227,10 +192,10 @@ func woodsRoadCost(t uint8) int {
 		return 16
 	case tileRiverBank:
 		return 2
-	case tileBramble, tileFallenLog, tileDeadTree, tileLanternPost:
+	case tileBramble, tileFallenLog, tileDeadTree, tileLanternPost, tileDenseTree:
 		return 18
 	case 3, 4: // tree, big tree
-		return 3
+		return 4
 	case tileBush, tileReeds:
 		return 2
 	default:
@@ -292,10 +257,11 @@ func (g *Game) findWoodsRoad(m *Map, sx, sy, tx, ty int) [][2]int {
 }
 
 func (g *Game) placeWoodsLanterns(m *Map, path [][2]int) {
-	if len(path) < 12 {
+	if len(path) < 6 {
 		return
 	}
-	placeAt := func(p [2]int) bool {
+	placed := 0
+	tryAt := func(p [2]int) bool {
 		for radius := 1; radius <= 3; radius++ {
 			for dy := -radius; dy <= radius; dy++ {
 				for dx := -radius; dx <= radius; dx++ {
@@ -303,11 +269,11 @@ func (g *Game) placeWoodsLanterns(m *Map, path [][2]int) {
 						continue
 					}
 					x, y := p[0]+dx, p[1]+dy
-					if x < 1 || y < 1 || x >= m.W-1 || y >= m.H-1 {
+					if x < 2 || y < 2 || x >= m.W-2 || y >= m.H-2 {
 						continue
 					}
 					t := m.Tile(x, y)
-					if t == 2 || t == tileBush {
+					if t == 2 || t == tileBush || t == tileFlowers || t == tileMud {
 						m.SetTile(x, y, tileLanternPost)
 						return true
 					}
@@ -316,36 +282,222 @@ func (g *Game) placeWoodsLanterns(m *Map, path [][2]int) {
 		}
 		return false
 	}
-	placed := false
-	for i := 6; i < len(path)-6; i += 6 + g.Roll(3) {
-		if placeAt(path[i]) {
-			placed = true
+	for i := 6; i < len(path)-2 && placed < 8; i += 5 + g.Roll(3) {
+		if tryAt(path[i]) {
+			placed++
 		}
 	}
-	if !placed {
-		placeAt(path[len(path)/2])
+	for i := 6; i < len(path)-1 && placed < 4; i += 2 {
+		if tryAt(path[i]) {
+			placed++
+		}
 	}
 }
 
-func (g *Game) scatterWoodsProps(m *Map, startX, startY, exitX, exitY int) {
-	for i := 0; i < 90; i++ {
+func (g *Game) scatterWoodsProps(m *Map, theme int, path [][2]int, entry, exit [2]int) {
+	want := 6 + g.Roll(7)
+	placed := 0
+	for tries := 0; tries < 300 && placed < want; tries++ {
 		x := 2 + g.Roll(m.W-4)
 		y := 2 + g.Roll(m.H-4)
 		if m.Tile(x, y) != 2 {
 			continue
 		}
-		if abs(x-startX)+abs(y-startY) < 5 || abs(x-exitX)+abs(y-exitY) < 5 {
+		if abs(x-entry[0])+abs(y-entry[1]) < 4 || abs(x-exit[0])+abs(y-exit[1]) < 4 {
 			continue
 		}
-		switch r := g.Roll(100); {
-		case r < 35:
-			m.SetTile(x, y, tileFlowers)
-		case r < 65:
-			m.SetTile(x, y, tileStump)
-		case r < 82:
-			m.SetTile(x, y, tileFallenLog)
-		case r < 92:
-			m.SetTile(x, y, tileDeadTree)
+		if abs(x-m.LandmarkX)+abs(y-m.LandmarkY) < 3 {
+			continue
+		}
+		var tile uint8
+		switch theme {
+		case WoodsCemetery:
+			switch r := g.Roll(100); {
+			case r < 35:
+				tile = tileGravestone
+			case r < 65:
+				tile = tileDeadTree
+			case r < 85:
+				tile = tileStump
+			default:
+				tile = tileBush
+			}
+		case WoodsMeteorField:
+			switch r := g.Roll(100); {
+			case r < 40:
+				tile = tileBurnedGround
+			case r < 65:
+				tile = tileDeadTree
+			case r < 85:
+				tile = tileStump
+			default:
+				tile = tileMeteorRock
+			}
+		case WoodsMillPond:
+			switch r := g.Roll(100); {
+			case r < 30:
+				tile = tileFlowers
+			case r < 55:
+				tile = tileStump
+			case r < 75:
+				tile = tileBush
+			default:
+				tile = tileReeds
+			}
+		default:
+			switch r := g.Roll(100); {
+			case r < 35:
+				tile = tileFlowers
+			case r < 60:
+				tile = tileStump
+			case r < 80:
+				tile = tileBush
+			default:
+				tile = tileFallenLog
+			}
+		}
+		m.SetTile(x, y, tile)
+		placed++
+	}
+}
+
+func sampleWoodsNoise(grid []float64, gw, gh int, fx, fy float64) float64 {
+	x0, y0 := int(fx), int(fy)
+	tx, ty := fx-float64(x0), fy-float64(y0)
+	if x0 < 0 {
+		x0, tx = 0, 0
+	}
+	if y0 < 0 {
+		y0, ty = 0, 0
+	}
+	if x0 >= gw-1 {
+		x0, tx = gw-2, 1
+	}
+	if y0 >= gh-1 {
+		y0, ty = gh-2, 1
+	}
+	tx = tx * tx * (3 - 2*tx)
+	ty = ty * ty * (3 - 2*ty)
+	a := grid[y0*gw+x0]
+	b := grid[y0*gw+x0+1]
+	c := grid[(y0+1)*gw+x0]
+	d := grid[(y0+1)*gw+x0+1]
+	top := a + (b-a)*tx
+	bottom := c + (d-c)*tx
+	return top + (bottom-top)*ty
+}
+
+func clearWoodsArea(m *Map, cx, cy, radius, edge int) {
+	for y := cy - radius; y <= cy+radius; y++ {
+		for x := cx - radius; x <= cx+radius; x++ {
+			if x < edge || y < edge || x >= m.W-edge || y >= m.H-edge {
+				continue
+			}
+			if abs(x-cx)+abs(y-cy) <= radius+edge {
+				m.SetTile(x, y, 2) // grass
+			}
 		}
 	}
 }
+
+// addWoodsThemeWater paints the optional themed pond or river. The Mill's pond
+// deliberately overlaps the road so the route crosses it on a bridge.
+func (g *Game) addWoodsThemeWater(m *Map, theme int, path [][2]int, cx, cy int) {
+	switch theme {
+	case WoodsChurch:
+		for _, off := range [][2]int{{cx + 8, cy + 4}, {cx - 8, cy + 4}, {cx + 8, cy - 4}, {cx - 8, cy - 4}} {
+			if g.paintWoodsPondIf(m, off[0], off[1], 3+g.Roll(2), 2+g.Roll(2), false) {
+				return
+			}
+		}
+	case WoodsMillPond:
+		order := make([]int, 0, len(path))
+		for i := len(path) / 3; i < len(path)*2/3; i++ {
+			order = append(order, i)
+		}
+		for i := 2; i < len(path)-2; i++ {
+			order = append(order, i)
+		}
+		for _, idx := range order {
+			if idx <= 1 || idx >= len(path)-2 {
+				continue
+			}
+			p := path[idx]
+			if abs(p[0]-cx)+abs(p[1]-cy) < 8 {
+				continue
+			}
+			if g.paintWoodsPondIf(m, p[0], p[1], 4+g.Roll(2), 3+g.Roll(2), true) {
+				return
+			}
+		}
+		for _, idx := range order {
+			if idx <= 1 || idx >= len(path)-2 {
+				continue
+			}
+			p := path[idx]
+			if g.paintWoodsPondIf(m, p[0], p[1], 4, 3, true) {
+				return
+			}
+		}
+	}
+}
+
+func (g *Game) paintWoodsPondIf(m *Map, cx, cy, rx, ry int, allowRoad bool) bool {
+	if cx < 3 || cy < 3 || cx >= m.W-3 || cy >= m.H-3 {
+		return false
+	}
+	x0, x1 := maxInt(2, cx-rx-2), minInt(m.W-3, cx+rx+2)
+	y0, y1 := maxInt(2, cy-ry-2), minInt(m.H-3, cy+ry+2)
+	for y := y0; y <= y1; y++ {
+		for x := x0; x <= x1; x++ {
+			t := m.Tile(x, y)
+			if isWoodsStructure(t) || t == portalTile(0) {
+				return false
+			}
+			if !allowRoad && (t == tileDirtRoad || t == tileWoodenBridge) {
+				return false
+			}
+		}
+	}
+	for y := y0; y <= y1; y++ {
+		for x := x0; x <= x1; x++ {
+			dx := float64(x-cx) / float64(rx)
+			dy := float64(y-cy) / float64(ry)
+			d := dx*dx + dy*dy
+			d += (g.RNG.Float64() - 0.5) * 0.35
+			switch {
+			case d < 0.55:
+				m.SetTile(x, y, tileDeepWater)
+			case d < 1.0:
+				if g.Roll(100) < 8 {
+					m.SetTile(x, y, tileLilyPad)
+				} else {
+					m.SetTile(x, y, tileShallowWater)
+				}
+			case d < 1.35:
+				if g.Roll(100) < 20 {
+					m.SetTile(x, y, tileReeds)
+				} else {
+					m.SetTile(x, y, tileRiverBank)
+				}
+			}
+		}
+	}
+	return true
+}
+
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+var _ = math.Hypot

@@ -113,6 +113,7 @@ const (
 	RoleLanternMetal ColorRole = "light.lantern_metal"
 	RoleLanternGlow  ColorRole = "light.lantern_glow"
 	RoleFirelight    ColorRole = "light.firelight"
+	RoleMeteorGlow   ColorRole = "light.meteor_glow"
 	RoleMoonlight    ColorRole = "light.moonlight"
 
 	RoleWoodWallDark       ColorRole = "structure.wood_wall_dark"
@@ -228,24 +229,20 @@ type WoodsAccent struct {
 	Secondary RGB
 }
 
-// WoodsAccents follows the per-level palette table in the woods colour plan.
-var WoodsAccents = [9]WoodsAccent{
-	{Primary: rgbFromHex(0xC9A227), Secondary: rgbFromHex(0xD8D0B0)}, // Woodcutter's Clearing
-	{Primary: rgbFromHex(0xA83A32), Secondary: rgbFromHex(0xD8C0C8)}, // Old Orchard
-	{Primary: rgbFromHex(0xD6CBB0), Secondary: rgbFromHex(0x8A9A92)}, // Forgotten Cemetery
-	{Primary: rgbFromHex(0x2F5A66), Secondary: rgbFromHex(0xC9A85A)}, // River Mill
-	{Primary: rgbFromHex(0xE06A2A), Secondary: rgbFromHex(0x7A4E2E)}, // Poacher's Camp
-	{Primary: rgbFromHex(0x6AA89A), Secondary: rgbFromHex(0x7A7C72)}, // Druid's Grove
-	{Primary: rgbFromHex(0xB8A88A), Secondary: rgbFromHex(0x5A6A7A)}, // Abandoned Village
-	{Primary: rgbFromHex(0xE06A2A), Secondary: rgbFromHex(0x5A6A3A)}, // Charcoal Clearing
-	{Primary: rgbFromHex(0xF2C46A), Secondary: rgbFromHex(0x7A4A8A)}, // Ruined Chapel
+// WoodsAccents follows the five themed woods maps.
+var WoodsAccents = [numWoodsMaps]WoodsAccent{
+	WoodsChurch:        {Primary: rgbFromHex(0xC9A227), Secondary: rgbFromHex(0x3A6A8A)}, // church gold and stained glass
+	WoodsPeasantHouses: {Primary: rgbFromHex(0xC9A85A), Secondary: rgbFromHex(0x8A5A3A)}, // thatch and timber
+	WoodsMillPond:      {Primary: rgbFromHex(0x2F5A66), Secondary: rgbFromHex(0xC9A85A)}, // river and mill gold
+	WoodsCemetery:      {Primary: rgbFromHex(0xD6CBB0), Secondary: rgbFromHex(0x8A9A92)}, // bone and grave fog
+	WoodsMeteorField:   {Primary: rgbFromHex(0x8AF2B0), Secondary: rgbFromHex(0xE06A2A)}, // meteor glow and embers
 }
 
-func woodsAccentFor(level int) WoodsAccent {
-	if level < 0 || level >= len(WoodsAccents) {
+func woodsAccentFor(theme int) WoodsAccent {
+	if theme < 0 || theme >= len(WoodsAccents) {
 		return WoodsAccents[0]
 	}
-	return WoodsAccents[level]
+	return WoodsAccents[theme]
 }
 
 func accentableRole(role ColorRole) bool {
@@ -260,7 +257,7 @@ func (u *UI) applyWoodsAccent(c RGB, role ColorRole, x, y int) RGB {
 	if u.g == nil || u.g.Theme != 0 || !accentableRole(role) {
 		return c
 	}
-	accent := woodsAccentFor(u.g.Level)
+	accent := woodsAccentFor(u.g.currentWoodsTheme())
 	h := tileColorHash(u.g.Level, x, y) % 100
 	switch {
 	case h < 10:
@@ -325,6 +322,7 @@ var WoodsPalette = Palette{
 	RoleLanternMetal: paletteColor(0x4A4A44, 8),
 	RoleLanternGlow:  paletteColor(0xFFD27A, 14),
 	RoleFirelight:    paletteColor(0xE08A3A, 12),
+	RoleMeteorGlow:   paletteColor(0x8AF2B0, 10),
 	RoleMoonlight:    paletteColor(0x223028, 8),
 
 	RoleWoodWallDark:       paletteColor(0x4A3324, 6),

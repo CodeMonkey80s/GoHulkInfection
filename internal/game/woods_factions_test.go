@@ -13,7 +13,7 @@ func clearAround(g *Game, cx, cy, radius int) {
 }
 
 func TestWoodsSpawnsVillagersAndAnimals(t *testing.T) {
-	for level := 0; level < 9; level++ {
+	for level := 0; level < numWoodsMaps; level++ {
 		for seed := int64(0); seed < 5; seed++ {
 			g := NewGame(seed + int64(level)*7000)
 			g.SetupNewGame(0, "tester")

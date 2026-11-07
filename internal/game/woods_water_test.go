@@ -4,7 +4,7 @@ import "testing"
 
 func TestWoodsRiverIsEdgeToEdge(t *testing.T) {
 	g := NewGame(5150)
-	m := NewMap(mapWidth, mapHeight)
+	m := NewMap(mapWidth, woodsMapHeight)
 	for i := range m.Tiles {
 		m.Tiles[i] = 2
 	}
@@ -32,14 +32,13 @@ func TestWoodsRiverIsEdgeToEdge(t *testing.T) {
 	}
 }
 
-func TestWoodsGeneratorWaterAndBridges(t *testing.T) {
+func TestWoodsThemeWaterAndBridges(t *testing.T) {
 	totalBridges := 0
-	for level := 0; level < 9; level++ {
-		for seed := int64(0); seed < 10; seed++ {
-			g := NewGame(seed + int64(level)*3000)
-			g.SetupNewGame(0, "tester")
+	for seed := int64(0); seed < 12; seed++ {
+		g := NewGame(seed + 3000)
+		g.SetupNewGame(0, "tester")
+		for level := 0; level < numWoodsMaps; level++ {
 			g.GenerateLevel(level)
-
 			water, banks, bridges := 0, 0, 0
 			for y := 0; y < g.Map.H; y++ {
 				for x := 0; x < g.Map.W; x++ {
@@ -57,11 +56,16 @@ func TestWoodsGeneratorWaterAndBridges(t *testing.T) {
 					}
 				}
 			}
-			if water == 0 {
-				t.Fatalf("level %d seed %d has no water", level, seed)
+			if water > 0 && banks == 0 {
+				t.Fatalf("level %d seed %d has water without banks", level, seed)
 			}
-			if banks == 0 {
-				t.Fatalf("level %d seed %d has no river banks", level, seed)
+			if g.WoodsRun.Themes[level] == WoodsMillPond {
+				if water == 0 {
+					t.Fatalf("seed %d Mill map has no water", seed)
+				}
+				if bridges == 0 {
+					t.Fatalf("seed %d Mill map has no road bridge", seed)
+				}
 			}
 			totalBridges += bridges
 		}

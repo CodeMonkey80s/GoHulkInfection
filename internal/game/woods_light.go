@@ -24,6 +24,8 @@ func (m *Map) WarmLight(x, y int) float64 {
 				radius = 4
 			case tileCampfire, tileFireplace:
 				radius = 5
+			case tileMeteorRock:
+				radius = 4
 			}
 			if m.Fire[idx] > 0 {
 				radius = 5

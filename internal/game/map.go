@@ -6,8 +6,9 @@ import (
 )
 
 const (
-	mapWidth  = 80
-	mapHeight = 46
+	mapWidth       = 80
+	mapHeight      = 46
+	woodsMapHeight = 23
 )
 
 type Map struct {
@@ -452,7 +453,7 @@ func (g *Game) finishLevel(m *Map, level, theme int) {
 	g.Theme = theme
 	g.Weather = WeatherClear
 	g.SpawnPopulation()
-	if theme == 0 && level >= 0 && level < len(g.WoodLoot) {
+	if theme == 0 && level >= 0 && level < numWoodsMaps {
 		g.spawnSignatureLoot(level)
 	}
 	// Starting hint.
@@ -466,7 +467,7 @@ func (g *Game) finishLevel(m *Map, level, theme int) {
 
 func levelTheme(level int) int {
 	switch {
-	case level < 9:
+	case level >= 0 && level < numWoodsMaps:
 		return 0
 	case level < 18:
 		return 1

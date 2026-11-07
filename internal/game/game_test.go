@@ -9,8 +9,11 @@ import (
 func TestSetupAndFOV(t *testing.T) {
 	g := NewGame(1)
 	g.SetupNewGame(0, "tester")
-	if g.Map == nil || g.Map.W != mapWidth || g.Map.H != mapHeight {
-		t.Fatalf("bad map size")
+	if g.Map == nil {
+		t.Fatal("no map generated")
+	}
+	if g.Map.W != mapWidth || g.Map.H != woodsMapHeight {
+		t.Fatalf("bad map size: %dx%d", g.Map.W, g.Map.H)
 	}
 	if !g.Map.IsPassable(g.Player.X, g.Player.Y) {
 		t.Fatalf("player start is not passable")
