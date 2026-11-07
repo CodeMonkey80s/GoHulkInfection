@@ -159,6 +159,14 @@ type Critter struct {
 	Alert     int
 	Dead      bool
 	IsAnimal  bool
+
+	Path        []point
+	PathTargetX int
+	PathTargetY int
+	PathExpires int
+	Stuck       int
+	LastX       int
+	LastY       int
 }
 
 func (c *Critter) Def() *CritterDef {

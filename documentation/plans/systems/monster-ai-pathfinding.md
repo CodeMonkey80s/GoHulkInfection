@@ -1,12 +1,15 @@
 # Monster AI and Cardinal Pathfinding
 
-Status: **proposed**
+Status: **done**
 Parent: [Feature plans](../README.md)
 Related: [Cardinal movement](cardinal-movement.md), [Woods level revamp](../woods/level-revamp.md)
 Scope: monster target selection, pathfinding, local avoidance and villager/animal behaviour. Movement itself is covered by the cardinal movement plan.
 
 This plan replaces the current first-step BFS with a cardinal pathfinding layer
 that behaves well in the woods, around huts, water and crowds.
+
+Implementation status: complete. Monsters use four-way A* with path caching,
+hazard/occupancy costs, door opening, local sidesteps and stuck detection.
 
 ---
 
@@ -143,21 +146,21 @@ Add deterministic tests for:
 
 ## 9. Acceptance criteria
 
-- [ ] Monsters move only cardinally.
-- [ ] Monsters route around walls, furniture and deep water.
-- [ ] Monsters strongly avoid fire and acid.
-- [ ] Monsters open doors instead of stopping at them.
-- [ ] Monsters do not permanently block or oscillate around each other.
-- [ ] Villagers flee zombies and fight when armed/cornered.
-- [ ] Animals flee; boars charge when attacked.
-- [ ] Zombies still convert killed villagers.
-- [ ] Pathfinding remains fast on a crowded 80×46 map.
-- [ ] Caves, temple and time-portal AI remains unchanged.
+- [x] Monsters move only cardinally.
+- [x] Monsters route around walls, furniture and deep water.
+- [x] Monsters strongly avoid fire and acid.
+- [x] Monsters open doors instead of stopping at them.
+- [x] Monsters do not permanently block or oscillate around each other.
+- [x] Villagers flee zombies and fight when armed/cornered.
+- [x] Animals flee; boars charge when attacked.
+- [x] Zombies still convert killed villagers.
+- [x] Pathfinding remains fast on a crowded 80×46 map.
+- [x] Caves, temple and time-portal AI remains unchanged.
 
-## 10. Open questions
+## 10. Resolved decisions
 
-- Should monsters ever willingly enter fire/acid to reach a target?
-- Should allies be allowed to swap positions, or always path around?
-- How long should cached paths remain valid?
-- Should villagers use full A* or a cheaper greedy flee step?
-- Should zombies hear combat or only use sight?
+- Monsters avoid fire/acid/smoke with a high cost but may cross if no safe route exists.
+- Allies are high-cost obstacles; monsters path around them rather than swapping.
+- Cached paths last three turns or until the target moves / the next step is blocked.
+- Villagers use greedy cardinal fleeing; armed villagers use A* when advancing.
+- Zombies use sight only for now; noise/hearing remains future work.

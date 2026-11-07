@@ -733,6 +733,8 @@ func (g *Game) SpawnCritter(proto, x, y int) *Critter {
 		Level:    d.Level,
 		XP:       d.XP,
 		IsAnimal: d.Class == 0,
+		LastX:    x,
+		LastY:    y,
 	}
 	c.MaxHP = c.TGH * 3
 	if c.MaxHP < 1 {
