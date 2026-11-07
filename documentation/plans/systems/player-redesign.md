@@ -197,11 +197,12 @@ This keeps loot decisions immediate and avoids inventory Tetris.
 
 ### Smash
 
-Smash is contextual:
+Smash is intentional:
 
-- walking into a small obstacle such as a bramble, fence or piece of furniture attempts to smash it
+- `f` followed by a direction bashes an adjacent small obstacle
+- a bash takes a turn whether it succeeds or fails
 - a weapon in Hands is not required, but an axe, hatchet or saw improves the chance
-- there is no separate smash key
+- some containers such as barrels and crates drop supplies when smashed
 
 ## 4. HP, AP, AV and DV
 
@@ -367,13 +368,13 @@ type PlayerSlots struct {
 ## 10. Resolved decisions
 
 - One Hands slot.
-- Attack is bump-only; `f` + direction is contextual bashing.
+- Attack is bump-only; `f` + direction is intentional bashing.
 - Throwing is deferred; `t` reserved.
 - Belt 2 available from the start, Belt 3 at level 6.
 - Body accepts armour only; belt accepts non-body items.
 - Pickup auto-places into Hands → Body (if armour) → first free belt slot.
 - Belt throwables must be swapped into Hands before throwing.
-- Smash is contextual: walk into small obstacles or use `f` + direction.
+- Smash is intentional: use `f` + direction; containers may drop supplies.
 - HP regenerates slowly as before; AP is restored by kits, tools and vials.
 - Acid bypasses AP completely for now.
 - Armour has no action key: equip applies AP immediately; `B` unequips/drops it.

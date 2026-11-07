@@ -1,6 +1,7 @@
 package game
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/gdamore/tcell/v2"
@@ -44,7 +45,7 @@ func TestActiveBindingsUseNewKeys(t *testing.T) {
 	}
 }
 
-func TestContextualBash(t *testing.T) {
+func TestBashingIsIntentional(t *testing.T) {
 	g := NewGame(7200)
 	g.SetupNewGame(0, "tester")
 	g.Critters = nil
@@ -54,7 +55,12 @@ func TestContextualBash(t *testing.T) {
 	g.Options["optPlayerGodMode"] = 1
 
 	x, y := g.Player.X+1, g.Player.Y
+	startX, startY := g.Player.X, g.Player.Y
 	g.Map.SetTile(x, y, tileBramble)
+	g.MovePlayer(1, 0)
+	if g.Map.Tile(x, y) != tileBramble || g.Player.X != startX || g.Player.Y != startY {
+		t.Fatal("walking into a bramble should be blocked, not bashed")
+	}
 	if !g.tryBashTile(x, y) {
 		t.Fatal("bramble was not recognised as bashable")
 	}
@@ -63,15 +69,7 @@ func TestContextualBash(t *testing.T) {
 	}
 	g.Map.SetTile(x, y, 10) // stone wall
 	if g.tryBashTile(x, y) {
-		t.Fatal("stone wall should not be contextually bashable")
-	}
-
-	g.Map.SetTile(x, y, tileBramble)
-	for i := 0; i < 10 && g.Map.Tile(x, y) == tileBramble; i++ {
-		g.MovePlayer(1, 0)
-	}
-	if g.Map.Tile(x, y) == tileBramble {
-		t.Fatal("walking into a bramble did not attempt a bash")
+		t.Fatal("stone wall should not be bashable")
 	}
 }
 
@@ -178,5 +176,35 @@ func TestSpaceClosesModals(t *testing.T) {
 		if g.State != StatePlaying {
 			t.Fatalf("space did not close state %v (now %v)", state, g.State)
 		}
+	}
+}
+
+func TestBarrelBashDropsLoot(t *testing.T) {
+	g := NewGame(7206)
+	g.SetupNewGame(0, "tester")
+	g.Critters = nil
+	g.State = StatePlaying
+	clearAround(g, g.Player.X, g.Player.Y, 6)
+	g.Player.STR = 50
+	g.Options["optPlayerGodMode"] = 1
+	x, y := g.Player.X+1, g.Player.Y
+	g.Map.SetTile(x, y, tileBarrel)
+	g.PlayerBashDirection(1, 0)
+	if g.Map.Tile(x, y) == tileBarrel {
+		t.Fatal("barrel was not smashed")
+	}
+	found := false
+	for _, it := range g.Items {
+		if it.Name() == "raw fish" && abs(it.X-x)+abs(it.Y-y) <= 1 {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatal("barrel did not drop raw fish")
+	}
+	msgs := g.LastMessages(1)
+	if len(msgs) == 0 || !strings.Contains(strings.ToLower(msgs[0].Text), "raw fish") {
+		t.Fatalf("missing bash loot message: %v", msgs)
 	}
 }
