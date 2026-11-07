@@ -20,6 +20,7 @@ postponed.
 - [Woods level revamp](plans/woods/level-revamp.md) — generator, landmarks, huts, roads, loot, factions and AI (reused by the five-map run)
 - [Woods colour palette](plans/woods/color-palette.md) — true-colour palette, accents, lighting and UI
 - [Minimalist snake redesign](plans/woods/minimalist-snake-redesign.md) — five themed 80×23 maps with a random snake route
+- [Post-woods backlog](plans/backlog.md) — deferred improvements for after the next iteration
 
 ## Plan status
 

@@ -13,6 +13,12 @@ Status legend: `Not planned yet` · `Proposed` · `Planned` · `In progress` · 
 The woods folder has a short overview and implementation order here:
 [woods/README.md](woods/README.md).
 
+## Later backlog
+
+| Area | Status | Document |
+|---|---|---|
+| Post-woods improvements (deferred until after the next iteration) | Proposed | [backlog.md](backlog.md) |
+
 ## Other level themes
 
 | Theme | Levels | Status | Document |
