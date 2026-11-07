@@ -150,5 +150,5 @@ var ActiveHints = []string{
 	Hints[7], // acid ignores armor
 	"you are defenceless without a weapon; keep a melee weapon equipped.",
 	"grenades and molotovs can only be thrown at tiles within your sight range.",
-	"walk into small obstacles such as brambles, furniture or fences to smash them.",
+	"bash small obstacles with f and a direction; barrels and crates may hide supplies.",
 }

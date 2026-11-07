@@ -141,10 +141,6 @@ func (g *Game) MovePlayer(dx, dy int) {
 		return
 	}
 	if d.BlockMove {
-		if g.tryBashTile(nx, ny) {
-			g.EndPlayerTurn()
-			return
-		}
 		g.Msg("you cannot go there; "+d.Name+" blocks your way...", 8)
 		return
 	}
@@ -216,6 +212,30 @@ func (g *Game) PlayerBashDirection(dx, dy int) {
 	g.EndPlayerTurn()
 }
 
+func (g *Game) bashLootName(t uint8) string {
+	switch t {
+	case tileBarrel:
+		return "raw fish"
+	case tileCrate:
+		names := []string{"bread", "cheese", "dried meat", "bandage"}
+		return names[g.Roll(len(names))]
+	case tileShelf:
+		names := []string{"healing herb", "red potion", "green potion", "blue potion"}
+		return names[g.Roll(len(names))]
+	case tileMarketStall:
+		names := []string{"bread", "cheese", "apple"}
+		return names[g.Roll(len(names))]
+	case tileHaystack:
+		return "dried meat"
+	case tileTent:
+		return "bandage"
+	case tileCart:
+		names := []string{"rope", "whetstone", "oil flask"}
+		return names[g.Roll(len(names))]
+	}
+	return ""
+}
+
 func (g *Game) tryBashTile(x, y int) bool {
 	t := g.Map.Tile(x, y)
 	if !isBashableTile(t) {
@@ -236,6 +256,22 @@ func (g *Game) tryBashTile(x, y int) bool {
 	}
 	if g.Chance(chance) {
 		g.Map.SetTile(x, y, bashResultTile(t))
+		if loot := g.bashLootName(t); loot != "" {
+			if proto := itemProtoByName(loot); proto >= 0 {
+				it := &Item{Proto: proto, X: -1, Y: -1}
+				if def := it.Def(); def != nil && def.Kind == KindMedical {
+					it.Charges = def.Charges
+				}
+				if g.PlaceGroundItem(it, x, y) {
+					g.Msg("you smash the "+d.Name+"! "+capitalizeFirst(loot)+" falls out.", 12)
+					return true
+				}
+				if g.PlaceGroundItemNear(it, x, y) {
+					g.Msg("you smash the "+d.Name+"! "+capitalizeFirst(loot)+" falls out nearby.", 12)
+					return true
+				}
+			}
+		}
 		g.Msg("you smash the "+d.Name+"!", 12)
 	} else {
 		g.Msg("you bash the "+d.Name+" but it holds.", 8)
