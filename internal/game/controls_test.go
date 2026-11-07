@@ -129,3 +129,54 @@ func TestMonsterPathfindingIsCardinal(t *testing.T) {
 		t.Fatal("path step did not move")
 	}
 }
+
+func TestBashDirectionKey(t *testing.T) {
+	g := NewGame(7203)
+	g.SetupNewGame(0, "tester")
+	g.Critters = nil
+	g.State = StatePlaying
+	clearAround(g, g.Player.X, g.Player.Y, 6)
+	g.Player.STR = 50
+	x, y := g.Player.X+1, g.Player.Y
+	g.Map.SetTile(x, y, tileBramble)
+	g.PlayerBashDirection(1, 0)
+	if g.Map.Tile(x, y) == tileBramble {
+		t.Fatal("f + direction did not bash the bramble")
+	}
+}
+
+func TestBumpAttack(t *testing.T) {
+	g := NewGame(7204)
+	g.SetupNewGame(0, "tester")
+	g.Critters = nil
+	g.State = StatePlaying
+	clearAround(g, g.Player.X, g.Player.Y, 8)
+	g.Options["optPlayerGodMode"] = 1
+	g.Options["optMechanicBaseHitChance"] = 100
+	monster := g.SpawnCritter(0, g.Player.X+1, g.Player.Y)
+	monster.HP, monster.MaxHP = 999, 999
+	for i := 0; i < 30 && monster.HP == 999; i++ {
+		monster.X, monster.Y = g.Player.X+1, g.Player.Y
+		g.MovePlayer(1, 0)
+	}
+	if monster.HP == 999 {
+		t.Fatal("moving into a monster did not attack it")
+	}
+}
+
+func TestSpaceClosesModals(t *testing.T) {
+	states := []GameState{
+		StateInventory, StateLook, StateThrow, StateMessages, StateOptions,
+		StateSkills, StateHelp, StatePlayerScreen, StateQuitConfirm,
+	}
+	for _, state := range states {
+		g := NewGame(7205)
+		g.SetupNewGame(0, "tester")
+		g.State = state
+		u := &UI{g: g}
+		u.handleKey(tcell.NewEventKey(tcell.KeyRune, ' ', tcell.ModNone))
+		if g.State != StatePlaying {
+			t.Fatalf("space did not close state %v (now %v)", state, g.State)
+		}
+	}
+}

@@ -119,11 +119,7 @@ func (g *Game) MovePlayer(dx, dy int) {
 		return
 	}
 	if c := g.CritterAt(nx, ny); c != nil {
-		if g.Options.Bool("optPlayerAttackOnMove") {
-			g.PlayerMelee(c)
-			return
-		}
-		g.Msg("the "+c.NameOrUnknown()+" blocks your way...", 8)
+		g.PlayerMelee(c)
 		return
 	}
 	d := g.Map.Def(nx, ny)
@@ -209,6 +205,15 @@ func bashResultTile(t uint8) uint8 {
 	default:
 		return 2 // grass
 	}
+}
+
+func (g *Game) PlayerBashDirection(dx, dy int) {
+	x, y := g.Player.X+dx, g.Player.Y+dy
+	if !g.Map.InBounds(x, y) || !g.tryBashTile(x, y) {
+		g.Msg("there is nothing to bash there.", 8)
+		return
+	}
+	g.EndPlayerTurn()
 }
 
 func (g *Game) tryBashTile(x, y int) bool {

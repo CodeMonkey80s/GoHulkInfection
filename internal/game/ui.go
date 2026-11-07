@@ -39,17 +39,17 @@ type UI struct {
 	ox, oy    int
 	colorMode ColorMode
 
-	titleSel      int
-	classSel      int
-	optSel        int
-	optScroll     int
-	helpSel       int
-	helpScroll    int
-	msgScroll     int
-	msgExpanded   bool
-	attackPending bool
-	skillSel      int
-	slotSel       int
+	titleSel    int
+	classSel    int
+	optSel      int
+	optScroll   int
+	helpSel     int
+	helpScroll  int
+	msgScroll   int
+	msgExpanded bool
+	bashPending bool
+	skillSel    int
+	slotSel     int
 }
 
 func Run() error {
@@ -596,11 +596,11 @@ func (u *UI) drawGame() {
 	}
 	u.drawTopMessages()
 	u.drawStatus(47)
-	if u.attackPending {
+	if u.bashPending {
 		u.fill(0, 45, screenW, 2, ' ', 8, 0)
 		u.fill(0, 45, screenW, 1, ' ', 15, 1)
-		u.putStr(1, 45, "attack: choose a direction", 15, 1)
-		u.putStr(1, 46, "h/j/k/l or arrows attack, esc cancels", 8, 0)
+		u.putStr(1, 45, "bash: choose a direction", 15, 1)
+		u.putStr(1, 46, "h/j/k/l or arrows bash, esc cancels", 8, 0)
 	}
 }
 
@@ -941,19 +941,19 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 		}
 		return
 	}
-	if u.attackPending {
+	if u.bashPending {
 		if e.Key() == tcell.KeyEscape {
-			u.attackPending = false
-			g.Msg("attack cancelled.", 8)
+			u.bashPending = false
+			g.Msg("bash cancelled.", 8)
 			return
 		}
 		if dx, dy, ok := directionFromEvent(e); ok {
-			u.attackPending = false
-			g.PlayerDirectionalAttack(dx, dy)
+			u.bashPending = false
+			g.PlayerBashDirection(dx, dy)
 			return
 		}
-		u.attackPending = false
-		g.Msg("attack cancelled.", 8)
+		u.bashPending = false
+		g.Msg("bash cancelled.", 8)
 		return
 	}
 	if dx, dy, ok := directionFromEvent(e); ok {
@@ -985,12 +985,8 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 	case 'g':
 		g.PickUp()
 	case 'f':
-		if g.Player.HandItem() == nil {
-			g.Msg("you are defenceless without a weapon.", 12)
-			return
-		}
-		u.attackPending = true
-		g.Msg("attack in which direction? (esc cancels)", 8)
+		u.bashPending = true
+		g.Msg("bash in which direction? (esc cancels)", 8)
 	case '?':
 		g.State = StateHelp
 	case 'e':
@@ -1071,6 +1067,8 @@ func (u *UI) drawConfirm() {
 
 func (u *UI) handleQuitConfirm(e *tcell.EventKey) {
 	switch e.Rune() {
+	case ' ':
+		u.g.State = StatePlaying
 	case 'y', 'Y':
 		u.g.SaveAndQuit()
 	case 'n', 'N':
@@ -1118,7 +1116,7 @@ func (u *UI) drawLookOverlay() {
 		desc = lines[0]
 	}
 	u.putStrTcell(1, 45, desc, fg, bg)
-	u.putStrTcell(1, 46, fmt.Sprintf("look: [%d:%d] move keys move  enter/esc quit", g.LookX, g.LookY), dim, bg)
+	u.putStrTcell(1, 46, fmt.Sprintf("look: [%d:%d] move keys move  enter/esc/space quit", g.LookX, g.LookY), dim, bg)
 }
 
 func (u *UI) handleLook(e *tcell.EventKey) {
@@ -1128,7 +1126,7 @@ func (u *UI) handleLook(e *tcell.EventKey) {
 		g.LookY += dy
 		return
 	}
-	if isEnter(e) || e.Key() == tcell.KeyEscape || e.Rune() == 'z' || e.Rune() == 'v' {
+	if isEnter(e) || e.Key() == tcell.KeyEscape || e.Rune() == 'z' || e.Rune() == 'v' || e.Rune() == ' ' {
 		g.State = StatePlaying
 	}
 }
@@ -1139,7 +1137,7 @@ func (u *UI) drawThrowOverlay() {
 	fg := u.uiColor(RolePrimaryText, 15)
 	dim := u.uiColor(RoleDimText, 8)
 	u.fillTcell(0, 45, screenW, 2, ' ', fg, bg)
-	u.putStrTcell(1, 45, fmt.Sprintf("throw: target [%d:%d]  range %d  enter throw  esc cancel", g.LookX, g.LookY, g.FOVRadius()), fg, bg)
+	u.putStrTcell(1, 45, fmt.Sprintf("throw: target [%d:%d]  range %d  enter throw  esc/space cancel", g.LookX, g.LookY, g.FOVRadius()), fg, bg)
 	u.putStrTcell(1, 46, "move keys move cursor", dim, bg)
 }
 
@@ -1169,7 +1167,7 @@ func (u *UI) handleThrow(e *tcell.EventKey) {
 		g.State = StatePlaying
 		g.ThrowGrenade(g.LookX, g.LookY)
 	default:
-		if e.Rune() == 'z' {
+		if e.Rune() == 'z' || e.Rune() == ' ' {
 			g.State = StatePlaying
 		}
 	}
