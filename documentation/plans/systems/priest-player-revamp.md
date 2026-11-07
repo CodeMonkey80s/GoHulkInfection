@@ -1,14 +1,18 @@
-# Priest Player Revamp — Random Backgrounds, Skills and Holy Gear
+# Priest Player Revamp — Weighted Perks, Robe Slots and Holy Gear
 
 Status: **proposed**
 Parent: [Feature plans](../README.md)
 Related: [Player redesign](player-redesign.md), [Player experience adjustments](player-experience-adjustments.md), [Woods minimalist snake redesign](../woods/minimalist-snake-redesign.md)
-Scope: player identity, random generation, stats/skills, intro, starting gear, priest-themed items, zombie/villager variants.
+Scope: player identity, weighted random perks, intro, robe/head/slot equipment, priest-themed items and zombie/villager variants.
 
 This plan replaces the current class-selection screen and stat-based survivor
 roster with a single protagonist: a priest recently reassigned to the village.
-The priest’s name, past, skills and starting kit are generated once, with a
-hidden `[r]` reroll.
+The design target is a minimalist experience: few numbers, clear choices and
+replayability through randomly assigned perks and gear rather than hidden
+statistics.
+
+A separate end-game plan will cover the demon finale and the stone-circle map.
+That work is deliberately not part of this revamp.
 
 ---
 
@@ -16,175 +20,229 @@ hidden `[r]` reroll.
 
 - Make the player a priest, not a generic survivor class.
 - Remove class selection entirely.
-- Generate name, background, skills and starting kit randomly.
-- Generate the intro text from the assigned background and skills.
+- Remove player-facing STR/TGH/AGI/INT and complicated derived statistics.
+- Generate the priest’s perks and starting kit with weighted randomness so
+  different runs encourage different builds.
+- Make more powerful perks rarer than common perks.
+- Generate the intro text from the assigned perks and starting kit.
 - Keep the priest’s past mysterious but hinted at through the intro.
-- Replace STR/TGH/AGI/INT with a compact skill/perk system.
-- Give the priest three belt slots from the start.
-- Make every item feel appropriate for a priest fighting evil.
+- Replace body armour and belt slots with a permanent robe, a head slot and
+  installable robe slots.
+- Make vials, throwable flasks and armour shards compete for the same simple
+  robe-slot resource.
+- Make every item feel appropriate for a priest fighting corruption.
 - Add living villager types and matching zombie versions.
 - Keep the game readable at 80×25 and compatible with the completed woods run.
 
-## 2. Do we still need player statistics?
+## 2. Locked design decisions
 
-**Recommendation: remove traditional STR/TGH/AGI/INT.**
+These decisions are settled and should drive the rewrite of the implementation
+plan:
 
-Reasons:
+- The priest is always the player character; there is no class-selection screen.
+- Traditional STR/TGH/AGI/INT statistics are removed from player-facing play.
+- Perks are assigned randomly at character creation using weighted probabilities.
+- More powerful perks have a lower chance to appear.
+- The robe is always worn and cannot be removed.
+- The player has **Hands**, **Head** and **Robe** equipment areas.
+- The robe starts with **three slots**.
+- Additional robe slots can be installed later during the adventure, not
+  necessarily through experience.
+- Every robe slot holds exactly one item. Vials, flasks and shards all occupy
+  one slot each; there is no size or weight calculation.
+- Vials are consumables that restore a small flat amount of health.
+- Flasks are throwable items and always occupy one robe slot.
+- Shards are armour items that occupy one robe slot and provide a maximum AP
+  value.
+- Different shards have different maximum AP values.
+- Damage drains equipped shards before HP.
+- When a shard reaches 0 AP it breaks and disappears, freeing its slot.
+- Excess damage carries to the next shard and then to HP.
+- Drained shards are not repaired; they are replaced with new shards.
+- The current Meteor Field remains the final woods map for this revamp. The
+  stone circle, demons and final victory are deferred to a separate end-game
+  plan.
 
-- They duplicate the job of skills and perks.
-- They hide important math from the player.
-- Random stat rolls make the intro harder to explain and balance.
-- The priest theme is stronger if abilities are explicit: “you can throw”,
-  “you can search”, “you can bless”.
-- The game is already minimalist; four invisible stats add noise.
+## 3. Player model
 
-Keep only:
+Keep only the following player-facing resources:
 
-- **HP** — fixed base plus Endurance bonuses.
-- **AP** — armour points, as now.
-- **Skills 0–3** — explicit abilities and gates.
-- **Perks** — short binary background traits used for flavour, intro and small
-  bonuses.
+- **HP** — health.
+- **AP** — total armour points supplied by equipped shards.
+- **Perks** — passive traits, randomly assigned and later earned.
+- **Rites/spells** — active abilities, if kept separate from perks. This split
+  is still open.
+- **Robe slots** — the inventory limit for vials, flasks, shards and small
+  relics.
 
-Combat values become:
+No player-facing strength, toughness, agility or intelligence. Combat should
+remain readable through weapon values, HP, AP and explicit perk effects rather
+than hidden derived formulas.
 
-- attack from Zeal + weapon AV + weapon skill
-- defence from Reflex + armour DV
-- HP from base + Endurance
-- holy item power from Faith
-- throwing range/accuracy from Throwing
-- hidden loot from Searching
+## 4. Perks, rites and progression
 
-This is easier to explain on the intro screen and easier to balance.
+### 4.1 Perks
 
-## 3. Skills and perks
+Perks define a run’s build. They are passive unless explicitly stated otherwise.
 
-### 3.1 Skills
+- Assigned at character creation with weighted probabilities.
+- Powerful perks are rarer; rarity should mean “more unusual or build-defining”,
+  not strictly stronger in every situation.
+- Perks must not duplicate within one run.
+- The intro uses the assigned perks for background lines.
+- Perks can be gained later through experience and a perk progression tree.
+- The tree should stay shallow and readable; exact tiers and prerequisites are
+  still open.
+- Prefer binary effects or simple “+1 rank” bonuses over percentage stacking.
 
-Six skills, each rated **0–3**:
+Example perk themes:
 
-| Skill | 0 | 1 | 2 | 3 |
-|---|---|---|---|---|
-| **Zeal** | weak melee | trained | strong | crusader |
-| **Reflex** | clumsy | basic dodge | agile | untouchable |
-| **Faith** | no holy bonus | use holy water | stronger blessings | relic mastery |
-| **Searching** | cannot search containers | basic search | hidden compartments | secret caches and rare finds |
-| **Throwing** | cannot throw | short range | medium range | long range and accuracy |
-| **Endurance** | fragile | normal | tough | hardened |
-
-Explicit gates:
-
-- **Throwing 0** means the priest cannot throw holy water, lampions or other
-  throwables at all.
-- **Searching 0** means the priest cannot search barrels, crates or hidden
-  compartments for extra loot.
-- **Faith** improves holy water, lampion fire against undead, relics and
-  blessings.
-- **Endurance** raises HP and resistance to poison, fire and disease.
-- **Zeal** and **Reflex** replace the old attack/defence stat math.
-
-### 3.2 Perks
-
-Two random binary perks per priest. They add flavour, a small bonus and intro
-lines.
-
-Suggested perks:
-
-| Perk | Effect | Intro hint |
+| Perk | Rough role | Intro hint |
 |---|---|---|
-| **Former Soldier** | +1 Zeal; starts with a military knife | “You wore a uniform before you wore the collar.” |
-| **Gravedigger** | +1 Endurance; starts with a shovel; better grave loot | “You know the weight of wet earth.” |
-| **Disgraced Exorcist** | +1 Faith; starts with holy water | “Something followed you out of the last village.” |
-| **Poacher’s Son** | +1 Throwing; starts with a lampion | “You learned to throw before you learned to pray.” |
+| **Former Soldier** | better melee; starts with a military knife | “You wore a uniform before you wore the collar.” |
+| **Gravedigger** | tougher; starts with a shovel; better grave loot | “You know the weight of wet earth.” |
+| **Disgraced Exorcist** | better holy effects; starts with holy water | “Something followed you out of the last village.” |
+| **Poacher’s Son** | better throwing; starts with a flask | “You learned to throw before you learned to pray.” |
 | **Plague Orphan** | poison resistance; extra food | “The fever took your family, not you.” |
-| **Pilgrim** | +1 Searching; starts with a walking staff | “You have walked farther than most maps admit.” |
+| **Pilgrim** | better searching; starts with a walking staff | “You have walked farther than most maps admit.” |
 
-Perks must not duplicate. The intro uses both perks and the two highest skills.
+The exact perk pool, rarity weights and number of starting perks remain open.
+The current candidate is three starting perks, with more gained during play.
 
-## 4. Random generation
+### 4.2 Rites and spells
+
+Active abilities such as **Shout**, **Banish**, **Blessing**, **Healing Wounds**
+and **Immobilize** may be separate from passive perks.
+
+The intended distinction is:
+
+- **Perks** — passive, permanent, no resource cost.
+- **Rites/spells** — active, limited by charges or uses, learned from relics,
+  shrines or progression.
+- Perks may modify rites, for example by adding one use of Banish.
+
+Whether rites are completely separate from the perk tree, and whether the priest
+starts with one rite, is still an open question.
+
+## 5. Random generation
 
 At the start of a new game, generate:
 
 1. **Name** — from a priest name table, e.g. Father Aleksy, Barnaba, Cyryl,
    Damian, Eliasz, Feliks, Grzegorz, Hieronim, Ignacy, Jakub, Kazimierz, Leon,
    Mateusz, Mikołaj, Piotr, Rafał, Szymon, Tomasz, Urban, Wiktor.
-2. **Skills** — distribute 8 points across the six skills, max 3 each.
-   - at least one of Zeal/Reflex must be at least 1
-   - at least one of Faith/Searching/Throwing must be at least 1
-3. **Perks** — two unique perks from the list.
-4. **Starting kit** — based on skills and perks.
-5. **Intro text** — assembled from name, assignment, perks and highest skills.
+2. **Perks** — weighted random assignment, no duplicates. The starting count is
+   still open; three is the current preference, five is the upper option.
+3. **Starting kit** — a basic weapon, basic robe, likely one basic shard and
+   whichever vials/flasks fit the assigned perks.
+4. **Intro text** — assembled from the name, assigned perks and starting kit.
 
-The player never sees a class-selection screen. The intro screen shows the
-generated name, background, skills and starting kit.
+The player never sees a class-selection screen.
 
 ### Hidden reroll
 
-`r` on the intro screen regenerates name, skills, perks, starting kit and intro.
-It is **not displayed anywhere** in the UI or help screen.
+The previous proposal kept a hidden `r` reroll on the intro screen. It is still
+under consideration because unlimited rerolling can undermine rare-perk
+weights. If kept, it should regenerate name, perks, kit and intro without being
+listed in the UI or help screen.
 
-## 5. Intro screen
+## 6. Robe, head and slots
 
-The intro replaces both the old intro and class selection. It should show:
+### 6.1 Equipment areas
 
-- generated priest name
-- assignment to the village
-- two or three short background lines derived from perks
-- current skills with levels
-- the current threat/goal
-- `press enter to begin`
+| Area | Slots | Rules |
+|---|---:|---|
+| **Hands** | 1 | Weapon or tool. |
+| **Head** | 1 | One item with one clear effect. |
+| **Robe** | 3 initially | Always worn; cannot be removed. Holds small items. |
 
-Example structure:
+The robe can gain more slots during the adventure. The exact source is open:
+rewards, rare finds, shrine upgrades or quests are all acceptable; it does not
+have to come from experience.
 
-```text
-FATHER ALEKSY
+### 6.2 Robe slot contents
 
-The bishop assigned you to a village that no longer answers letters.
-You wore a uniform before you wore the collar.
-You learned to throw before you learned to pray.
+Each robe slot holds exactly one item:
 
-Zeal 2   Reflex 1   Faith 1
-Searching 0   Throwing 2   Endurance 1
+- healing vial
+- throwable flask
+- armour shard
+- small relic or other thematic utility item
 
-The dead are walking. Find the source and put it to rest.
+There is no separate belt, body armour or item-size system.
 
-press enter to begin
-```
+### 6.3 Armour shards
 
-The hidden `r` reroll is not listed. It should be implemented but undocumented.
+- Each shard has its own **current AP / maximum AP**.
+- Different shard types have different maximum AP values.
+- Total armour is the sum of the equipped shards.
+- Damage drains the equipped shards one at a time.
+- When a shard reaches 0 AP, it breaks and disappears, immediately freeing its
+  slot.
+- Excess damage carries to the next shard, then to HP.
+- There is no repair system.
+- Partially used shards remain equipped until they break or are deliberately
+  dropped.
+- A new shard can be attached to any free robe slot.
 
-## 6. Starting kit and slots
+Suggested shard identities, with exact AP values still to tune:
 
-- The priest starts with **three belt slots unlocked**.
-- No belt unlock progression.
-- Hands: a basic weapon, usually a sickle, cross, staff or improvised tool.
-- Body: a basic robe or cassock.
-- Belt 1–3: holy water, lampion, bread or bandage depending on skills/perks.
+- leather shard
+- chain shard
+- iron shard
+- silver shard
+- blessed shard
 
-Example kits:
+### 6.4 Vials and flasks
 
-| Background | Hands | Body | Belt 1 | Belt 2 | Belt 3 |
-|---|---|---|---|---|---|
-| Former Soldier | military knife | cassock | bandage | holy water | — |
-| Gravedigger | shovel | cassock | bandage | holy water | — |
-| Disgraced Exorcist | cross | cassock | holy water | bandage | — |
-| Poacher’s Son | sickle | cassock | lampion | bandage | — |
-| Plague Orphan | staff | cassock | bread | bandage | — |
-| Pilgrim | staff | cassock | bandage | holy water | — |
+- **Vials** restore a small flat amount of health. Exact values are open.
+- **Flasks** are throwable and occupy one slot each.
+- Flask effect types should each have one clear identity, for example:
+  - flammable flask — fire
+  - holy smoke flask — smoke/anti-undead
+  - other thematic flasks to be defined
+- No slot-size distinction between vials and flasks: both are one slot.
+
+### 6.5 Head items
+
+The head slot should carry one clear effect rather than a bundle of statistics.
+Examples:
+
+- hat
+- crown
+- helmet
+- monocle of true sight
+- iron cage facemask
+
+Exact head items and their effects remain open.
+
+### 6.6 Starting kit
+
+The priest starts with:
+
+- a basic weapon in Hands
+- a basic robe with three slots
+- a small starting kit chosen to fit the assigned perks
+- likely one basic armour shard so the priest is not armourless
+
+Example provisional kit:
+
+| Area | Example |
+|---|---|
+| Hands | sickle / staff / military knife |
+| Head | empty or simple hat |
+| Robe slot 1 | basic leather shard |
+| Robe slot 2 | healing vial |
+| Robe slot 3 | empty or starting flask |
 
 ## 7. Priest-themed items
 
-### 7.1 Robes and armour
+### 7.1 Robes and shards
 
-| Item | AP | Absorb | DV | Notes |
-|---|---:|---:|---:|---|
-| Novice robe | 8 | 30% | 0 | light, no penalty |
-| Priest’s cassock | 15 | 40% | 0 | basic starting robe |
-| Penitent’s robe | 22 | 50% | -1 | padded, uncomfortable |
-| Exorcist’s vestment | 30 | 55% | -1 | better vs undead |
-| Chain under-robe | 40 | 65% | -2 | heavy, hidden armour |
-| Grave shroud | 12 | 35% | 0 | light, quiet |
-| Leather jerkin | 25 | 50% | -1 | practical, not holy |
+The robe is a fixed identity item rather than a swappable armour tier. Armour
+comes from shards. Do not carry over the old percentage-based armour table.
+
+Shard values should stay small and readable, with no absorption percentages.
 
 ### 7.2 Weapons
 
@@ -197,26 +255,32 @@ Example kits:
 - **War hammer** — heavy militia weapon.
 - **Pitchfork / wood axe / club** — improvised village weapons.
 
-### 7.3 Consumables and throwables
+### 7.3 Consumables, flasks and relics
 
-- **Holy water vial** — throwable, burn/steam damage, bonus against undead.
-- **Lampion** — throwable oil lamp, fire/burn damage.
-- **Blessed bread** — heals.
-- **Communion wine** — heals and steadies.
-- **Incense** — smoke, maybe repels weak undead.
+- **Healing vial** — small flat heal.
+- **Communion wine** — stronger heal, rarer.
+- **Flammable flask** — throwable fire.
+- **Holy smoke flask** — throwable smoke/anti-undead effect.
+- **Holy water vial** — throwable or applied; exact behaviour open.
+- **Lampion** — light source or throwable fire, to be decided.
+- **Incense** — smoke, possibly repels weak undead.
 - **Salt pouch** — temporary barrier or anti-undead ward.
 - **Candle** — light source.
-- **Oil flask** — fire starter or lampion refill.
+- **Oil flask** — fire starter or flask refill.
 - **Healing herb / poultice** — healing.
 - **Antidote** — poison cure.
-- **Rosary** — Faith focus.
-- **Prayer book** — Faith/searching aid.
+- **Rosary** — focus or rite aid.
+- **Prayer book** — lore/searching aid.
 - **Silver cross / bone relic / old tome** — chapel relics.
 
-## 8. Zombies and villagers
+## 8. Zombies, villagers and corruption
 
 Living villagers should have matching zombie versions. When a zombie kills a
 living type, the corresponding zombie rises after the conversion delay.
+
+The long-term priest goal is to purge the village from corruption by force,
+banishment or curing select villagers. The exact victory/progress conditions
+are still open.
 
 | Living villager | Zombie version | Behaviour |
 |---|---|---|
@@ -225,10 +289,10 @@ living type, the corresponding zombie rises after the conversion delay.
 | Runner / courier | Zombie runner | fast, low HP, persistent |
 | Thug / village brute | Zombie thug | high HP, heavy hit, slow |
 
-Additional enemies that fit the theme:
+Additional enemy ideas:
 
 - **Ghoul** — cemetery ambusher, faster than a zombie.
-- **Wraith** — chapel/meteor spirit, resistant to physical damage.
+- **Wraith** — chapel/Meteor Field spirit, resistant to physical damage.
 - **Plague crow** — fast, harasses from a distance.
 - **Possessed villager** — living body controlled by the infection.
 - **Church guardian** — armoured undead near the chapel.
@@ -241,53 +305,99 @@ Spawn by theme:
 - Cemetery: zombies, ghouls, wraiths.
 - Meteor Field: strange glowing creatures, wraiths, possessed villagers.
 
-## 9. Other thematic proposals
+The number of living villager types in the first implementation pass is still
+open.
+
+## 9. End-game and demons — separate plan
+
+The stone circle, the final demon and the end-game victory conditions are **not
+part of this revamp**.
+
+A separate end-game plan will cover:
+
+- replacing the final woods map with a stone circle and pillars
+- randomly selected demons, initially Azazel, Asmodeus and Astaroth
+- unique demon abilities and counterplay
+- the final purge/cure/banish victory conditions
+- how the end-game connects to the caves/temple/time-portal roadmap
+
+Until that plan is written, the current Meteor Field remains in place so this
+revamp does not destabilise the completed woods run.
+
+## 10. Other thematic proposals
+
+These are ideas, not locked decisions:
 
 - **Holy ground** — chapel floor and consecrated areas weaken undead.
 - **Blessed water** — thrown holy water leaves a short-lived blessed puddle.
-- **Lampion fire** — lampions create a small fire patch and light.
-- **Faith checks** — high Faith improves relics and holy item effects.
+- **Flask fire** — flammable flasks create a small fire patch.
+- **Faith checks** — holy perks improve relics and blessed effects.
 - **Searching checks** — hidden compartments in barrels, crates, graves and
   altars.
 - **Village survivors** — peasants may ask for help, give hints or drop supplies.
-- **Confession/mercy** — optional: sparing a possessed villager may yield a
+- **Confession/mercy** — sparing or curing a possessed villager may yield a
   relic or hint.
 - **Cursed relics** — powerful chapel items with a drawback.
 
-## 10. Implementation phases
+## 11. Implementation phases
 
-1. **Data model** — replace class/stat fields with `PriestProfile`, skills,
-   perks and three starting belt slots.
-2. **Generation** — random name, skills, perks, starting kit and intro text.
-3. **Intro/UI** — remove class selection; add generated intro and hidden reroll.
-4. **Combat formulas** — replace stats with Zeal/Reflex/Endurance and skill
-   gates for throwing/searching/faith.
-5. **Items** — robes, weapons, holy water, lampions, relics and consumables.
-6. **Villager/zombie variants** — living types, matching zombies and conversion.
-7. **Tests and tuning** — generation, skill gates, starting kits, intro text,
-   conversion and balance.
+These phases should be updated again once the perk/rite and progression
+questions are resolved.
 
-## 11. Acceptance criteria
+1. **Data model** — add `PriestProfile`, weighted perks, Hands/Head/Robe slots,
+   shard AP state and robe-slot installation.
+2. **Generation** — random name, weighted perks, starting kit and intro text.
+3. **Intro/UI** — remove class selection; add generated intro and decide on the
+   hidden reroll.
+4. **Equipment** — replace belt/body slots with the permanent robe and universal
+   robe slots; implement vials, flasks and shards.
+5. **Damage model** — sequential shard depletion, breakage at 0 AP and excess
+   damage to HP.
+6. **Perks and rites** — implement the shallow perk tree, perk gain cadence and
+   active rites if kept separate.
+7. **Items** — weapons, head items, shards, vials, flasks and relics.
+8. **Villager/zombie variants** — living types, matching zombies and conversion.
+9. **Tests and tuning** — weighted generation, perk invariants, starting kits,
+   slot limits, shard breakage, intro text and balance.
+
+## 12. Acceptance criteria
 
 - [ ] There is no class-selection screen.
 - [ ] The player is always a priest with a randomly generated name.
-- [ ] The intro is generated from the assigned perks and skills.
-- [ ] Hidden `r` rerolls name, skills, perks, kit and intro without being shown.
+- [ ] Perks are assigned with weighted rarity and never duplicate.
+- [ ] Powerful perks are rarer than common perks.
+- [ ] The intro is generated from the assigned perks and starting kit.
 - [ ] STR/TGH/AGI/INT are removed from player-facing play.
-- [ ] Skills are rated 0–3 and gate throwing, searching and holy abilities.
-- [ ] The priest starts with three belt slots.
+- [ ] Equipment is limited to Hands, Head and the permanently worn Robe.
+- [ ] The robe starts with three slots and can gain more during the adventure.
+- [ ] Each robe slot holds exactly one vial, flask, shard or small item.
+- [ ] Vials restore a small flat amount of HP.
+- [ ] Flasks are throwable and occupy one slot.
+- [ ] Shards provide different maximum AP values.
+- [ ] Damage drains shards in order; a shard at 0 AP breaks and frees its slot.
+- [ ] Excess shard damage carries to the next shard and then HP.
+- [ ] Drained shards are not repaired and can be replaced.
 - [ ] Every starting item fits the priest theme.
 - [ ] Living peasants, militia, runners and thugs have matching zombie versions.
 - [ ] Zombie kills convert the matching villager type.
-- [ ] Holy water and lampions are throwable burn weapons.
 - [ ] The game remains readable at 80×25.
+- [ ] The Meteor Field remains the final woods map until the separate demon
+      end-game plan is implemented.
 
-## 12. Open questions
+## 13. Open questions
 
-- Should skills be fully random, or use a small point-budget with minimums?
-- Should perks be binary or also have levels?
-- Should hidden `r` also reroll the intro, or only name and skills?
-- Should holy water damage all enemies or only undead?
-- Should Searching be required for all container loot, or only hidden extras?
-- Should the priest be able to use non-priest weapons without a penalty?
-- How many living villager types should appear in the first pass?
+- Should the priest start with three or five perks?
+- What is the total perk pool, and what rarity weights should it use?
+- How deep is the perk tree, what are its tiers and what cadence grants perks?
+- Are rites/spells separate from perks, or part of the same progression?
+- Does the hidden reroll remain, and can it fish for rare perks?
+- What exactly is in the starting kit, including whether a basic shard is always
+  equipped?
+- How are new robe slots earned during the adventure?
+- What are the shard types and their maximum AP values?
+- How much HP should each vial restore?
+- What flask types exist, and what gates throwing them?
+- Which head items exist, and what is each one’s single effect?
+- How many living villager types appear in the first implementation pass?
+- What counts as purging corruption: killing, banishing, curing or a mix?
+- What are the final demon/end-game rules? Deferred to a separate plan.

@@ -40,7 +40,7 @@ revamp plans are written.
 | Player experience adjustments — classes, intro, one-line HUD, 80×25 layout | Done | [systems/player-experience-adjustments.md](systems/player-experience-adjustments.md) |
 | Cardinal movement — remove diagonals, unified hjkl controls | Done | [systems/cardinal-movement.md](systems/cardinal-movement.md) |
 | Monster AI and cardinal pathfinding | Done | [systems/monster-ai-pathfinding.md](systems/monster-ai-pathfinding.md) |
-| Priest player revamp — random background, skills/perks, holy gear, zombie variants | Proposed | [systems/priest-player-revamp.md](systems/priest-player-revamp.md) |
+| Priest player revamp — weighted perks, robe slots, holy gear, zombie variants; demon end-game separate | Proposed | [systems/priest-player-revamp.md](systems/priest-player-revamp.md) |
 
 The woods plan intentionally includes the first pass of:
 
