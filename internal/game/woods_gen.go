@@ -28,10 +28,13 @@ func (g *Game) generateWoodsLevel(level int) {
 	if !validWoodsRun(&g.WoodsRun) {
 		g.WoodsRun = newWoodsRun(g.RNG)
 	}
-	theme := g.WoodsRun.Themes[index]
-	entryEdge := g.WoodsRun.Entries[index]
-	exitEdge := g.WoodsRun.Exits[index]
+	g.generateWoodsMap(level, g.WoodsRun.Themes[index], g.WoodsRun.Entries[index], g.WoodsRun.Exits[index])
+}
 
+// generateWoodsMap builds a single woods map for an explicit theme and edge
+// pair. The normal run path supplies these from WoodsRun; tests use it to cover
+// the full theme/edge matrix.
+func (g *Game) generateWoodsMap(level, theme, entryEdge, exitEdge int) {
 	m := NewMap(mapWidth, woodsMapHeight)
 	m.Theme = 0
 	m.Name = woodsThemeName(theme)
