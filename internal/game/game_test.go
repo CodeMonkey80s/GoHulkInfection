@@ -214,14 +214,20 @@ func TestSaveMigrationDropsRangedSlot(t *testing.T) {
 		{Proto: 46}, // tool/medical slot in old layout
 	}}
 	c, removed := critterFromSave(sc, 1)
-	if removed != 1 {
-		t.Fatalf("expected 1 removed item, got %d", removed)
+	if removed != 2 {
+		t.Fatalf("expected 2 removed items, got %d", removed)
 	}
-	want := []int{16, 5, 41, 46}
-	for i, proto := range want {
-		if c.Equip[i] == nil || c.Equip[i].Proto != proto {
-			t.Fatalf("equip slot %d = %v, want proto %d", i, c.Equip[i], proto)
-		}
+	if c.Equip[0] == nil || c.Equip[0].Proto != 16 {
+		t.Fatalf("equip slot 0 = %v, want proto 16", c.Equip[0])
+	}
+	if c.Equip[1] != nil {
+		t.Fatal("old body armour should not be migrated")
+	}
+	if c.Equip[2] == nil || c.Equip[2].Proto != 41 {
+		t.Fatalf("equip slot 2 = %v, want proto 41", c.Equip[2])
+	}
+	if c.Equip[3] == nil || c.Equip[3].Proto != 46 {
+		t.Fatalf("equip slot 3 = %v, want proto 46", c.Equip[3])
 	}
 }
 

@@ -43,10 +43,6 @@ func TestRangedWeaponsAmmoAndOldArmourAreUnavailable(t *testing.T) {
 			t.Fatalf("%q should not be available in normal play", name)
 		}
 	}
-	armour := itemProtoByName("padded jerkin")
-	if armour < 0 || !CritterItemAvailable(armour) {
-		t.Fatal("monsters should still be able to use armour prototypes")
-	}
 	if proto := itemProtoByName("holy fire flask"); proto < 0 || !ItemAvailable(proto) {
 		t.Fatal("holy fire flask should be available")
 	}

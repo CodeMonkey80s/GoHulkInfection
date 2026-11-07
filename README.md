@@ -106,6 +106,7 @@ grants a second Rite is not implemented yet.
 * turn/energy based critters with faction-aware cardinal A* pathfinding,
   zombie, observer and animal AI
 * melee combat with recovered weapon AV/DV and damage values
+* monsters attack with explicit damage dice (for example `2d10+2`), always deal at least 1 damage, have HP only and carry no body armour
 * throwing is deferred; thematic holy, fire, incense and alchemical flask data is retained for a future pass
 * recovered weapon table (attack/defense value and damage range per subtype)
 * one priest character with a randomly generated name and starting Rite
@@ -113,7 +114,7 @@ grants a second Rite is not implemented yet.
 * shards drain in slot order, break at 0 AP and can be replaced; acid bypasses AP
 * blood, corpses and limbs
 * Hands, Head and a permanently worn Robe with three starting slots
-* one-line HUD with HP/AP, the ready weapon and Rite charges; one-line message bar
+* one-line HUD with HP/AP, the ready weapon, Rite charges and the current target glyph, name, damage dice and HP; one-line message bar
 * `~` expands the latest eight messages; `i` opens the non-scrolling inventory/equipment overlay
 * one item maximum per ground tile; dropping onto an occupied tile is refused
 * experience is stored for now; player levels and skill points are removed

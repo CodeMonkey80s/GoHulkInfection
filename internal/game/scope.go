@@ -66,18 +66,6 @@ func ItemAvailable(proto int) bool {
 	return true
 }
 
-// CritterItemAvailable keeps armour available to monsters even though the
-// player now uses robe shards instead of body armour.
-func CritterItemAvailable(proto int) bool {
-	if proto < 0 || proto >= len(ItemDefs) {
-		return false
-	}
-	if ItemDefs[proto].Kind == KindArmor {
-		return true
-	}
-	return ItemAvailable(proto)
-}
-
 func ItemIsThrowable(proto int) bool {
 	if proto < 0 || proto >= len(ItemDefs) {
 		return false

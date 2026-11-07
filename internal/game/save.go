@@ -61,6 +61,9 @@ type saveCritter struct {
 	Alert     int            `json:"alert"`
 	Flee      int            `json:"flee,omitempty"`
 	Immobile  int            `json:"immobile,omitempty"`
+	DmgCount  int            `json:"dmg_count,omitempty"`
+	DmgSides  int            `json:"dmg_sides,omitempty"`
+	DmgBonus  int            `json:"dmg_bonus,omitempty"`
 	Dead      bool           `json:"dead"`
 }
 
@@ -131,7 +134,9 @@ func critterToSave(c *Critter) saveCritter {
 		Align: c.Align, Class: c.Class, AI: c.AI, Color: c.Color, Glyph: c.Glyph,
 		Player: c.Player, Energy: c.Energy, Level: c.Level, XP: c.XP, Gold: c.Gold, Blood: c.Blood,
 		Poison: c.Poison, LastSeenX: c.LastSeenX, LastSeenY: c.LastSeenY,
-		Alert: c.Alert, Flee: c.Flee, Immobile: c.Immobile, Dead: c.Dead,
+		Alert: c.Alert, Flee: c.Flee, Immobile: c.Immobile,
+		DmgCount: c.DmgCount, DmgSides: c.DmgSides, DmgBonus: c.DmgBonus,
+		Dead: c.Dead,
 	}
 	if c.Player {
 		ss := &saveSlots{
@@ -167,7 +172,12 @@ func critterFromSave(s saveCritter, version int) (*Critter, int) {
 		Align: s.Align, Class: s.Class, AI: s.AI, Color: s.Color, Glyph: s.Glyph,
 		Player: s.Player, Energy: s.Energy, Level: s.Level, XP: s.XP, Gold: s.Gold, Blood: s.Blood,
 		Poison: s.Poison, LastSeenX: s.LastSeenX, LastSeenY: s.LastSeenY,
-		Alert: s.Alert, Flee: s.Flee, Immobile: s.Immobile, Dead: s.Dead,
+		Alert: s.Alert, Flee: s.Flee, Immobile: s.Immobile,
+		DmgCount: s.DmgCount, DmgSides: s.DmgSides, DmgBonus: s.DmgBonus,
+		Dead: s.Dead,
+	}
+	if !c.Player && c.DmgCount <= 0 {
+		assignMonsterDamage(c)
 	}
 	if s.Player {
 		c.Slots = PlayerSlots{BeltUnlocked: 2}
@@ -289,7 +299,7 @@ func critterFromSave(s saveCritter, version int) (*Critter, int) {
 		if si.Proto < 0 {
 			continue
 		}
-		if !CritterItemAvailable(si.Proto) {
+		if !ItemAvailable(si.Proto) {
 			removed++
 			continue
 		}
@@ -299,7 +309,7 @@ func critterFromSave(s saveCritter, version int) (*Critter, int) {
 	}
 	if version < 2 {
 		// Old layout: melee, ranged, armor, grenade, tool.
-		if len(s.Equip) > 1 && s.Equip[1].Proto >= 0 && !CritterItemAvailable(s.Equip[1].Proto) {
+		if len(s.Equip) > 1 && s.Equip[1].Proto >= 0 && !ItemAvailable(s.Equip[1].Proto) {
 			removed++
 		}
 		want := [NumEquipSlots]int{0, 2, 3, 4}
@@ -309,7 +319,7 @@ func critterFromSave(s saveCritter, version int) (*Critter, int) {
 				if si.Proto < 0 {
 					continue
 				}
-				if !CritterItemAvailable(si.Proto) {
+				if !ItemAvailable(si.Proto) {
 					removed++
 					continue
 				}
@@ -323,7 +333,7 @@ func critterFromSave(s saveCritter, version int) (*Critter, int) {
 				if si.Proto < 0 {
 					continue
 				}
-				if !CritterItemAvailable(si.Proto) {
+				if !ItemAvailable(si.Proto) {
 					removed++
 					continue
 				}
@@ -434,6 +444,7 @@ func (g *Game) LoadGame(path string) error {
 		Theme: s.Map.Theme, Name: s.Map.Name,
 	}
 	g.Critters = nil
+	g.CurrentTarget = nil
 	for _, sc := range s.Critters {
 		c, n := critterFromSave(sc, s.Version)
 		removed += n

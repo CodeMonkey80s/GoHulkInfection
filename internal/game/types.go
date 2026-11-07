@@ -173,6 +173,9 @@ type Critter struct {
 	Alert     int
 	Flee      int
 	Immobile  int
+	DmgCount  int
+	DmgSides  int
+	DmgBonus  int
 	Dead      bool
 	IsAnimal  bool
 
@@ -339,37 +342,38 @@ const (
 )
 
 type Game struct {
-	Map          *Map
-	Player       *Critter
-	PlayerName   string
-	PlayerClass  int
-	Critters     []*Critter
-	Items        []*Item
-	Messages     []Message
-	Turn         int
-	Level        int
-	Theme        int
-	Weather      Weather
-	WeatherLeft  int
-	Options      Options
-	State        GameState
-	CursorX      int
-	CursorY      int
-	LookX, LookY int
-	SavePath     string
-	RNG          *rand.Rand
-	HintsShown   int
-	FreePoints   int
-	Running      bool
-	Quit         bool
-	Score        int
-	StartTime    int64
-	WoodLoot     [9]int
-	WoodsRun     WoodsRun
-	PlayerRites  [MaxRites]int
-	RiteCharges  [MaxRites]int
-	PeaceTurns   int
-	PendingRises []PendingRise
+	Map           *Map
+	Player        *Critter
+	PlayerName    string
+	PlayerClass   int
+	Critters      []*Critter
+	Items         []*Item
+	Messages      []Message
+	Turn          int
+	Level         int
+	Theme         int
+	Weather       Weather
+	WeatherLeft   int
+	Options       Options
+	State         GameState
+	CursorX       int
+	CursorY       int
+	LookX, LookY  int
+	SavePath      string
+	RNG           *rand.Rand
+	HintsShown    int
+	FreePoints    int
+	Running       bool
+	Quit          bool
+	Score         int
+	StartTime     int64
+	WoodLoot      [9]int
+	WoodsRun      WoodsRun
+	PlayerRites   [MaxRites]int
+	RiteCharges   [MaxRites]int
+	PeaceTurns    int
+	CurrentTarget *Critter
+	PendingRises  []PendingRise
 	// temporary screen data
 	ScrollMsg    int
 	PendingThrow int

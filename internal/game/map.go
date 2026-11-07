@@ -447,6 +447,7 @@ func (g *Game) finishLevel(m *Map, level, theme int) {
 	g.Map = m
 	g.Critters = nil
 	g.Items = nil
+	g.CurrentTarget = nil
 	g.Level = level
 	g.Options["optGameLevelID"] = level
 	g.Theme = theme
@@ -740,6 +741,9 @@ func (g *Game) SpawnCritter(proto, x, y int) *Critter {
 		Skills:   d.Skills,
 		Level:    d.Level,
 		XP:       d.XP,
+		DmgCount: d.DmgCount,
+		DmgSides: d.DmgSides,
+		DmgBonus: d.DmgBonus,
 		IsAnimal: d.Class == 0,
 		LastX:    x,
 		LastY:    y,
@@ -749,6 +753,9 @@ func (g *Game) SpawnCritter(proto, x, y int) *Critter {
 		c.MaxHP = 1
 	}
 	c.HP = c.MaxHP
+	if c.DmgCount <= 0 {
+		assignMonsterDamage(c)
+	}
 	// Scale a little with dungeon level.
 	scale := 1 + g.Level/14
 	if scale > 2 && c.Align != AlignNeutral {
@@ -762,13 +769,9 @@ func (g *Game) SpawnCritter(proto, x, y int) *Critter {
 		}
 		c.XP += c.XP * (scale - 1) / 3
 	}
-	// Give some monsters melee equipment.
+	// Monsters have health and explicit damage dice, not body armour.
 	if c.Class == 1 && g.Roll(3) == 0 {
-		if g.Roll(2) == 0 {
-			c.Equip[EquipMelee] = &Item{Proto: 8 + g.Roll(4), X: -1, Y: -1}
-		} else {
-			c.Equip[EquipArmor] = &Item{Proto: 5 + g.Roll(3), X: -1, Y: -1}
-		}
+		c.Equip[EquipMelee] = &Item{Proto: 8 + g.Roll(4), X: -1, Y: -1}
 	}
 	if c.Align == AlignVillager {
 		if c.Name == "militia" || g.Roll(100) < 40 {
@@ -779,9 +782,6 @@ func (g *Game) SpawnCritter(proto, x, y int) *Critter {
 			if proto >= 0 {
 				c.Equip[EquipMelee] = &Item{Proto: proto, X: -1, Y: -1}
 			}
-		}
-		if g.Roll(100) < 30 {
-			c.Equip[EquipArmor] = &Item{Proto: 5, X: -1, Y: -1}
 		}
 	}
 	g.Critters = append(g.Critters, c)
