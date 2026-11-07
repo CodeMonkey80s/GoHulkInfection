@@ -74,9 +74,11 @@ func (g *Game) DefenseValue(c *Critter) int {
 			dv += wd.DV
 		}
 	}
-	if arm := c.BodyItem(); arm != nil {
-		if stats, ok := ArmorStatsFor(arm.Def()); ok {
-			dv += stats.DV
+	if c.Player {
+		if arm := c.BodyItem(); arm != nil {
+			if stats, ok := ArmorStatsFor(arm.Def()); ok {
+				dv += stats.DV
+			}
 		}
 	}
 	if dv < 1 {
@@ -195,15 +197,7 @@ func (g *Game) MonsterAttack(c, target *Critter) {
 		}
 		return
 	}
-	dmg := c.STR/2 + c.Skill(SkillUnarmed)/8 + g.Roll(4)
-	if w := c.HandItem(); w != nil {
-		if wd := w.Def().Weapon(); wd != nil {
-			dmg += g.RollRange(wd.DmgMin, wd.DmgMax) / 2
-		}
-	}
-	if dmg < 1 {
-		dmg = 1
-	}
+	dmg := g.rollMonsterDamage(c)
 	if target.Player {
 		g.Msg("the "+c.NameOrUnknown()+" attacks you and hit.", 12)
 	}
@@ -219,6 +213,12 @@ func (g *Game) DamageCritter(target *Critter, dmg int, source *Critter, dtype in
 	}
 	if target.Align == AlignVillager && source != nil && source.Player {
 		target.Align = AlignEnemy
+	}
+	if target.Player && source != nil && source.Align == AlignEnemy {
+		g.CurrentTarget = source
+	}
+	if source != nil && source.Player && target.Align == AlignEnemy {
+		g.CurrentTarget = target
 	}
 	if target.Player && g.Options.Bool("optPlayerGodMode") {
 		g.Msg("your god mode absorbs the damage.", 8)
@@ -246,30 +246,6 @@ func (g *Game) DamageCritter(target *Critter, dmg int, source *Critter, dtype in
 				dmg = g.damagePlayerShards(dmg)
 			}
 		}
-	} else if arm := target.Equip[EquipArmor]; arm != nil {
-		if d := arm.Def(); d != nil {
-			factor := d.ArmorMelee
-			switch dtype {
-			case 1:
-				factor = d.ArmorRanged
-			case 2:
-				factor = d.ArmorAcid
-			}
-			if factor <= 0 {
-				factor = 100
-			}
-			dmg = dmg * factor / 100
-			if dmg < 1 {
-				dmg = 1
-			}
-			if g.Options.Bool("optGameSendDamageToItems") && g.Chance(5) {
-				arm.Charges--
-				if arm.Charges < 0 {
-					target.Equip[EquipArmor] = nil
-					g.Msg("your "+d.Name+" is shattered!", 12)
-				}
-			}
-		}
 	}
 	if target.Player {
 		g.Msg(fmt.Sprintf("the attack does %d damage.", dmg), 12)
@@ -287,6 +263,9 @@ func (g *Game) KillCritter(target, killer *Critter) {
 	}
 	target.Dead = true
 	target.HP = 0
+	if g.CurrentTarget == target {
+		g.CurrentTarget = nil
+	}
 	if target.Player {
 		g.Msg("you died.", 12)
 		g.Msg("=== session ended ===", 7)

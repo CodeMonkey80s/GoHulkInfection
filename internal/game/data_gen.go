@@ -115,6 +115,8 @@ type CritterDef struct {
 	Skills                  [NumSkills]int
 	AI                      int
 	Level, XP               int
+	DmgCount, DmgSides      int
+	DmgBonus                int
 }
 
 var CritterDefs = []CritterDef{

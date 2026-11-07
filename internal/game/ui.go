@@ -722,7 +722,16 @@ func (u *UI) drawStatus(y int) {
 	u.putStr(len(hp)+3, y, ap, apColor, 0)
 	weaponX := len(hp) + len(ap) + 6
 	u.putStr(weaponX, y, weapon, 7, 0)
-	u.putStr(weaponX+len(weapon)+3, y, g.RiteSummary(), 11, 0)
+	riteX := weaponX + len(weapon) + 3
+	u.putStr(riteX, y, g.RiteSummary(), 11, 0)
+	if target := g.CurrentTarget; target != nil && target.IsAlive() {
+		text := fmt.Sprintf("%c %s %s HP %d/%d", cp437Rune(target.Glyph), target.NameOrUnknown(), target.DamageDescription(), target.HP, target.MaxHP)
+		x := screenW - len([]rune(text))
+		if x < riteX+len([]rune(g.RiteSummary()))+2 {
+			x = riteX + len([]rune(g.RiteSummary())) + 2
+		}
+		u.putStr(x, y, text, 12, 0)
+	}
 }
 
 func wrapText(s string, width int) []string {
