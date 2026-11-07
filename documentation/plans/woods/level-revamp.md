@@ -6,7 +6,7 @@ Related: [Woods colour palette](color-palette.md)
 Scope: **woods levels 0–8 only**
 
 Superseded in part by [Woods Minimalist Snake Redesign](minimalist-snake-redesign.md):
-the proposed five-map 80×23 run replaces the map count, size, progression and
+the planned five-map 80×23 run replaces the map count, size, progression and
 per-level theme structure described here. The terrain, loot, faction and
 rendering systems remain reusable.
 

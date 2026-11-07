@@ -1,12 +1,14 @@
 # Woods Minimalist Snake Redesign — Five Maps at 80×23
 
-Status: **proposed**
+Status: **planned**
 Parent: [Woods plans](README.md)
 Related: [Woods level revamp](level-revamp.md), [Woods colour palette](color-palette.md), [Cardinal movement](../systems/cardinal-movement.md)
-Scope: woods run structure, map size, map themes and content density. Reuses the existing terrain, landmark, loot, faction and palette systems.
+Scope: woods run structure, map size, map themes and content density. Reuses the existing terrain, landmark, loot, faction and palette systems. Caves, temple and time-portal levels are postponed until the woods/village redesign is complete.
 
 This plan replaces the current nine 80×46 woods maps with a compact five-map
 snake run. Each map is a single themed place rather than a miniature world.
+The five-map run replaces the current woods entirely; caves, temple and
+time-portal work is postponed.
 
 ---
 
@@ -35,13 +37,13 @@ be reflowed to 25 rows. Long lists use pages instead of scrolling.
 
 The woods run is five maps:
 
-| Map | Theme | Fixed / random |
-|---:|---|---|
-| 0 | Church | fixed first |
-| 1 | Peasant Houses | shuffled middle |
-| 2 | Mill and Pond | shuffled middle |
-| 3 | Forgotten Cemetery | shuffled middle |
-| 4 | Meteor Field | fixed last |
+| Map | Theme | Fixed / random | Entry / exit |
+|---:|---|---|---|
+| 0 | Church | fixed first | entry west, exit east |
+| 1 | Peasant Houses | shuffled middle | opposite previous exit → random |
+| 2 | Mill and Pond | shuffled middle | opposite previous exit → random |
+| 3 | Forgotten Cemetery | shuffled middle | opposite previous exit → random |
+| 4 | Meteor Field | fixed last | entry west, exit east to caves |
 
 The three middle themes are shuffled once at world creation. The first map is
 always the Church; the last map is always the Meteor Field and its exit leads to
@@ -51,22 +53,24 @@ the caves.
 
 Generate a direction sequence at run start:
 
-- Map 0 enters from the south, representing the road from the village.
+- Map 0 is fixed: the Church is horizontal, with entry on the west edge and exit
+  on the east edge.
 - Each map has exactly one exit direction: north, south, east or west.
 - The next map’s entry is the opposite edge of the previous exit.
 - The next exit is chosen from the three edges that are not the entry edge.
 - Immediate 180° reversals are therefore impossible.
 - All other map edges are blocked by dense trees.
-- The final map exits to the caves.
+- The final map is fixed: the Meteor Field enters from the west and exits east
+  to the caves.
 
 Example:
 
 ```text
-Church:          enter south → exit east
+Church:          enter west  → exit east
 Peasant Houses:  enter west  → exit north
 Mill and Pond:   enter south → exit east
 Cemetery:        enter west  → exit east
-Meteor Field:    enter west  → exit to caves
+Meteor Field:    enter west  → exit east to caves
 ```
 
 Store the theme order and direction sequence in the save so loading returns to
@@ -176,6 +180,15 @@ The final woods map.
 
 The meteor glow is the map’s dominant accent colour.
 
+## 5.6 Visibility and light
+
+- Player FOV has **no radius limit**; the 80×23 map edge is the visibility limit.
+- The whole current map is visible once the player is on it.
+- Lanterns, fires and the meteor glow are visible across the map.
+- Warm light pools remain local around the light source; they are atmosphere, not
+  a visibility restriction.
+- No fog-of-war radius tuning is needed for the compact maps.
+
 ## 6. Reuse and replacement
 
 Keep:
@@ -203,7 +216,7 @@ Replace:
 4. **Church map** — first complete themed map.
 5. **Middle themes** — Peasant Houses, Mill and Pond, Cemetery.
 6. **Meteor Field** — final map and caves transition.
-7. **Density pass** — spawn counts, loot, props and FOV.
+7. **Density pass** — spawn counts, loot and props.
 8. **Tests** — snake sequence, connectivity, dimensions, themes and save/load.
 
 ## 8. Acceptance criteria
@@ -212,21 +225,24 @@ Replace:
 - [ ] The whole game fits an 80×25 terminal.
 - [ ] Woods maps are 80×23 and never scroll.
 - [ ] Each map has exactly one entry edge and one exit edge.
+- [ ] FOV covers the whole map; map edges are the only visibility limit.
 - [ ] All other edges are blocked by dense trees.
 - [ ] The snake direction sequence is generated once and saved.
 - [ ] No map immediately reverses direction.
 - [ ] Entry, central landmark and exit are connected by road.
-- [ ] The Church is always first.
-- [ ] The Meteor Field is always last and leads to the caves.
+- [ ] The Church is always first, with entry west and exit east.
+- [ ] The Meteor Field is always last, enters west and exits east to the caves.
 - [ ] The three middle themes are shuffled.
 - [ ] Each map has its themed landmark and appropriate population.
 - [ ] No void tiles and all exits are reachable under cardinal movement.
 - [ ] Caves, temple and time-portal maps are unaffected.
 
-## 9. Open questions
+## 9. Resolved decisions
 
-- Should the fourth theme be the Forgotten Cemetery or the Old Orchard?
-- Should the first map entry always be south, or be generated once per run?
-- Should the Meteor Field exit be fixed or use the final snake direction?
-- Should the five-map run replace the old nine-map woods entirely, or remain an optional “short run” mode?
-- How far should FOV be reduced for 80×23 maps: 5, 6 or 7?
+- Fourth theme: **Forgotten Cemetery**.
+- The Church is fixed first: horizontal layout, entry west, exit east.
+- The Meteor Field is fixed last: entry west, exit east to the caves.
+- The five-map run replaces the current nine-map woods entirely.
+- Caves, temple and time-portal work is postponed.
+- FOV is unlimited within the 80×23 map; map edges are the only limit.
+- The three middle themes are shuffled once per run.
