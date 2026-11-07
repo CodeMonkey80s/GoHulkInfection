@@ -65,8 +65,7 @@ func (g *Game) MonsterTurn(c *Critter) {
 		if p == nil || !p.IsAlive() {
 			return
 		}
-		dist := chebyshev(c.X, c.Y, p.X, p.Y)
-		canSee := dist <= 14 && g.Map.LineOfSight(c.X, c.Y, p.X, p.Y)
+		dist, canSee := g.canSeeCritter(c, p, 14)
 		if canSee {
 			c.LastSeenX, c.LastSeenY = p.X, p.Y
 			c.Alert = 10
@@ -174,17 +173,30 @@ func (g *Game) areHostile(a, b *Critter) bool {
 	return false
 }
 
+// canSeeCritter applies the same sight blockers as player FOV: dense trees,
+// brambles, bushes, walls and closed doors stop AI perception.
+func (g *Game) canSeeCritter(c, other *Critter, maxDist int) (int, bool) {
+	if g.Map == nil || c == nil || other == nil || !other.IsAlive() {
+		return 0, false
+	}
+	dist := chebyshev(c.X, c.Y, other.X, other.Y)
+	if dist > maxDist {
+		return 0, false
+	}
+	if !g.Map.LineOfSight(c.X, c.Y, other.X, other.Y) {
+		return 0, false
+	}
+	return dist, true
+}
+
 func (g *Game) nearestHostile(c *Critter, maxDist int) (*Critter, int) {
 	best, bestDist := (*Critter)(nil), maxDist+1
 	consider := func(other *Critter) {
 		if other == nil || other == c || !other.IsAlive() || !g.areHostile(c, other) {
 			return
 		}
-		d := chebyshev(c.X, c.Y, other.X, other.Y)
-		if d > maxDist || d >= bestDist {
-			return
-		}
-		if !g.Map.LineOfSight(c.X, c.Y, other.X, other.Y) {
+		d, canSee := g.canSeeCritter(c, other, maxDist)
+		if !canSee || d >= bestDist {
 			return
 		}
 		best, bestDist = other, d
@@ -207,11 +219,8 @@ func (g *Game) nearestAnimalThreat(c *Critter, maxDist int) (*Critter, int) {
 		if other.Align != AlignPlayer && other.Align != AlignEnemy {
 			return
 		}
-		d := chebyshev(c.X, c.Y, other.X, other.Y)
-		if d > maxDist || d >= bestDist {
-			return
-		}
-		if !g.Map.LineOfSight(c.X, c.Y, other.X, other.Y) {
+		d, canSee := g.canSeeCritter(c, other, maxDist)
+		if !canSee || d >= bestDist {
 			return
 		}
 		best, bestDist = other, d

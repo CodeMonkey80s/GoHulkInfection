@@ -263,13 +263,12 @@ decision is which Body armour to wear.
 
 ## 5. HUD and message layout
 
-Target 80×50 layout — as little as possible:
+Target 80×25 layout — as little as possible:
 
 ```text
 row 0      latest message only
-row 1..46  map view
-row 47     HP 39/39   AP 20/20   chainsaw
-rows 48-49 clear
+row 1..23  map view
+row 24     HP 39/39   AP 20/20   chainsaw
 ```
 
 Rules:

@@ -44,7 +44,7 @@ func TestSignatureCategoriesResolve(t *testing.T) {
 }
 
 func TestSignatureLootSpawnedAtLandmarks(t *testing.T) {
-	for level := 0; level < 9; level++ {
+	for level := 0; level < numWoodsMaps; level++ {
 		for seed := int64(0); seed < 6; seed++ {
 			g := NewGame(seed + int64(level)*6000)
 			g.SetupNewGame(0, "tester")

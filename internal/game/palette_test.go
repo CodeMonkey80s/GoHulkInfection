@@ -425,6 +425,9 @@ func TestWoodsTileRoles(t *testing.T) {
 		int(tileChapelAltar):  RoleAltarStone,
 		int(tileBellTower):    RoleStoneLight,
 		int(tileWoodpile):     RoleStump,
+		int(tileBurnedGround): RoleAsh,
+		int(tileMeteorRock):   RoleMeteorGlow,
+		int(tileDenseTree):    RolePineCanopy,
 	}
 	for id, want := range cases {
 		got, ok := TileColorRole(id)
@@ -435,8 +438,8 @@ func TestWoodsTileRoles(t *testing.T) {
 }
 
 func TestWoodsAccentsAndWarmLight(t *testing.T) {
-	if len(WoodsAccents) != 9 {
-		t.Fatalf("accent count = %d, want 9", len(WoodsAccents))
+	if len(WoodsAccents) != numWoodsMaps {
+		t.Fatalf("accent count = %d, want %d", len(WoodsAccents), numWoodsMaps)
 	}
 	for i, a := range WoodsAccents {
 		if a.Primary == (RGB{}) || a.Secondary == (RGB{}) {

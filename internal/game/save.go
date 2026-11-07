@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-const saveVersion = 3
+const saveVersion = 4
 
 type saveItem struct {
 	Proto   int  `json:"p"`
@@ -98,6 +98,7 @@ type saveGame struct {
 	FreePoints   int            `json:"free_points"`
 	Score        int            `json:"score"`
 	WoodLoot     []int          `json:"wood_loot,omitempty"`
+	WoodsRun     *WoodsRun      `json:"woods_run,omitempty"`
 	PendingRises []PendingRise  `json:"pending_rises,omitempty"`
 }
 
@@ -306,6 +307,7 @@ func (g *Game) SaveGame(path string) error {
 		FreePoints:   g.FreePoints,
 		Score:        g.Score,
 		WoodLoot:     append([]int(nil), g.WoodLoot[:]...),
+		WoodsRun:     &g.WoodsRun,
 		PendingRises: append([]PendingRise(nil), g.PendingRises...),
 	}
 	s.Map = saveMap{
@@ -362,6 +364,11 @@ func (g *Game) LoadGame(path string) error {
 		copy(g.WoodLoot[:], s.WoodLoot)
 	} else {
 		g.WoodLoot = newWoodLootAssignment(g.RNG)
+	}
+	if validWoodsRun(s.WoodsRun) {
+		g.WoodsRun = *s.WoodsRun
+	} else {
+		g.WoodsRun = newWoodsRun(g.RNG)
 	}
 	g.Map = &Map{
 		W: s.Map.W, H: s.Map.H, Tiles: s.Map.Tiles, Seen: s.Map.Seen, Visible: s.Map.Visible,

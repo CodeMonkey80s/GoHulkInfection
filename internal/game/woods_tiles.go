@@ -52,6 +52,9 @@ var (
 	tileChapelAltar  uint8
 	tileBellTower    uint8
 	tileWoodpile     uint8
+	tileBurnedGround uint8
+	tileMeteorRock   uint8
+	tileDenseTree    uint8
 )
 
 var woodsTileRoles = map[int]ColorRole{}
@@ -231,6 +234,18 @@ func init() {
 		Name: "woodpile", Type: 2, Glyph: '=', Color: 6,
 		BlockMove: true, BlockSight: false, Partner: -1,
 	})
+	tileBurnedGround = add(TileDef{
+		Name: "burned ground", Type: 1, Glyph: '.', Color: 8,
+		BlockMove: false, BlockSight: false, Partner: -1,
+	})
+	tileMeteorRock = add(TileDef{
+		Name: "meteor rock", Type: 2, Glyph: '*', Color: 13,
+		BlockMove: true, BlockSight: false, Partner: -1,
+	})
+	tileDenseTree = add(TileDef{
+		Name: "dense tree", Type: 1, Glyph: 'T', Color: 2,
+		BlockMove: true, BlockSight: true, Partner: -1,
+	})
 
 	woodsTileRoles = map[int]ColorRole{
 		int(tileDirtRoad):     RoleDirtRoad,
@@ -275,5 +290,8 @@ func init() {
 		int(tileChapelAltar):  RoleAltarStone,
 		int(tileBellTower):    RoleStoneLight,
 		int(tileWoodpile):     RoleStump,
+		int(tileBurnedGround): RoleAsh,
+		int(tileMeteorRock):   RoleMeteorGlow,
+		int(tileDenseTree):    RolePineCanopy,
 	}
 }

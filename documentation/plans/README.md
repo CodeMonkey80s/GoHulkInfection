@@ -2,16 +2,22 @@
 
 Status legend: `Not planned yet` · `Proposed` · `Planned` · `In progress` · `Done`
 
-## Active focus: woods levels 0–8
+## Woods redesign: complete
 
 | Feature | Status | Document |
 |---|---|---|
 | Woods level revamp — outdoor generator, landmarks, huts, roads, loot, factions | Done | [woods/level-revamp.md](woods/level-revamp.md) |
-| Woods true-colour palette and per-level accents | Done | [woods/color-palette.md](woods/color-palette.md) |
-| Woods minimalist snake redesign — five 80×23 themed maps | Planned | [woods/minimalist-snake-redesign.md](woods/minimalist-snake-redesign.md) |
+| Woods true-colour palette and per-theme accents | Done | [woods/color-palette.md](woods/color-palette.md) |
+| Woods minimalist snake redesign — five 80×23 themed maps | Done | [woods/minimalist-snake-redesign.md](woods/minimalist-snake-redesign.md) |
 
 The woods folder has a short overview and implementation order here:
 [woods/README.md](woods/README.md).
+
+## Later backlog
+
+| Area | Status | Document |
+|---|---|---|
+| Post-woods improvements (deferred until after the next iteration) | Proposed | [backlog.md](backlog.md) |
 
 ## Other level themes
 
@@ -21,8 +27,8 @@ The woods folder has a short overview and implementation order here:
 | Temple of the Underminer | 18–26 | Not planned yet | [temple.md](temple.md) |
 | Time portal / lab | 27 | Not planned yet | [time-portal.md](time-portal.md) |
 
-Caves, temple and time portal are postponed while the woods/village redesign is
-implemented. The current section-based generator remains in use until their own
+The woods redesign is implemented. Caves, temple and time portal remain
+postponed; the current section-based generator stays in use until their own
 revamp plans are written.
 
 ## Cross-cutting systems
@@ -31,7 +37,7 @@ revamp plans are written.
 |---|---|---|
 | Command and scope reduction — melee-only combat, no ranged/unarmed, FOV-limited throwing | Done | [systems/command-scope-reduction.md](systems/command-scope-reduction.md) |
 | Player redesign — five ADOM-style slots, HP/AP, minimal HUD | Done | [systems/player-redesign.md](systems/player-redesign.md) |
-| Player experience adjustments — classes, intro, one-line HUD, 80×46 viewport | Done | [systems/player-experience-adjustments.md](systems/player-experience-adjustments.md) |
+| Player experience adjustments — classes, intro, one-line HUD, 80×25 layout | Done | [systems/player-experience-adjustments.md](systems/player-experience-adjustments.md) |
 | Cardinal movement — remove diagonals, unified hjkl controls | Done | [systems/cardinal-movement.md](systems/cardinal-movement.md) |
 | Monster AI and cardinal pathfinding | Done | [systems/monster-ai-pathfinding.md](systems/monster-ai-pathfinding.md) |
 

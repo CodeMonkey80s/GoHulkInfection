@@ -12,13 +12,14 @@ func clearAround(g *Game, cx, cy, radius int) {
 	}
 }
 
-func TestWoodsSpawnsVillagersAndAnimals(t *testing.T) {
-	for level := 0; level < 9; level++ {
-		for seed := int64(0); seed < 5; seed++ {
+func TestWoodsSpawnsThemeAppropriatePopulation(t *testing.T) {
+	for level := 0; level < numWoodsMaps; level++ {
+		for seed := int64(0); seed < 8; seed++ {
 			g := NewGame(seed + int64(level)*7000)
 			g.SetupNewGame(0, "tester")
 			g.GenerateLevel(level)
-			villagers, animals := 0, 0
+			theme := g.WoodsRun.Themes[level]
+			villagers, animals, hostiles := 0, 0, 0
 			for _, c := range g.Critters {
 				switch c.Align {
 				case AlignVillager:
@@ -27,13 +28,34 @@ func TestWoodsSpawnsVillagersAndAnimals(t *testing.T) {
 					if c.IsAnimal {
 						animals++
 					}
+				case AlignEnemy:
+					hostiles++
 				}
 			}
-			if villagers == 0 {
-				t.Fatalf("level %d seed %d has no villagers", level, seed)
+			if len(g.Critters) < 3 || len(g.Critters) > 12 {
+				t.Fatalf("theme %d seed %d has %d critters, want 3-12", theme, seed, len(g.Critters))
 			}
-			if animals == 0 {
-				t.Fatalf("level %d seed %d has no neutral animals", level, seed)
+			switch theme {
+			case WoodsPeasantHouses:
+				if villagers < 2 || animals == 0 || hostiles == 0 {
+					t.Fatalf("Peasant Houses seed %d population v=%d a=%d h=%d", seed, villagers, animals, hostiles)
+				}
+			case WoodsMillPond:
+				if villagers == 0 || animals == 0 {
+					t.Fatalf("Mill seed %d population v=%d a=%d h=%d", seed, villagers, animals, hostiles)
+				}
+			case WoodsCemetery:
+				if hostiles < 3 || villagers != 0 {
+					t.Fatalf("Cemetery seed %d population v=%d a=%d h=%d", seed, villagers, animals, hostiles)
+				}
+			case WoodsMeteorField:
+				if hostiles < 3 || villagers != 0 {
+					t.Fatalf("Meteor Field seed %d population v=%d a=%d h=%d", seed, villagers, animals, hostiles)
+				}
+			case WoodsChurch:
+				if hostiles == 0 {
+					t.Fatalf("Church seed %d has no zombies", seed)
+				}
 			}
 		}
 	}

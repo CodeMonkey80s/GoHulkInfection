@@ -274,9 +274,9 @@ func (u *UI) drawPlayerScreen() {
 		val := p.Skill(skill)
 		u.putStr(43, y, fmt.Sprintf("%-16s %3d  %s", SkillNames[skill], val, skillLevelName(val)), 11, 0)
 	}
-	u.fill(0, 48, screenW, 2, ' ', 8, 0)
-	u.putStr(1, 48, "z/space quit screen", 8, 0)
-	u.putStr(1, 49, "x skill levels", 8, 0)
+	u.fill(0, 22, screenW, 3, ' ', 8, 0)
+	u.putStr(1, 23, "z/space quit screen", 8, 0)
+	u.putStr(1, 24, "x skill levels", 8, 0)
 }
 
 func skillLevelName(v int) string {
@@ -334,7 +334,7 @@ func (u *UI) drawSkills() {
 	u.putStr(1, 2, fmt.Sprintf("[ %% ] level / experience...  level: %d  experience: %d  skill points: %d", p.Level, p.XP, g.FreePoints), 10, 0)
 	u.putStr(1, 3, strings.Repeat("~", 76), 2, 0)
 	for i, skill := range ActiveSkills {
-		y := 5 + i*2
+		y := 4 + i*2
 		mark := "  "
 		fg := uint8(11)
 		bg := uint8(0)
@@ -349,9 +349,9 @@ func (u *UI) drawSkills() {
 			u.putStr(3, y+1, SkillDescs[skill], 8, 0)
 		}
 	}
-	u.fill(0, 42, screenW, 2, ' ', 8, 0)
-	u.putStr(1, 42, "up/down select   enter/+ increase skill (1 point)   z quit", 8, 0)
-	u.putStr(1, 43, fmt.Sprintf("you currently have %d free skill points", g.FreePoints), 10, 0)
+	u.fill(0, 22, screenW, 3, ' ', 8, 0)
+	u.putStr(1, 23, "up/down select   enter/+ increase skill (1 point)   z quit", 8, 0)
+	u.putStr(1, 24, fmt.Sprintf("you currently have %d free skill points", g.FreePoints), 10, 0)
 }
 
 func (u *UI) handleSkills(e *tcell.EventKey) {
@@ -410,7 +410,7 @@ func (u *UI) drawOptions() {
 	if u.optSel < 0 {
 		u.optSel = 0
 	}
-	visible := 39
+	visible := 17
 	if u.optSel < u.optScroll {
 		u.optScroll = u.optSel
 	}
@@ -435,17 +435,16 @@ func (u *UI) drawOptions() {
 		u.putStr(1, 2+i, fmt.Sprintf("%-76s", line), fg, bg)
 	}
 	d := &opts[u.optSel]
-	u.putStr(1, 42, "[ ? ] description...", 10, 0)
-	u.putStr(1, 43, strings.Repeat("~", 76), 2, 0)
+	u.putStr(1, 20, "[ ? ] description...", 10, 0)
+	u.putStr(1, 21, strings.Repeat("~", 76), 2, 0)
 	for i, l := range wrapText(d.Desc, 76) {
-		if i > 2 {
+		if i > 1 {
 			break
 		}
-		u.putStr(1, 44+i, l, 11, 0)
+		u.putStr(1, 22+i, l, 11, 0)
 	}
-	u.fill(0, 48, screenW, 2, ' ', 8, 0)
-	u.putStr(1, 48, "z quit screen   <6> increase   <4> decrease", 8, 0)
-	u.putStr(1, 49, "enter toggle", 8, 0)
+	u.fill(0, 24, screenW, 1, ' ', 8, 0)
+	u.putStr(1, 24, "z quit   <6> increase   <4> decrease   enter toggle", 8, 0)
 }
 
 func (u *UI) handleOptions(e *tcell.EventKey) {
@@ -536,7 +535,7 @@ func (u *UI) drawHelp() {
 	u.putStr(centerText("[ ? ] bindings...", screenW), 0, "[ ? ] bindings...", 2, 0)
 	u.putStr(1, 2, "[ ? ] keybindings", 10, 0)
 	u.putStr(1, 3, strings.Repeat("~", 76), 2, 0)
-	visible := 38
+	visible := 17
 	if u.helpSel < u.helpScroll {
 		u.helpScroll = u.helpSel
 	}
@@ -561,11 +560,11 @@ func (u *UI) drawHelp() {
 		u.putStr(1, 4+i, fmt.Sprintf("%-76s", line), fg, bg)
 	}
 	k := ActiveKeyBindings[u.helpSel]
-	u.putStr(1, 43, "[ ? ] description...", 10, 0)
-	u.putStr(1, 44, strings.Repeat("~", 76), 2, 0)
-	u.putStr(1, 45, k.Desc, 11, 0)
-	u.fill(0, 48, screenW, 2, ' ', 8, 0)
-	u.putStr(1, 48, "z quit screen   up/down select   pgup/pgdn scroll", 8, 0)
+	u.putStr(1, 21, "[ ? ] description...", 10, 0)
+	u.putStr(1, 22, strings.Repeat("~", 76), 2, 0)
+	u.putStr(1, 23, k.Desc, 11, 0)
+	u.fill(0, 24, screenW, 1, ' ', 8, 0)
+	u.putStr(1, 24, "z quit   up/down select   pgup/pgdn page", 8, 0)
 }
 
 func (u *UI) handleHelp(e *tcell.EventKey) {
@@ -619,7 +618,7 @@ func (u *UI) drawMessageBuffer() {
 	for _, m := range u.g.Messages {
 		lines = append(lines, wrapText(m.Text, 76)...)
 	}
-	visible := 40
+	visible := 19
 	if u.msgScroll > len(lines)-visible {
 		u.msgScroll = len(lines) - visible
 	}
@@ -633,8 +632,8 @@ func (u *UI) drawMessageBuffer() {
 		}
 		u.putStr(1, 4+i, lines[idx], 11, 0)
 	}
-	u.fill(0, 48, screenW, 2, ' ', 8, 0)
-	u.putStr(1, 48, "z quit screen   up/down scroll   pgup/pgdn page", 8, 0)
+	u.fill(0, 24, screenW, 1, ' ', 8, 0)
+	u.putStr(1, 24, "z quit   up/down scroll   pgup/pgdn page", 8, 0)
 }
 
 func (u *UI) handleMessages(e *tcell.EventKey) {

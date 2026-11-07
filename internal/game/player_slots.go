@@ -203,6 +203,10 @@ func (g *Game) playerConsumeMedical(it *Item) bool {
 		g.Msg(fmt.Sprintf("you apply the armour vial (%d/%d AP).", arm.AP, stats.MaxAP), 10)
 		return true
 	}
+	if g.Player.HP >= g.Player.MaxHP {
+		g.Msg("you are already at full health.", 8)
+		return false
+	}
 	if it.Charges <= 0 {
 		it.Charges = d.Charges
 	}
@@ -225,6 +229,10 @@ func (g *Game) playerConsumeFood(it *Item) bool {
 	}
 	d := it.Def()
 	if d == nil || d.Kind != KindFood {
+		return false
+	}
+	if d.Heal >= 0 && g.Player.HP >= g.Player.MaxHP {
+		g.Msg("you are already at full health.", 8)
 		return false
 	}
 	if it.Charges <= 0 {

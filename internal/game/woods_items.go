@@ -79,8 +79,9 @@ func (g *Game) spawnSignatureLoot(level int) {
 		}
 		g.placeLootNear(g.Map.LandmarkX, g.Map.LandmarkY, it)
 	}
-	// Bias ordinary woods loot toward the level's signature category.
-	for i := 0; i < 2+g.Roll(2); i++ {
+	// One extra signature item keeps the compact maps thematic without
+	// flooding them with loot.
+	for i := 0; i < 1; i++ {
 		proto := g.randomSignatureItem(category)
 		if proto < 0 {
 			continue

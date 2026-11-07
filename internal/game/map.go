@@ -6,8 +6,9 @@ import (
 )
 
 const (
-	mapWidth  = 80
-	mapHeight = 46
+	mapWidth       = 80
+	mapHeight      = 46
+	woodsMapHeight = 23
 )
 
 type Map struct {
@@ -23,7 +24,6 @@ type Map struct {
 	Name      string
 	LandmarkX int
 	LandmarkY int
-	ExitMode  int
 }
 
 func NewMap(w, h int) *Map {
@@ -451,8 +451,14 @@ func (g *Game) finishLevel(m *Map, level, theme int) {
 	g.Options["optGameLevelID"] = level
 	g.Theme = theme
 	g.Weather = WeatherClear
-	g.SpawnPopulation()
-	if theme == 0 && level >= 0 && level < len(g.WoodLoot) {
+	if theme == 0 {
+		woodsTheme := g.currentWoodsTheme()
+		g.spawnWoodsPopulation(woodsTheme)
+		g.spawnWoodsLoot(level, woodsTheme)
+	} else {
+		g.SpawnPopulation()
+	}
+	if theme == 0 && level >= 0 && level < numWoodsMaps {
 		g.spawnSignatureLoot(level)
 	}
 	// Starting hint.
@@ -466,7 +472,7 @@ func (g *Game) finishLevel(m *Map, level, theme int) {
 
 func levelTheme(level int) int {
 	switch {
-	case level < 9:
+	case level >= 0 && level < numWoodsMaps:
 		return 0
 	case level < 18:
 		return 1
@@ -787,6 +793,7 @@ func (g *Game) SetupNewGame(class int, name string) {
 	g.PlayerClass = class
 	g.PlayerName = name
 	g.WoodLoot = newWoodLootAssignment(g.RNG)
+	g.WoodsRun = newWoodsRun(g.RNG)
 	g.Player = &Critter{
 		Proto:  -1,
 		Name:   name,
@@ -846,6 +853,12 @@ func (g *Game) FOVRadius() int {
 
 func (g *Game) UpdateFOV() {
 	if g.Map == nil || g.Player == nil {
+		return
+	}
+	if g.Theme == 0 {
+		// Woods FOV has no radius limit; dense trees, walls, closed doors and
+		// other sight-blocking tiles still occlude the view.
+		g.Map.FOV(g.Player.X, g.Player.Y, g.Map.W+g.Map.H)
 		return
 	}
 	g.Map.FOV(g.Player.X, g.Player.Y, g.FOVRadius())

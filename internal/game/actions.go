@@ -298,6 +298,10 @@ func (g *Game) UsePortal() {
 		return
 	}
 	g.Msg("you enter the "+name+".", 10)
+	if g.Level == numWoodsMaps-1 {
+		g.ChangeLevel(9) // the Meteor Field exits into the caves
+		return
+	}
 	g.ChangeLevel(g.Level + 1)
 }
 
@@ -307,13 +311,7 @@ func (g *Game) ChangeLevelRelative(delta int) {
 	if g.Player == nil || !g.Player.IsAlive() {
 		return
 	}
-	level := g.Level + delta
-	if level < 0 {
-		level = 0
-	}
-	if level > 27 {
-		level = 27
-	}
+	level := adjacentLevel(g.Level, delta)
 	if level == g.Level {
 		if delta > 0 {
 			g.Msg("you are already on the last map.", 8)
@@ -324,6 +322,32 @@ func (g *Game) ChangeLevelRelative(delta int) {
 	}
 	g.Msg(fmt.Sprintf("you travel directly to map level %d.", level), 10)
 	g.ChangeLevel(level)
+}
+
+func adjacentLevel(level, delta int) int {
+	if delta > 0 {
+		switch {
+		case level >= 27:
+			return 27
+		case level == numWoodsMaps-1:
+			return 9 // skip the retired woods levels 5-8
+		default:
+			return level + 1
+		}
+	}
+	if delta < 0 {
+		switch {
+		case level <= 0:
+			return 0
+		case level == 9:
+			return numWoodsMaps - 1
+		case level > numWoodsMaps-1 && level < 9:
+			return numWoodsMaps - 1
+		default:
+			return level - 1
+		}
+	}
+	return level
 }
 
 func (g *Game) ChangeLevel(level int) {

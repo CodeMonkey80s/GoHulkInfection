@@ -2,29 +2,24 @@ package game
 
 import "math"
 
-type woodLevelSpec struct {
-	Name   string
+type woodsThemeSpec struct {
 	HutMin int
 	HutMax int
 }
 
-var woodLevelSpecs = []woodLevelSpec{
-	{Name: "The Woodcutter's Clearing", HutMin: 2, HutMax: 6},
-	{Name: "The Old Orchard", HutMin: 2, HutMax: 6},
-	{Name: "The Forgotten Cemetery", HutMin: 2, HutMax: 6},
-	{Name: "The River Mill", HutMin: 2, HutMax: 6},
-	{Name: "The Poacher's Camp", HutMin: 2, HutMax: 6},
-	{Name: "The Druid's Grove", HutMin: 2, HutMax: 6},
-	{Name: "The Abandoned Village", HutMin: 5, HutMax: 8},
-	{Name: "The Charcoal Burner's Clearing", HutMin: 2, HutMax: 6},
-	{Name: "The Ruined Chapel", HutMin: 2, HutMax: 4},
+var woodsThemeSpecs = [numWoodsMaps]woodsThemeSpec{
+	WoodsChurch:        {HutMin: 1, HutMax: 2},
+	WoodsPeasantHouses: {HutMin: 3, HutMax: 4},
+	WoodsMillPond:      {HutMin: 0, HutMax: 1},
+	WoodsCemetery:      {HutMin: 0, HutMax: 1},
+	WoodsMeteorField:   {HutMin: 0, HutMax: 0},
 }
 
-func woodLevelSpecFor(level int) woodLevelSpec {
-	if level < 0 || level >= len(woodLevelSpecs) {
-		return woodLevelSpecs[0]
+func woodThemeSpecFor(theme int) woodsThemeSpec {
+	if theme < 0 || theme >= len(woodsThemeSpecs) {
+		return woodsThemeSpecs[0]
 	}
-	return woodLevelSpecs[level]
+	return woodsThemeSpecs[theme]
 }
 
 func isWoodsStructure(t uint8) bool {
@@ -34,114 +29,51 @@ func isWoodsStructure(t uint8) bool {
 		tileOrchardTree, tileBeehive, tileCiderPress, tileGravestone, tileIronFence,
 		tileCryptDoor, tileMillStone, tileTent, tileCampfire, tileCage, tileDryingRack,
 		tileMushroomRing, tileDruidAltar, tileWell, tileCart, tileMarketStall,
-		tileHaystack, tileKiln, tileChapelAltar, tileBellTower, tileWoodpile:
+		tileHaystack, tileKiln, tileChapelAltar, tileBellTower, tileWoodpile,
+		tileMeteorRock:
 		return true
 	}
 	return false
 }
 
-func (g *Game) placeWoodsLandmark(m *Map, level int, path [][2]int, startX, startY, exitX, exitY int) {
-	switch level {
-	case 0:
-		g.buildWoodcutterLandmark(m, path)
-	case 1:
-		g.buildOrchardLandmark(m, path)
-	case 2:
-		g.buildCemeteryLandmark(m, path)
-	case 3:
-		g.buildRiverMillLandmark(m, path)
-	case 4:
-		g.buildPoacherCampLandmark(m, path)
-	case 5:
-		g.buildDruidGroveLandmark(m, path)
-	case 6:
-		g.buildVillageLandmark(m, path)
-	case 7:
-		g.buildCharcoalLandmark(m, path)
-	case 8:
-		g.buildRuinedChapelAtExit(m, path, exitX, exitY)
+func (g *Game) woodsLandmarkCenter(m *Map, theme int) (int, int) {
+	cx := 34 + g.Roll(13)
+	cy := 9 + g.Roll(5)
+	if theme == WoodsCemetery {
+		cy = 11
+	}
+	return clampInt(cx, 26, 53), clampInt(cy, 8, 13)
+}
+
+func sideTowardEdge(edge int) [2]int {
+	switch edge {
+	case EdgeNorth:
+		return [2]int{0, -1}
+	case EdgeSouth:
+		return [2]int{0, 1}
+	case EdgeEast:
+		return [2]int{1, 0}
+	default:
+		return [2]int{-1, 0}
 	}
 }
 
-func landmarkAreaOK(m *Map, x0, y0, x1, y1 int) (bool, bool) {
-	hasWater := false
+func clearWoodsRect(m *Map, x0, y0, x1, y1 int) {
 	for y := y0; y <= y1; y++ {
 		for x := x0; x <= x1; x++ {
-			t := m.Tile(x, y)
-			if t == tileDirtRoad || t == tileWoodenBridge || t == portalTile(0) || isWoodsStructure(t) {
-				return false, false
-			}
-			if t == tileRiverBank || isWoodsWater(t) {
-				hasWater = true
-			}
-		}
-	}
-	return true, hasWater
-}
-
-func (g *Game) reserveLandmarkArea(m *Map, path [][2]int, w, h int) (int, int, [2]int, bool) {
-	mid := len(path) / 2
-	var fallbackX, fallbackY int
-	var fallbackSide [2]int
-	fallbackOK := false
-	for off := 0; off < len(path)/2; off++ {
-		for _, idx := range []int{mid + off, mid - off} {
-			if idx < 6 || idx >= len(path)-6 {
+			if x < 2 || y < 2 || x >= m.W-2 || y >= m.H-2 {
 				continue
 			}
-			p := path[idx]
-			sides := [][2]int{{0, -1}, {0, 1}, {-1, 0}, {1, 0}}
-			g.RNG.Shuffle(len(sides), func(a, b int) {
-				sides[a], sides[b] = sides[b], sides[a]
-			})
-			for _, side := range sides {
-				cx := p[0] + side[0]*(w/2+2)
-				cy := p[1] + side[1]*(h/2+2)
-				x0, x1 := cx-w/2-1, cx+w/2+1
-				y0, y1 := cy-h/2-1, cy+h/2+1
-				if x0 < 2 || y0 < 2 || x1 >= m.W-2 || y1 >= m.H-2 {
-					continue
-				}
-				ok, hasWater := landmarkAreaOK(m, x0, y0, x1, y1)
-				if !ok {
-					continue
-				}
-				if !hasWater {
-					clearWoodsArea(m, cx, cy, w/2+1, 0)
-					m.LandmarkX, m.LandmarkY = cx, cy
-					return cx, cy, side, true
-				}
-				if !fallbackOK {
-					fallbackX, fallbackY, fallbackSide, fallbackOK = cx, cy, side, true
-				}
-			}
+			m.SetTile(x, y, 2)
 		}
 	}
-	if fallbackOK {
-		clearWoodsArea(m, fallbackX, fallbackY, w/2+1, 0)
-		m.LandmarkX, m.LandmarkY = fallbackX, fallbackY
-		return fallbackX, fallbackY, fallbackSide, true
-	}
-
-	// Last resort: scan the whole map for a dry area away from the road.
-	for y0 := 2; y0 <= m.H-h-2; y0++ {
-		for x0 := 2; x0 <= m.W-w-2; x0++ {
-			ok, hasWater := landmarkAreaOK(m, x0, y0, x0+w+1, y0+h+1)
-			if !ok || hasWater {
-				continue
-			}
-			cx, cy := x0+w/2, y0+h/2
-			clearWoodsArea(m, cx, cy, w/2+1, 0)
-			m.LandmarkX, m.LandmarkY = cx, cy
-			return cx, cy, [2]int{0, 1}, true
-		}
-	}
-	return 0, 0, [2]int{}, false
 }
 
-func buildLandmarkBuilding(m *Map, cx, cy, w, h int, side [2]int, wall, floor, door uint8) {
-	x0, x1 := cx-w/2, cx-w/2+w-1
-	y0, y1 := cy-h/2, cy-h/2+h-1
+func buildWoodsBuilding(m *Map, cx, cy, w, h int, wall, floor, door uint8, doorSide [2]int) [2]int {
+	x0 := cx - w/2
+	y0 := cy - h/2
+	x1 := x0 + w - 1
+	y1 := y0 + h - 1
 	for y := y0; y <= y1; y++ {
 		for x := x0; x <= x1; x++ {
 			if x == x0 || x == x1 || y == y0 || y == y1 {
@@ -151,200 +83,86 @@ func buildLandmarkBuilding(m *Map, cx, cy, w, h int, side [2]int, wall, floor, d
 			}
 		}
 	}
-	var dx, dy int
-	switch {
-	case side[1] == -1:
-		dx, dy = cx, y1
-	case side[1] == 1:
-		dx, dy = cx, y0
-	case side[0] == -1:
-		dx, dy = x1, cy
+	doorX, doorY := cx, cy
+	switch doorSide {
+	case [2]int{0, -1}:
+		doorX, doorY = cx, y0
+	case [2]int{0, 1}:
+		doorX, doorY = cx, y1
+	case [2]int{-1, 0}:
+		doorX, doorY = x0, cy
 	default:
-		dx, dy = x0, cy
+		doorX, doorY = x1, cy
 	}
-	m.SetTile(dx, dy, door)
-	for k := 1; k <= 6; k++ {
-		x, y := dx-side[0]*k, dy-side[1]*k
-		if !m.InBounds(x, y) {
-			break
-		}
-		t := m.Tile(x, y)
-		if t == tileDirtRoad || t == tileWoodenBridge {
-			break
-		}
-		if isWoodsStructure(t) {
-			break
-		}
-		if isWoodsWater(t) {
-			m.SetTile(x, y, tileWoodenBridge)
-		} else {
-			m.SetTile(x, y, tileDirtRoad)
-		}
-	}
+	m.SetTile(doorX, doorY, door)
+	return [2]int{doorX + doorSide[0], doorY + doorSide[1]}
 }
 
-func (g *Game) buildWoodcutterLandmark(m *Map, path [][2]int) {
-	cx, cy, side, ok := g.reserveLandmarkArea(m, path, 9, 7)
-	if !ok {
-		return
-	}
-	buildLandmarkBuilding(m, cx, cy, 5, 5, side, tileWoodenWall, tileWoodenFloor, tileWoodenDoor)
-	m.SetTile(cx+3, cy, tileWoodpile)
-	for i := 0; i < 4; i++ {
-		x, y := cx-3+g.Roll(7), cy-2+g.Roll(5)
-		if m.Tile(x, y) == 2 {
-			m.SetTile(x, y, tileWoodpile)
-		}
-	}
-	for i := 0; i < 7; i++ {
-		x, y := cx-4+g.Roll(9), cy-3+g.Roll(7)
-		if m.Tile(x, y) == 2 {
-			m.SetTile(x, y, tileStump)
-		}
-	}
-}
-
-func (g *Game) buildOrchardLandmark(m *Map, path [][2]int) {
-	cx, cy, _, ok := g.reserveLandmarkArea(m, path, 11, 9)
-	if !ok {
-		return
-	}
-	for y := cy - 3; y <= cy+3; y += 2 {
-		for x := cx - 4; x <= cx+4; x += 2 {
-			if m.Tile(x, y) == 2 {
-				m.SetTile(x, y, tileOrchardTree)
-			}
-		}
-	}
-	m.SetTile(cx, cy, tileCiderPress)
-	for _, p := range [][2]int{{cx - 4, cy - 3}, {cx + 4, cy - 3}, {cx - 4, cy + 3}, {cx + 4, cy + 3}} {
-		m.SetTile(p[0], p[1], tileBeehive)
-	}
-}
-
-func (g *Game) buildCemeteryLandmark(m *Map, path [][2]int) {
-	cx, cy, side, ok := g.reserveLandmarkArea(m, path, 13, 11)
-	if !ok {
-		return
-	}
-	x0, x1 := cx-6, cx+6
-	y0, y1 := cy-5, cy+5
-	for x := x0; x <= x1; x++ {
-		m.SetTile(x, y0, tileIronFence)
-		m.SetTile(x, y1, tileIronFence)
-	}
-	for y := y0; y <= y1; y++ {
-		m.SetTile(x0, y, tileIronFence)
-		m.SetTile(x1, y, tileIronFence)
-	}
-	gateX, gateY := cx, y0
-	switch {
-	case side[1] == -1:
-		gateX, gateY = cx, y1
-	case side[1] == 1:
-		gateX, gateY = cx, y0
-	case side[0] == -1:
-		gateX, gateY = x1, cy
+func (g *Game) buildWoodsThemeLandmark(m *Map, theme, cx, cy, entryEdge int) [2]int {
+	switch theme {
+	case WoodsChurch:
+		return g.buildChurchLandmark(m, cx, cy, entryEdge)
+	case WoodsPeasantHouses:
+		return g.buildPeasantHousesLandmark(m, cx, cy, entryEdge)
+	case WoodsMillPond:
+		return g.buildMillLandmark(m, cx, cy, entryEdge)
+	case WoodsCemetery:
+		return g.buildCemeteryLandmark(m, cx, cy, entryEdge)
 	default:
-		gateX, gateY = x0, cy
+		return g.buildMeteorLandmark(m, cx, cy, entryEdge)
 	}
-	m.SetTile(gateX, gateY, 2)
-	if gateY == y0 {
-		m.SetTile(gateX, y0+1, 2)
-	} else if gateY == y1 {
-		m.SetTile(gateX, y1-1, 2)
-	} else if gateX == x0 {
-		m.SetTile(x0+1, gateY, 2)
-	} else {
-		m.SetTile(x1-1, gateY, 2)
-	}
-	for y := y0 + 2; y <= y1-2; y += 2 {
-		for x := x0 + 2; x <= x1-2; x += 2 {
-			if x == gateX || m.Tile(x, y) != 2 {
-				continue
-			}
+}
+
+func (g *Game) buildChurchLandmark(m *Map, cx, cy, entryEdge int) [2]int {
+	clearWoodsRect(m, cx-7, cy-5, cx+7, cy+5)
+	side := sideTowardEdge(entryEdge)
+	anchor := buildWoodsBuilding(m, cx, cy, 9, 7, 10, 9, tileWoodenDoor, side)
+	m.SetTile(cx-3, cy-2, tileBellTower)
+	altarX := cx - side[0]*3
+	altarY := cy - side[1]*2
+	m.SetTile(altarX, altarY, tileChapelAltar)
+	g.addChurchPond(m, cx, cy)
+	for i := 0; i < 8; i++ {
+		x, y := cx-7+g.Roll(15), cy-5+g.Roll(11)
+		if m.Tile(x, y) == 2 && !(x == anchor[0] && y == anchor[1]) {
 			m.SetTile(x, y, tileGravestone)
 		}
 	}
-	buildLandmarkBuilding(m, cx-3, cy-2, 5, 5, side, 10, 9, tileCryptDoor)
-	for i := 0; i < 4; i++ {
-		x, y := cx-7+g.Roll(15), cy-6+g.Roll(13)
+	for i := 0; i < 2; i++ {
+		x, y := cx-7+g.Roll(15), cy-5+g.Roll(11)
 		if m.Tile(x, y) == 2 {
 			m.SetTile(x, y, tileDeadTree)
 		}
 	}
+	m.LandmarkX, m.LandmarkY = cx, cy
+	return anchor
 }
 
-func (g *Game) buildRiverMillLandmark(m *Map, path [][2]int) {
-	cx, cy, side, ok := g.reserveLandmarkArea(m, path, 9, 7)
-	if !ok {
-		return
+func (g *Game) addChurchPond(m *Map, cx, cy int) bool {
+	candidates := [][2]int{
+		{cx + 10, cy}, {cx - 10, cy},
+		{cx, cy + 8}, {cx, cy - 8},
+		{cx + 9, cy + 6}, {cx + 9, cy - 6},
+		{cx - 9, cy + 6}, {cx - 9, cy - 6},
+		{cx + 12, cy + 4}, {cx - 12, cy + 4},
+		{cx + 12, cy - 4}, {cx - 12, cy - 4},
 	}
-	buildLandmarkBuilding(m, cx, cy, 6, 5, side, tileWoodenWall, tileWoodenFloor, tileWoodenDoor)
-	for _, p := range [][2]int{{cx - 4, cy}, {cx + 4, cy}, {cx, cy - 3}, {cx, cy + 3}} {
-		if m.Tile(p[0], p[1]) == 2 {
-			m.SetTile(p[0], p[1], tileMillStone)
-			break
+	for _, off := range candidates {
+		if g.paintWoodsPondIf(m, off[0], off[1], 3, 2, false) {
+			return true
 		}
 	}
+	return false
 }
 
-func (g *Game) buildPoacherCampLandmark(m *Map, path [][2]int) {
-	cx, cy, _, ok := g.reserveLandmarkArea(m, path, 11, 9)
-	if !ok {
-		return
-	}
-	m.SetTile(cx, cy, tileCampfire)
-	for _, p := range [][2]int{{cx - 3, cy - 2}, {cx + 3, cy - 2}, {cx, cy + 3}} {
-		if m.Tile(p[0], p[1]) == 2 {
-			m.SetTile(p[0], p[1], tileTent)
-		}
-	}
-	for _, p := range [][2]int{{cx - 3, cy + 2}, {cx + 3, cy + 2}} {
-		if m.Tile(p[0], p[1]) == 2 {
-			m.SetTile(p[0], p[1], tileCage)
-		}
-	}
-	for _, p := range [][2]int{{cx - 1, cy - 3}, {cx + 1, cy - 3}} {
-		if m.Tile(p[0], p[1]) == 2 {
-			m.SetTile(p[0], p[1], tileDryingRack)
-		}
-	}
-}
-
-func (g *Game) buildDruidGroveLandmark(m *Map, path [][2]int) {
-	cx, cy, _, ok := g.reserveLandmarkArea(m, path, 13, 11)
-	if !ok {
-		return
-	}
-	for i := 0; i < 8; i++ {
-		a := float64(i) * math.Pi / 4
-		x := cx + int(math.Round(math.Cos(a)*4))
-		y := cy + int(math.Round(math.Sin(a)*3))
-		m.SetTile(x, y, 12)
-	}
-	for i := 0; i < 8; i++ {
-		a := float64(i) * math.Pi / 4
-		x := cx + int(math.Round(math.Cos(a)*2))
-		y := cy + int(math.Round(math.Sin(a)*2))
-		if m.Tile(x, y) == 2 {
-			m.SetTile(x, y, tileMushroomRing)
-		}
-	}
-	m.SetTile(cx, cy, tileDruidAltar)
-	for _, p := range [][2]int{{cx - 5, cy - 4}, {cx + 5, cy - 4}, {cx - 5, cy + 4}, {cx + 5, cy + 4}} {
-		if m.Tile(p[0], p[1]) == 2 {
-			m.SetTile(p[0], p[1], 4) // giant tree
-		}
-	}
-}
-
-func (g *Game) buildVillageLandmark(m *Map, path [][2]int) {
-	cx, cy, _, ok := g.reserveLandmarkArea(m, path, 13, 11)
-	if !ok {
-		return
-	}
+func (g *Game) buildPeasantHousesLandmark(m *Map, cx, cy, entryEdge int) [2]int {
+	clearWoodsRect(m, cx-8, cy-5, cx+8, cy+5)
 	m.SetTile(cx, cy, tileWell)
+	side := sideTowardEdge(entryEdge)
+	anchor := [2]int{cx + side[0], cy + side[1]}
+	if m.Tile(anchor[0], anchor[1]) != 2 {
+		m.SetTile(anchor[0], anchor[1], 2)
+	}
 	for _, p := range [][2]int{{cx - 3, cy - 2}, {cx + 3, cy - 2}} {
 		if m.Tile(p[0], p[1]) == 2 {
 			m.SetTile(p[0], p[1], tileMarketStall)
@@ -355,147 +173,134 @@ func (g *Game) buildVillageLandmark(m *Map, path [][2]int) {
 			m.SetTile(p[0], p[1], tileCart)
 		}
 	}
-	for _, p := range [][2]int{{cx - 5, cy}, {cx + 5, cy}} {
+	for _, p := range [][2]int{{cx - 6, cy}, {cx + 6, cy}, {cx, cy - 4}} {
 		if m.Tile(p[0], p[1]) == 2 {
 			m.SetTile(p[0], p[1], tileHaystack)
 		}
 	}
-}
-
-func (g *Game) buildCharcoalLandmark(m *Map, path [][2]int) {
-	cx, cy, _, ok := g.reserveLandmarkArea(m, path, 11, 9)
-	if !ok {
-		return
-	}
-	for i := 0; i < 3; i++ {
-		x := cx - 3 + i*3
-		if m.Tile(x, cy) == 2 {
-			m.SetTile(x, cy, tileKiln)
-			if m.InBounds(x+1, cy) && m.Tile(x+1, cy) == 2 {
-				m.Fire[m.idx(x+1, cy)] = 20 + g.Roll(20)
-			}
-			if m.InBounds(x, cy-1) && m.Tile(x, cy-1) == 2 {
-				m.Smoke[m.idx(x, cy-1)] = 20 + g.Roll(20)
-			}
-		}
-	}
 	for i := 0; i < 6; i++ {
-		x, y := cx-5+g.Roll(11), cy-4+g.Roll(9)
+		x, y := cx-7+g.Roll(15), cy-4+g.Roll(9)
 		if m.Tile(x, y) == 2 {
-			m.SetTile(x, y, tileDeadTree)
+			if g.Roll(2) == 0 {
+				m.SetTile(x, y, tileFlowers)
+			} else {
+				m.SetTile(x, y, tileBush)
+			}
 		}
 	}
+	m.LandmarkX, m.LandmarkY = cx, cy
+	return anchor
 }
 
-func (g *Game) buildRuinedChapelAtExit(m *Map, path [][2]int, exitX, exitY int) {
-	m.LandmarkX, m.LandmarkY = exitX, exitY
-	w, h := 11, 9
-	x0, x1 := exitX-w/2, exitX-w/2+w-1
-	y0, y1 := exitY-h/2, exitY-h/2+h-1
-	if x0 < 2 {
-		x0, x1 = 2, 2+w-1
-	}
-	if x1 >= m.W-2 {
-		x1, x0 = m.W-3, m.W-3-w+1
-	}
-	if y0 < 2 {
-		y0, y1 = 2, 2+h-1
-	}
-	if y1 >= m.H-2 {
-		y1, y0 = m.H-3, m.H-3-h+1
-	}
-	openSide := [2]int{0, 1}
-	if len(path) >= 2 {
-		prev := path[len(path)-2]
-		dx, dy := exitX-prev[0], exitY-prev[1]
-		if abs(dx) > abs(dy) {
-			if dx > 0 {
-				openSide = [2]int{-1, 0}
-			} else {
-				openSide = [2]int{1, 0}
-			}
-		} else if dy > 0 {
-			openSide = [2]int{0, -1}
-		} else {
-			openSide = [2]int{0, 1}
+func (g *Game) buildMillLandmark(m *Map, cx, cy, entryEdge int) [2]int {
+	clearWoodsRect(m, cx-8, cy-5, cx+8, cy+5)
+	side := sideTowardEdge(entryEdge)
+	anchor := buildWoodsBuilding(m, cx, cy, 8, 5, tileWoodenWall, tileWoodenFloor, tileWoodenDoor, side)
+	for _, p := range [][2]int{{cx + 4, cy - 2}, {cx - 4, cy + 2}, {cx + 4, cy + 2}} {
+		if m.Tile(p[0], p[1]) == 2 {
+			m.SetTile(p[0], p[1], tileMillStone)
 		}
+	}
+	for _, p := range [][2]int{{cx - 5, cy - 2}, {cx + 5, cy}} {
+		if m.Tile(p[0], p[1]) == 2 {
+			m.SetTile(p[0], p[1], tileBarrel)
+		}
+	}
+	if m.Tile(cx-5, cy+2) == 2 {
+		m.SetTile(cx-5, cy+2, tileCart)
+	}
+	if m.Tile(cx+2, cy-3) == 2 {
+		m.SetTile(cx+2, cy-3, tileCrate)
+	}
+	m.LandmarkX, m.LandmarkY = cx, cy
+	return anchor
+}
+
+func (g *Game) buildCemeteryLandmark(m *Map, cx, cy, entryEdge int) [2]int {
+	w, h := 15, 11
+	x0, x1 := cx-w/2, cx-w/2+w-1
+	y0, y1 := cy-h/2, cy-h/2+h-1
+	clearWoodsRect(m, x0-2, y0-2, x1+2, y1+2)
+	for x := x0; x <= x1; x++ {
+		m.SetTile(x, y0, tileIronFence)
+		m.SetTile(x, y1, tileIronFence)
 	}
 	for y := y0; y <= y1; y++ {
-		for x := x0; x <= x1; x++ {
-			if m.Tile(x, y) == tileDirtRoad || m.Tile(x, y) == tileWoodenBridge || m.Tile(x, y) == portalTile(0) {
+		m.SetTile(x0, y, tileIronFence)
+		m.SetTile(x1, y, tileIronFence)
+	}
+	side := sideTowardEdge(entryEdge)
+	var gateX, gateY int
+	switch side {
+	case [2]int{0, -1}:
+		gateX, gateY = cx, y0
+	case [2]int{0, 1}:
+		gateX, gateY = cx, y1
+	case [2]int{-1, 0}:
+		gateX, gateY = x0, cy
+	default:
+		gateX, gateY = x1, cy
+	}
+	m.SetTile(gateX, gateY, 2)
+	anchor := [2]int{gateX + side[0], gateY + side[1]}
+
+	cryptCX, cryptCY := cx, cy
+	buildWoodsBuilding(m, cryptCX, cryptCY, 7, 5, 10, 9, tileCryptDoor, side)
+	for y := y0 + 2; y <= y1-2; y += 2 {
+		for x := x0 + 2; x <= x1-2; x += 2 {
+			if m.Tile(x, y) != 2 {
 				continue
 			}
-			wall := x == x0 || x == x1 || y == y0 || y == y1
-			if wall {
-				if (openSide[0] == 0 && openSide[1] == -1 && y == y0) ||
-					(openSide[0] == 0 && openSide[1] == 1 && y == y1) ||
-					(openSide[0] == -1 && openSide[1] == 0 && x == x0) ||
-					(openSide[0] == 1 && openSide[1] == 0 && x == x1) {
-					wall = false
-				}
+			if abs(x-gateX)+abs(y-gateY) < 3 {
+				continue
 			}
-			if wall {
-				m.SetTile(x, y, 10)
-			} else {
-				m.SetTile(x, y, 9)
-			}
-		}
-	}
-	m.SetTile(exitX, exitY, portalTile(0))
-	switch openSide {
-	case [2]int{0, -1}:
-		for y := y0 - 1; y <= exitY; y++ {
-			if m.Tile(exitX, y) != portalTile(0) {
-				g.setWoodsRoadTile(m, exitX, y)
-			}
-		}
-	case [2]int{0, 1}:
-		for y := exitY; y <= y1+1; y++ {
-			if m.Tile(exitX, y) != portalTile(0) {
-				g.setWoodsRoadTile(m, exitX, y)
-			}
-		}
-	case [2]int{-1, 0}:
-		for x := x0 - 1; x <= exitX; x++ {
-			if m.Tile(x, exitY) != portalTile(0) {
-				g.setWoodsRoadTile(m, x, exitY)
-			}
-		}
-	default:
-		for x := exitX; x <= x1+1; x++ {
-			if m.Tile(x, exitY) != portalTile(0) {
-				g.setWoodsRoadTile(m, x, exitY)
-			}
-		}
-	}
-	altarX, altarY := exitX, exitY
-	switch {
-	case openSide[1] == -1:
-		altarY = y1 - 1
-	case openSide[1] == 1:
-		altarY = y0 + 1
-	case openSide[0] == -1:
-		altarX = x1 - 1
-	default:
-		altarX = x0 + 1
-	}
-	m.SetTile(altarX, altarY, tileChapelAltar)
-	m.SetTile(x0+1, y0+1, tileBellTower)
-	for i := 0; i < 8; i++ {
-		x, y := x0-2+g.Roll(w+4), y0-2+g.Roll(h+4)
-		if m.Tile(x, y) == 2 {
 			m.SetTile(x, y, tileGravestone)
 		}
 	}
-	for _, p := range [][2]int{{x0 - 1, y0 - 1}, {x1 + 1, y0 - 1}, {x0 - 1, y1 + 1}, {x1 + 1, y1 + 1}, {x0 - 2, y0}, {x1 + 2, y0}} {
-		if !m.InBounds(p[0], p[1]) {
-			continue
+	for i := 0; i < 6; i++ {
+		x, y := x0-3+g.Roll(w+6), y0-3+g.Roll(h+6)
+		if m.InBounds(x, y) && m.Tile(x, y) == 2 {
+			m.SetTile(x, y, tileDeadTree)
 		}
-		t := m.Tile(p[0], p[1])
-		if t == tileDirtRoad || t == portalTile(0) || t == tileRiverBank || isWoodsWater(t) {
-			continue
-		}
-		m.SetTile(p[0], p[1], tileGravestone)
-		break
 	}
+	m.LandmarkX, m.LandmarkY = cryptCX, cryptCY
+	return anchor
+}
+
+func (g *Game) buildMeteorLandmark(m *Map, cx, cy, entryEdge int) [2]int {
+	rx, ry := 9, 4
+	clearWoodsRect(m, cx-rx-2, cy-ry-2, cx+rx+2, cy+ry+2)
+	for y := cy - ry; y <= cy+ry; y++ {
+		for x := cx - rx; x <= cx+rx; x++ {
+			dx := float64(x-cx) / float64(rx)
+			dy := float64(y-cy) / float64(ry)
+			d := dx*dx + dy*dy
+			if d <= 0.25 {
+				m.SetTile(x, y, tileMud)
+			} else if d <= 1.0 {
+				m.SetTile(x, y, tileBurnedGround)
+			}
+		}
+	}
+	for i := 0; i < 9; i++ {
+		a := float64(i) * 2 * math.Pi / 9
+		x := cx + int(math.Round(math.Cos(a)*float64(rx)*0.78))
+		y := cy + int(math.Round(math.Sin(a)*float64(ry)*0.78))
+		if m.InBounds(x, y) {
+			m.SetTile(x, y, tileMeteorRock)
+		}
+	}
+	for i := 0; i < 7; i++ {
+		x, y := cx-rx-3+g.Roll(2*rx+7), cy-ry-3+g.Roll(2*ry+7)
+		if m.InBounds(x, y) && m.Tile(x, y) == 2 {
+			m.SetTile(x, y, tileDeadTree)
+		}
+	}
+	side := sideTowardEdge(entryEdge)
+	anchor := [2]int{cx + side[0]*(rx+1), cy + side[1]*(ry+1)}
+	if !m.InBounds(anchor[0], anchor[1]) || m.Tile(anchor[0], anchor[1]) != 2 {
+		anchor = [2]int{cx + rx + 1, cy}
+	}
+	m.LandmarkX, m.LandmarkY = cx, cy
+	return anchor
 }
