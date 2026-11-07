@@ -452,7 +452,13 @@ func (g *Game) finishLevel(m *Map, level, theme int) {
 	g.Options["optGameLevelID"] = level
 	g.Theme = theme
 	g.Weather = WeatherClear
-	g.SpawnPopulation()
+	if theme == 0 {
+		woodsTheme := g.currentWoodsTheme()
+		g.spawnWoodsPopulation(woodsTheme)
+		g.spawnWoodsLoot(level, woodsTheme)
+	} else {
+		g.SpawnPopulation()
+	}
 	if theme == 0 && level >= 0 && level < numWoodsMaps {
 		g.spawnSignatureLoot(level)
 	}
@@ -850,7 +856,20 @@ func (g *Game) UpdateFOV() {
 	if g.Map == nil || g.Player == nil {
 		return
 	}
+	if g.Theme == 0 {
+		g.Map.RevealAll()
+		return
+	}
 	g.Map.FOV(g.Player.X, g.Player.Y, g.FOVRadius())
+}
+
+// RevealAll marks the whole compact woods map visible. The map edge is the
+// only visibility limit; light sources still cast local warm pools.
+func (m *Map) RevealAll() {
+	for i := range m.Visible {
+		m.Visible[i] = true
+		m.Seen[i] = true
+	}
 }
 
 func (g *Game) TileDescription(x, y int) string {

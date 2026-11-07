@@ -98,14 +98,59 @@ func TestSetupNewGameUsesClassValuesAndKit(t *testing.T) {
 	}
 }
 
-func TestAllThemesUseViewportSizedMaps(t *testing.T) {
-	for _, level := range []int{0, 8, 9, 17, 18, 26, 27} {
+func TestAllThemesUseExpectedMapSizes(t *testing.T) {
+	for level := 0; level < numWoodsMaps; level++ {
 		g := NewGame(int64(level + 500))
 		g.SetupNewGame(0, "tester")
 		g.GenerateLevel(level)
-		if g.Map.W != screenW || (g.Map.H != mapHeight && g.Map.H != mapViewH) {
-			t.Fatalf("level %d map = %dx%d, want width %d and height %d or %d", level, g.Map.W, g.Map.H, screenW, mapViewH, mapHeight)
+		if g.Map.W != screenW || g.Map.H != woodsMapHeight {
+			t.Fatalf("woods level %d map = %dx%d, want %dx%d", level, g.Map.W, g.Map.H, screenW, woodsMapHeight)
 		}
+	}
+	for _, level := range []int{9, 17, 18, 26, 27} {
+		g := NewGame(int64(level + 500))
+		g.SetupNewGame(0, "tester")
+		g.GenerateLevel(level)
+		if g.Map.W != screenW || g.Map.H != mapHeight {
+			t.Fatalf("section level %d map = %dx%d, want %dx%d", level, g.Map.W, g.Map.H, screenW, mapHeight)
+		}
+	}
+}
+
+func TestGameUses80x25Layout(t *testing.T) {
+	if screenW != 80 || screenH != 25 || mapViewH != 23 || woodsMapHeight != 23 {
+		t.Fatalf("layout constants = %dx%d view %d woods %d, want 80x25 view 23 woods 23", screenW, screenH, mapViewH, woodsMapHeight)
+	}
+	g := NewGame(710)
+	g.SetupNewGame(0, "tester")
+	g.Msg("layout test message", 10)
+	g.State = StatePlaying
+	g.UpdateFOV()
+	u, s := newTestUI(g, ColorModeTrueColor)
+	defer s.Fini()
+	u.drawGame()
+	s.Show()
+	rows := strings.Split(screenText(s), "\n")
+	if len(rows) != screenH+1 {
+		t.Fatalf("rendered %d rows, want %d plus trailing newline", len(rows)-1, screenH)
+	}
+	if !strings.Contains(rows[0], "layout test message") {
+		t.Fatalf("row 0 is not the latest message: %q", rows[0])
+	}
+	if !strings.Contains(rows[hudRow], "HP ") || !strings.Contains(rows[hudRow], "AP ") {
+		t.Fatalf("row %d is not the HUD: %q", hudRow, rows[hudRow])
+	}
+	found := false
+	for y := 1; y <= mapViewH; y++ {
+		if strings.Contains(rows[y], "@") {
+			if y != g.Player.Y+1 {
+				t.Fatalf("player rendered on row %d, want %d", y, g.Player.Y+1)
+			}
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("player is not rendered inside the 80x23 map area")
 	}
 }
 

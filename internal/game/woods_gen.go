@@ -128,19 +128,24 @@ func (g *Game) buildWoodsRoute(m *Map, entryEdge, entryPos, exitEdge, exitPos in
 	for _, p := range path {
 		g.setWoodsRoadTile(m, p[0], p[1])
 	}
-	g.carveWoodsEdgeRoad(m, entryEdgePoint, entryInside)
-	g.carveWoodsEdgeRoad(m, exitEdgePoint, exitInside)
+	path = append(path, g.carveWoodsEdgeRoad(m, entryEdgePoint, entryInside)...)
+	path = append(path, g.carveWoodsEdgeRoad(m, exitEdgePoint, exitInside)...)
 	m.SetTile(exitEdgePoint[0], exitEdgePoint[1], portalTile(0))
 	return path
 }
 
-func (g *Game) carveWoodsEdgeRoad(m *Map, edgePoint, insidePoint [2]int) {
-	path := m.Line(edgePoint[0], edgePoint[1], insidePoint[0], insidePoint[1])
+func (g *Game) carveWoodsEdgeRoad(m *Map, edgePoint, insidePoint [2]int) [][2]int {
+	line := m.Line(edgePoint[0], edgePoint[1], insidePoint[0], insidePoint[1])
+	path := make([][2]int, 0, len(line)+2)
+	path = append(path, edgePoint)
 	g.setWoodsRoadTile(m, edgePoint[0], edgePoint[1])
-	for _, p := range path {
+	for _, p := range line {
+		path = append(path, p)
 		g.setWoodsRoadTile(m, p[0], p[1])
 	}
+	path = append(path, insidePoint)
 	g.setWoodsRoadTile(m, insidePoint[0], insidePoint[1])
+	return path
 }
 
 func (g *Game) directWoodsRoute(points ...[2]int) [][2]int {
@@ -227,7 +232,7 @@ func (g *Game) findWoodsRoad(m *Map, sx, sy, tx, ty int) [][2]int {
 		}
 		for _, d := range dirs4 {
 			nx, ny := cur.x+d[0], cur.y+d[1]
-			if nx < 1 || ny < 1 || nx >= m.W-1 || ny >= m.H-1 {
+			if nx < 2 || ny < 2 || nx >= m.W-2 || ny >= m.H-2 {
 				continue
 			}
 			ni := m.idx(nx, ny)
