@@ -982,33 +982,25 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 		return
 	}
 	r := e.Rune()
+	if slot, ok := slotForKey(r); ok {
+		g.UseSlot(slot)
+		return
+	}
 	switch r {
 	case '.':
 		g.WaitTurn()
-	case 'a':
-		g.UseSlot(SlotHands)
 	case 'r':
 		g.UseRite(0)
 	case 't':
 		g.UseRite(1)
-	case 'A':
-		g.DropSlot(SlotHands)
-	case 'H':
-		g.DropSlot(SlotHead)
-	case 'C':
-		g.DropSlot(SlotRobe1)
-	case 'D':
-		g.DropSlot(SlotRobe2)
-	case 'R':
-		g.DropSlot(SlotRobe3)
-	case 'g':
+	case 'p':
 		g.PickUp()
-	case 'f':
+	case 'x':
 		u.bashPending = true
 		g.Msg("bash in which direction? (esc cancels)", 8)
 	case '?':
 		g.State = StateHelp
-	case 'e':
+	case 'i':
 		g.State = StateInventory
 		u.slotSel = 0
 	case 'v':
@@ -1016,13 +1008,13 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 		g.LookX, g.LookY = g.Player.X, g.Player.Y
 	case '~':
 		u.msgExpanded = true
-	case 'O':
+	case 'o':
 		g.State = StateOptions
 		u.optSel = 0
 		u.optScroll = 0
 	case '@':
 		g.State = StatePlayerScreen
-	case 'S':
+	case 's':
 		g.SaveAndQuit()
 	case '>':
 		g.UsePortal()
@@ -1030,11 +1022,7 @@ func (u *UI) handlePlaying(e *tcell.EventKey) {
 		g.ChangeLevelRelative(1)
 	case '[':
 		g.ChangeLevelRelative(-1)
-	case 'Q':
-		g.State = StateQuitConfirm
-	case 'z':
-		g.State = StateQuitConfirm
-	case 'Z':
+	case 'q', 'z':
 		g.State = StateQuitConfirm
 	}
 	if e.Key() == tcell.KeyEscape {
