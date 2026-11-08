@@ -7,6 +7,7 @@ build file lives here.
 ## Start here
 
 - [Project README](../README.md) — build, controls and current gameplay features
+- [Retrospection](RETROSPECTION.md) — how the project drifted away from its original reverse-engineering goal
 - [Feature plans](plans/README.md) — roadmap and links to all planned work
 - [Reverse-engineering reference](reference/reverse-engineering.md) — how the original binary was analysed and what was recovered
 - [Item theme review](reference/item-review.md) — which recovered items are kept, renamed or removed from normal play

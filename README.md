@@ -10,6 +10,21 @@ systems and uses the data tables recovered from the original binary: item
 prototypes, critter prototypes, skill list, tile table, map sections, key
 bindings, options, player classes, hints and the original texts.
 
+## ⚠ Project status: the goal drifted
+
+This project **started** as a faithful Go reimplementation of `hi030.exe`
+reconstructed by reverse engineering. It **no longer is one**. Over its commit
+history the port drifted into an original game: melee-only cardinal-movement
+combat, a single priest protagonist with invented Rites and robe shards,
+renamed items, an original woods generator, and a medieval village-horror
+theme replacing the original's sci-fi/military horror. The recovered data
+tables are still embedded in `data_gen.go`, but most gameplay systems —
+movement, combat, equipment, progression, levels, items and presentation —
+are new designs that deliberately replace recovered ones.
+
+Read the full [retrospection](documentation/RETROSPECTION.md) for the
+commit-by-commit account of how and why this happened.
+
 ## Build & run
 
 ```sh
@@ -136,6 +151,7 @@ is a preservation/reimplementation effort and keeps the original notices.
 ## Documentation
 
 - [Documentation index](documentation/README.md)
+- [Retrospection — how the project drifted from its original goal](documentation/RETROSPECTION.md)
 - [Feature plans and roadmap](documentation/plans/README.md)
 - [Reverse-engineering notes](documentation/reference/reverse-engineering.md)
 
